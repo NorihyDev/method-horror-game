@@ -1,0 +1,59 @@
+# Test builds: desktop (Linux, Windows), headless dedicated server and an
+# Android DEBUG APK signed with the public debug key. Runs on main and on demand;
+# never on fork pull requests (no secrets are used here anyway).
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Cache Godot downloads
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cache/godot-dl
+          key: godot-templates-${{ hashFiles('tools/godot-version.txt', 'tools/ci/install_godot.sh') }}
+      - name: Install pinned Godot + export templates (SHA-512 verified)
+        run: ./tools/ci/install_godot.sh --templates
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Prepare Android debug export
+        run: ./tools/ci/android_setup.sh
+      - name: Import
+        run: timeout 600 godot --headless --path game --import
+      - name: Export
+        run: |
+          mkdir -p builds/linux builds/windows builds/server builds/android
+          G=godot
+          timeout 600 $G --headless --path game --export-debug "Linux" ../builds/linux/method_horror.x86_64
+          timeout 600 $G --headless --path game --export-debug "Windows Desktop" ../builds/windows/METHOD_HORROR.exe
+          timeout 600 $G --headless --path game --export-release "Linux Dedicated Server" ../builds/server/method_horror_server.x86_64
+          timeout 900 $G --headless --path game --export-debug "Android" ../builds/android/method_horror_debug.apk
+          test -s builds/android/method_horror_debug.apk
+      - name: Smoke-test the exported Linux build
+        run: timeout 300 ./builds/linux/method_horror.x86_64 --headless -- --smoke
+      - name: Checksums
+        run: find builds -type f \( -name "*.apk" -o -name "*.x86_64" -o -name "*.exe" -o -name "*.pck" \) -exec sha256sum {} \; | tee builds/SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: method-horror-test-builds-${{ github.sha }}
+          path: builds/
+          retention-days: 14
+      - name: Remove generated debug keystore
+        if: always()
+        run: rm -rf ~/.config/godot/keystores

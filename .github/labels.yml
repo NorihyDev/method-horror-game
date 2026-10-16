@@ -1,0 +1,41 @@
+# Suggested repository labels. Apply once a remote exists, e.g. with
+# `gh label create <name> --color <hex> --description "<text>"` for each entry.
+- name: bug
+  color: "8e1b1b"
+  description: Something does not work as intended
+- name: enhancement
+  color: "3a5f7d"
+  description: New feature or improvement
+- name: needs-triage
+  color: "c9a227"
+  description: Not yet reviewed
+- name: gameplay
+  color: "5b4636"
+  description: Rules, puzzles, controller, maps
+- name: ai
+  color: "4b2a4b"
+  description: The Watcher and future enemies
+- name: ui
+  color: "6b6b6b"
+  description: Menus, HUD, touch controls
+- name: audio
+  color: "2f4f4f"
+  description: Sound, music, captions
+- name: networking
+  color: "1f3d5c"
+  description: Multiplayer, lobby service, dedicated server
+- name: security
+  color: "b42727"
+  description: Validation, authentication, secrets, abuse
+- name: performance
+  color: "7f9c6b"
+  description: Frame time, memory, battery, size
+- name: accessibility
+  color: "8a7a3a"
+  description: Comfort, readability, input options
+- name: build
+  color: "444444"
+  description: CI, exports, signing, releases
+- name: docs
+  color: "9d978b"
+  description: Documentation only

@@ -1,0 +1,26 @@
+name: Feature or content proposal
+description: Suggest a feature, map idea or improvement.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem or player experience does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How should it work? Include rules a player can learn, not just the effect.
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Fits which milestone?
+      options: [M3 multiplayer, M4 online economy & maps 2-3, M5 polish & release, M6 maps 4-5, Unsure]
+  - type: textarea
+    id: notes
+    attributes:
+      label: Accessibility, performance or security considerations

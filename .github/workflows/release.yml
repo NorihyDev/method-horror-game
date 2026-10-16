@@ -1,0 +1,116 @@
+# Versioned release builds from a semantic-version tag (vMAJOR.MINOR.PATCH).
+# The tag must match application/config/version in game/project.godot.
+# Android release signing runs only in the protected "release" environment and
+# only when its secrets exist; otherwise the signing result is reported as
+# SKIPPED and no "signed" artifact is produced. Publishing is a draft release:
+# making it public is a manual, approved step.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - id: v
+        name: Check tag matches project version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Tag $GITHUB_REF_NAME is not vMAJOR.MINOR.PATCH"; exit 1; }
+          proj="$(grep -E '^config/version=' game/project.godot | cut -d'"' -f2)"
+          [[ "$tag" == "$proj" ]] || { echo "Tag $tag != project version $proj"; exit 1; }
+          grep -q "^## \[$tag\]" CHANGELOG.md || { echo "CHANGELOG.md has no section for $tag"; exit 1; }
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: release
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install pinned Godot + export templates (SHA-512 verified)
+        run: ./tools/ci/install_godot.sh --templates
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: ./tools/ci/android_setup.sh
+      - name: Tests must pass before packaging
+        run: |
+          timeout 600 godot --headless --path game --import
+          timeout 900 godot --headless --path game -- --test
+      - name: Desktop and server release exports
+        run: |
+          mkdir -p dist
+          G=godot
+          timeout 600 $G --headless --path game --export-release "Linux" ../dist/linux/method_horror.x86_64
+          timeout 600 $G --headless --path game --export-release "Windows Desktop" ../dist/windows/METHOD_HORROR.exe
+          timeout 600 $G --headless --path game --export-release "Linux Dedicated Server" ../dist/server/method_horror_server.x86_64
+          (cd dist && tar -czf method_horror_linux.tar.gz linux && tar -czf method_horror_server_linux.tar.gz server && zip -qr method_horror_windows.zip windows)
+      - name: Android release (signed only when protected secrets exist)
+        id: android
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_USER: ${{ secrets.ANDROID_RELEASE_KEYSTORE_USER }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PASSWORD }}
+        run: |
+          if [[ -z "$KEYSTORE_B64" || -z "$KEYSTORE_USER" || -z "$KEYSTORE_PASSWORD" ]]; then
+            echo "signing=SKIPPED (release signing secrets are not configured)" >> "$GITHUB_OUTPUT"
+            echo "::warning::Android release signing SKIPPED: secrets not configured. No signed APK/AAB was produced."
+            exit 0
+          fi
+          ks="$RUNNER_TEMP/release.keystore"
+          echo "$KEYSTORE_B64" | base64 -d > "$ks"
+          chmod 600 "$ks"
+          export GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$ks"
+          export GODOT_ANDROID_KEYSTORE_RELEASE_USER="$KEYSTORE_USER"
+          export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD="$KEYSTORE_PASSWORD"
+          timeout 900 godot --headless --path game --export-release "Android" ../dist/method_horror_release.apk
+          test -s dist/method_horror_release.apk
+          echo "signing=SIGNED" >> "$GITHUB_OUTPUT"
+      - name: Remove signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"; rm -rf ~/.config/godot/keystores
+      - name: Checksums and notes
+        run: |
+          cd dist
+          sha256sum *.tar.gz *.zip *.apk 2>/dev/null | tee SHA256SUMS.txt
+          version="${{ needs.validate.outputs.version }}"
+          awk "/^## \\[$version\\]/{flag=1;next}/^## \\[/{flag=0}flag" ../CHANGELOG.md > NOTES.md
+          printf '\n### Build facts\n- Godot %s\n- Android release signing: %s\n' "$(cat ../tools/godot-version.txt)" "${{ steps.android.outputs.signing }}" >> NOTES.md
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: method-horror-release-${{ needs.validate.outputs.version }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.apk
+            dist/SHA256SUMS.txt
+            dist/NOTES.md
+          retention-days: 30
+
+  draft-release:
+    needs: [validate, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: method-horror-release-${{ needs.validate.outputs.version }}
+          path: dist
+      - name: Create a DRAFT GitHub release (publishing is a manual step)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --title "METHOD HORROR $GITHUB_REF_NAME" --notes-file dist/NOTES.md dist/*.tar.gz dist/*.zip dist/SHA256SUMS.txt $(ls dist/*.apk 2>/dev/null || true)

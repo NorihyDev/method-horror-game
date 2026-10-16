@@ -1,0 +1,48 @@
+name: Bug report
+description: Something does not work as expected.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Security problems? Do not file them here — see SECURITY.md.
+  - type: input
+    id: build
+    attributes:
+      label: Build / commit
+      description: Version from the main menu (bottom right) or commit hash.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [Android phone, Android tablet, Windows, Linux, Other]
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS version
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Gameplay, The Watcher / AI, Puzzles, Controls / touch, UI / menus, Audio, Graphics / performance, Saves / settings, Multiplayer, Other]
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Start Solo → The Abandoned House (Normal)\n2. …"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Do not paste tokens, passwords or personal data.
