@@ -77,7 +77,12 @@ func test_profile_migration_negative_coins_clamped() -> void:
 
 
 func test_current_schema_is_untouched() -> void:
-	var v1 := {"schema_version": 1, "profile": {"display_name": "B", "local_id": "0123456789abcdef0"}, "progress": {"maps": {}}, "wallet": {}}
+	var v1 := {
+		"schema_version": 1,
+		"profile": {"display_name": "B", "local_id": "0123456789abcdef0"},
+		"progress": {"maps": {}},
+		"wallet": {}
+	}
 	var out: Dictionary = Saves.migrate(v1)
 	assert_eq(out["profile"]["display_name"], "B")
 

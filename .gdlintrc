@@ -1,0 +1,8 @@
+# gdtoolkit (gdlint) configuration for METHOD HORROR — see CONTRIBUTING.md.
+max-line-length: 140
+max-public-methods: 60
+max-returns: 12
+max-file-lines: 1200
+disable:
+  - no-elif-return
+  - no-else-return

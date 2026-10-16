@@ -36,8 +36,15 @@ const SCHEMA := {
 	"frame_cap": {"cat": CAT_GRAPHICS, "default": 60, "options": [30, 60, 90, 120, 0]},
 	"battery_saver": {"cat": CAT_GRAPHICS, "default": false},
 	"vsync": {"cat": CAT_GRAPHICS, "default": true, "desktop_only": true},
-	"window_mode": {"cat": CAT_GRAPHICS, "default": "windowed", "options": ["windowed", "fullscreen"], "desktop_only": true},
-	"window_size": {"cat": CAT_GRAPHICS, "default": "1280x720", "options": ["1280x720", "1600x900", "1920x1080", "2560x1440"], "desktop_only": true},
+	"window_mode":
+	{"cat": CAT_GRAPHICS, "default": "windowed", "options": ["windowed", "fullscreen"], "desktop_only": true},
+	"window_size":
+	{
+		"cat": CAT_GRAPHICS,
+		"default": "1280x720",
+		"options": ["1280x720", "1600x900", "1920x1080", "2560x1440"],
+		"desktop_only": true
+	},
 	# --- Audio --------------------------------------------------------------
 	"vol_master": {"cat": CAT_AUDIO, "default": 0.9, "min": 0.0, "max": 1.0, "step": 0.05},
 	"vol_music": {"cat": CAT_AUDIO, "default": 0.7, "min": 0.0, "max": 1.0, "step": 0.05},
@@ -85,26 +92,47 @@ const SCHEMA := {
 }
 
 const PRESETS := {
-	"low": {
-		"render_scale": 0.7, "upscaler": "bilinear", "msaa": 0, "shadows": "off",
-		"light_quality": "low", "texture_quality": "low", "particles": "off",
-		"draw_distance": "near", "glow": false,
+	"low":
+	{
+		"render_scale": 0.7,
+		"upscaler": "bilinear",
+		"msaa": 0,
+		"shadows": "off",
+		"light_quality": "low",
+		"texture_quality": "low",
+		"particles": "off",
+		"draw_distance": "near",
+		"glow": false,
 	},
-	"medium": {
-		"render_scale": 0.85, "upscaler": "fsr", "msaa": 0, "shadows": "low",
-		"light_quality": "low", "texture_quality": "high", "particles": "low",
-		"draw_distance": "near", "glow": true,
+	"medium":
+	{
+		"render_scale": 0.85,
+		"upscaler": "fsr",
+		"msaa": 0,
+		"shadows": "low",
+		"light_quality": "low",
+		"texture_quality": "high",
+		"particles": "low",
+		"draw_distance": "near",
+		"glow": true,
 	},
-	"high": {
-		"render_scale": 1.0, "upscaler": "fsr", "msaa": 2, "shadows": "high",
-		"light_quality": "high", "texture_quality": "high", "particles": "high",
-		"draw_distance": "far", "glow": true,
+	"high":
+	{
+		"render_scale": 1.0,
+		"upscaler": "fsr",
+		"msaa": 2,
+		"shadows": "high",
+		"light_quality": "high",
+		"texture_quality": "high",
+		"particles": "high",
+		"draw_distance": "far",
+		"glow": true,
 	},
 }
 
-var _values: Dictionary = {}
 var load_recovered := false
 var path := PATH
+var _values: Dictionary = {}
 
 
 func _ready() -> void:
@@ -330,12 +358,14 @@ func _apply_key(key: String) -> void:
 		"vsync":
 			if is_available("vsync"):
 				DisplayServer.window_set_vsync_mode(
-					DisplayServer.VSYNC_ENABLED if b("vsync") else DisplayServer.VSYNC_DISABLED)
+					DisplayServer.VSYNC_ENABLED if b("vsync") else DisplayServer.VSYNC_DISABLED
+				)
 		"window_mode":
 			if is_available("window_mode") and not AppInfo.is_headless():
 				var fullscreen := s("window_mode") == "fullscreen"
 				DisplayServer.window_set_mode(
-					DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED)
+					DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
+				)
 				if not fullscreen:
 					_apply_key("window_size")
 		"window_size":

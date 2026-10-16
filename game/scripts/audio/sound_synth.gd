@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name SoundSynth
 extends RefCounted
 ## Original procedural sound design for METHOD HORROR placeholder audio.
@@ -12,28 +13,73 @@ const TAU_F := TAU
 
 ## name -> loop?  Variants are rendered as name_1..name_n via VARIANTS.
 const SOUNDS := {
-	"step_wood": false, "step_concrete": false, "step_carpet": false, "step_metal": false,
-	"door_creak": false, "door_close": false, "door_locked": false, "unlock": false,
-	"pickup": false, "drop": false, "switch": false, "fuse_insert": false,
-	"short_circuit": false, "power_on": false, "hum_loop": true, "light_buzz_loop": true,
-	"spark": false, "keypad_beep": false, "keypad_error": false, "keypad_success": false,
-	"crank_clank": false, "crank_ok": false, "motor_loop": true, "garage_loop": true,
-	"watcher_breath_loop": true, "watcher_step": false, "watcher_screech": false,
-	"watcher_growl": false, "watcher_attack": false, "watcher_keys": false,
-	"player_breath_loop": true, "heartbeat_loop": true, "player_hurt": false,
-	"amb_house_loop": true, "amb_basement_loop": true,
-	"mus_tension_loop": true, "mus_chase_loop": true, "mus_menu_loop": true,
-	"ui_hover": false, "ui_click": false, "ui_back": false, "ui_confirm": false,
-	"stinger_scare": false, "distant_impact": false, "creak": false,
-	"page_turn": false, "locker_open": false, "locker_close": false,
-	"flashlight_click": false, "battery_insert": false, "escape_sting": false,
-	"defeat_sting": false, "ping": false, "drawer": false, "workbench": false,
-	"revive": false, "tape_voice": false,
+	"step_wood": false,
+	"step_concrete": false,
+	"step_carpet": false,
+	"step_metal": false,
+	"door_creak": false,
+	"door_close": false,
+	"door_locked": false,
+	"unlock": false,
+	"pickup": false,
+	"drop": false,
+	"switch": false,
+	"fuse_insert": false,
+	"short_circuit": false,
+	"power_on": false,
+	"hum_loop": true,
+	"light_buzz_loop": true,
+	"spark": false,
+	"keypad_beep": false,
+	"keypad_error": false,
+	"keypad_success": false,
+	"crank_clank": false,
+	"crank_ok": false,
+	"motor_loop": true,
+	"garage_loop": true,
+	"watcher_breath_loop": true,
+	"watcher_step": false,
+	"watcher_screech": false,
+	"watcher_growl": false,
+	"watcher_attack": false,
+	"watcher_keys": false,
+	"player_breath_loop": true,
+	"heartbeat_loop": true,
+	"player_hurt": false,
+	"amb_house_loop": true,
+	"amb_basement_loop": true,
+	"mus_tension_loop": true,
+	"mus_chase_loop": true,
+	"mus_menu_loop": true,
+	"ui_hover": false,
+	"ui_click": false,
+	"ui_back": false,
+	"ui_confirm": false,
+	"stinger_scare": false,
+	"distant_impact": false,
+	"creak": false,
+	"page_turn": false,
+	"locker_open": false,
+	"locker_close": false,
+	"flashlight_click": false,
+	"battery_insert": false,
+	"escape_sting": false,
+	"defeat_sting": false,
+	"ping": false,
+	"drawer": false,
+	"workbench": false,
+	"revive": false,
+	"tape_voice": false,
 }
 
 const VARIANTS := {
-	"step_wood": 4, "step_concrete": 4, "step_carpet": 4, "step_metal": 4,
-	"distant_impact": 3, "creak": 3, "door_creak": 2,
+	"step_wood": 4,
+	"step_concrete": 4,
+	"step_carpet": 4,
+	"step_metal": 4,
+	"distant_impact": 3,
+	"creak": 3,
+	"door_creak": 2,
 }
 
 var rng := RandomNumberGenerator.new()
@@ -72,6 +118,7 @@ static func to_wav(samples: PackedFloat32Array, loop: bool) -> AudioStreamWAV:
 
 
 # --- DSP helpers ------------------------------------------------------------
+
 
 static func make(seconds: float) -> PackedFloat32Array:
 	var b := PackedFloat32Array()
@@ -360,6 +407,7 @@ func note(seconds: float, freq: float, decay: float, brightness: float = 0.4) ->
 
 
 # --- Recipes ------------------------------------------------------------------
+
 
 func r_step_wood(v: int) -> PackedFloat32Array:
 	var b := make(0.3)

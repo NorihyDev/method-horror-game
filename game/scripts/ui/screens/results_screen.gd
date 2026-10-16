@@ -1,6 +1,7 @@
 extends Screen
 ## Victory / defeat results with the reward summary.
 
+
 func build() -> void:
 	var bg := ColorRect.new()
 	bg.color = ThemeFactory.BG

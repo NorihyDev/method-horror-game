@@ -3,6 +3,8 @@ extends Interactable
 ## An item lying in the world. Taking it is an authoritative, atomic state
 ## change: two players pressing at once cannot both receive it.
 
+static var _glint_tex: Texture2D
+
 @export var item_id := ""
 @export var count := 1
 var dropped := false
@@ -87,9 +89,6 @@ func _drawer() -> DrawerEntity:
 	return null
 
 
-static var _glint_tex: Texture2D
-
-
 static func _glint_texture() -> Texture2D:
 	if _glint_tex:
 		return _glint_tex
@@ -99,7 +98,10 @@ static func _glint_texture() -> Texture2D:
 		for x in size:
 			var d := Vector2(x - size / 2.0 + 0.5, y - size / 2.0 + 0.5)
 			var r := d.length() / (size / 2.0)
-			var star := maxf(0.0, 1.0 - absf(d.x) * 0.5) * maxf(0.0, 1.0 - r) + maxf(0.0, 1.0 - absf(d.y) * 0.5) * maxf(0.0, 1.0 - r)
+			var star := (
+				maxf(0.0, 1.0 - absf(d.x) * 0.5) * maxf(0.0, 1.0 - r)
+				+ maxf(0.0, 1.0 - absf(d.y) * 0.5) * maxf(0.0, 1.0 - r)
+			)
 			var a := clampf(pow(maxf(0.0, 1.0 - r), 3.0) + star * 0.6, 0.0, 1.0)
 			img.set_pixel(x, y, Color(1, 1, 1, a))
 	_glint_tex = ImageTexture.create_from_image(img)

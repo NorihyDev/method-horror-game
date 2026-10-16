@@ -11,8 +11,12 @@ signal progress_changed
 const PROFILE_PATH := "user://profile.json"
 const CHECKPOINT_PATH := "user://checkpoint.json"
 const AVATAR_COLORS: Array[Color] = [
-	Color(0.55, 0.12, 0.12), Color(0.78, 0.74, 0.64), Color(0.32, 0.42, 0.48),
-	Color(0.36, 0.44, 0.30), Color(0.52, 0.40, 0.22), Color(0.40, 0.30, 0.48),
+	Color(0.55, 0.12, 0.12),
+	Color(0.78, 0.74, 0.64),
+	Color(0.32, 0.42, 0.48),
+	Color(0.36, 0.44, 0.30),
+	Color(0.52, 0.40, 0.22),
+	Color(0.40, 0.30, 0.48),
 ]
 
 var data: Dictionary = {}
@@ -67,8 +71,13 @@ static func migrate(raw: Dictionary) -> Dictionary:
 			maps[str(map_id)] = {"completed": true, "completions": 1, "best_time": 0.0, "collectibles": []}
 		d = {
 			"schema_version": 1,
-			"profile": {"local_id": _generate_local_id(), "display_name": str(d.get("name", "")),
-				"avatar_color": 0, "created_at": int(Time.get_unix_time_from_system())},
+			"profile":
+			{
+				"local_id": _generate_local_id(),
+				"display_name": str(d.get("name", "")),
+				"avatar_color": 0,
+				"created_at": int(Time.get_unix_time_from_system())
+			},
 			"progress": {"maps": maps, "tutorial_done": false},
 			"wallet": {"balance": maxi(0, int(d.get("coins", 0)))},
 		}
@@ -114,10 +123,13 @@ func set_avatar_color(index: int) -> void:
 
 # --- Progress ---------------------------------------------------------------
 
+
 func map_progress(map_id: String) -> Dictionary:
 	var maps: Dictionary = data["progress"]["maps"]
 	if not maps.has(map_id):
-		maps[map_id] = {"completed": false, "completions": 0, "best_time": 0.0, "best_difficulty": "", "collectibles": []}
+		maps[map_id] = {
+			"completed": false, "completions": 0, "best_time": 0.0, "best_difficulty": "", "collectibles": []
+		}
 	return maps[map_id]
 
 
@@ -159,6 +171,7 @@ func tutorial_done() -> bool:
 
 # --- Wallet (local) --------------------------------------------------------
 
+
 func apply_local_reward(reward_id: String, amount: int, reason: String) -> bool:
 	var ok := wallet.apply_reward(reward_id, amount, reason, int(Time.get_unix_time_from_system()))
 	if ok:
@@ -189,6 +202,7 @@ func equipped_item(slot: String) -> Dictionary:
 
 # --- Checkpoint ------------------------------------------------------------
 
+
 func save_checkpoint(snapshot: Dictionary) -> void:
 	var err := SaveIO.write_atomic(checkpoint_path, {"schema_version": 1, "snapshot": snapshot})
 	if err != OK:
@@ -214,6 +228,7 @@ func clear_checkpoint() -> void:
 
 # --- Reset -----------------------------------------------------------------
 
+
 ## Deletes all local data (profile, wallet, checkpoint, settings).
 func reset_all_local_data() -> void:
 	SaveIO.delete_all(profile_path)
@@ -233,8 +248,13 @@ func reset_all_local_data() -> void:
 func _new_profile() -> Dictionary:
 	return {
 		"schema_version": AppInfo.SAVE_SCHEMA_VERSION,
-		"profile": {"local_id": _generate_local_id(), "display_name": "", "avatar_color": 0,
-			"created_at": int(Time.get_unix_time_from_system())},
+		"profile":
+		{
+			"local_id": _generate_local_id(),
+			"display_name": "",
+			"avatar_color": 0,
+			"created_at": int(Time.get_unix_time_from_system())
+		},
 		"progress": {"maps": {}, "tutorial_done": false},
 		"wallet": {},
 	}

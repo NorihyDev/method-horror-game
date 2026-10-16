@@ -41,6 +41,7 @@ func build_level() -> void:
 
 # --- Geometry ------------------------------------------------------------------------------
 
+
 func _rooms() -> void:
 	add_room("kitchen", AABB(Vector3(0, 0, 0), Vector3(8, H, 7)), "concrete")
 	add_room("dining", AABB(Vector3(8, 0, 0), Vector3(6, H, 7)), "wood")
@@ -92,7 +93,9 @@ func _interior_walls() -> void:
 	b.wall_z(6, 10, 18, 0, H, "wallpaper_red", "wallpaper", [{"from": 14.0, "to": 15.4, "top": 2.3}])
 	b.wall_z(10, 10, 18, 0, H, "wallpaper", "dark_wood")
 	# Utility | stairwell, full pit height, maglocked door at the top landing.
-	b.wall_z(21, 10, 18, BY, H - BY, "plaster", "plaster", [{"from": 10.3, "to": 11.4, "bottom": -BY, "top": -BY + DOOR_TOP}])
+	b.wall_z(
+		21, 10, 18, BY, H - BY, "plaster", "plaster", [{"from": 10.3, "to": 11.4, "bottom": -BY, "top": -BY + DOOR_TOP}]
+	)
 	# Stairwell south wall continues down to the basement opening.
 	b.wall_x(18, 21, 24, BY, H - BY, "plaster", "concrete", [{"from": 21.5, "to": 23.5, "top": 2.3}])
 
@@ -100,9 +103,14 @@ func _interior_walls() -> void:
 func _floors_and_ceilings() -> void:
 	var b := builder
 	var floors := [
-		["kitchen", 0, 0, 8, 7, "tile"], ["dining", 8, 0, 14, 7, "wood_floor"], ["garage", 14, 0, 24, 10, "concrete_floor"],
-		["hallway", 0, 7, 14, 10, "wood_floor"], ["living", 0, 10, 6, 18, "wood_floor"], ["foyer", 6, 10, 10, 18, "wood_floor"],
-		["study", 10, 10, 14, 18, "carpet"], ["utility", 14, 10, 21, 18, "concrete_floor"],
+		["kitchen", 0, 0, 8, 7, "tile"],
+		["dining", 8, 0, 14, 7, "wood_floor"],
+		["garage", 14, 0, 24, 10, "concrete_floor"],
+		["hallway", 0, 7, 14, 10, "wood_floor"],
+		["living", 0, 10, 6, 18, "wood_floor"],
+		["foyer", 6, 10, 10, 18, "wood_floor"],
+		["study", 10, 10, 14, 18, "carpet"],
+		["utility", 14, 10, 21, 18, "concrete_floor"],
 	]
 	for f in floors:
 		b.room = f[0]
@@ -147,7 +155,15 @@ func _fence_x(z: float, x0: float, x1: float) -> void:
 	b.box(Vector3((x0 + x1) * 0.5, BY + h * 0.5, z), Vector3(x1 - x0, h, 0.05), "metal_dark", true, 0)
 	var n := int((x1 - x0) / 0.12)
 	for i in n + 1:
-		b.box(Vector3(x0 + i * (x1 - x0) / maxf(n, 1), BY + h * 0.5, z), Vector3(0.012, h, 0.012), "metal_dark", false, GeoBuilder.FACE_ALL, Basis.IDENTITY, false)
+		b.box(
+			Vector3(x0 + i * (x1 - x0) / maxf(n, 1), BY + h * 0.5, z),
+			Vector3(0.012, h, 0.012),
+			"metal_dark",
+			false,
+			GeoBuilder.FACE_ALL,
+			Basis.IDENTITY,
+			false
+		)
 	for y in [0.05, 1.2, h - 0.03]:
 		b.box(Vector3((x0 + x1) * 0.5, BY + y, z), Vector3(x1 - x0, 0.04, 0.04), "metal", false)
 
@@ -158,7 +174,15 @@ func _fence_z(x: float, z0: float, z1: float) -> void:
 	b.box(Vector3(x, BY + h * 0.5, (z0 + z1) * 0.5), Vector3(0.05, h, z1 - z0), "metal_dark", true, 0)
 	var n := int((z1 - z0) / 0.12)
 	for i in n + 1:
-		b.box(Vector3(x, BY + h * 0.5, z0 + i * (z1 - z0) / maxf(n, 1)), Vector3(0.012, h, 0.012), "metal_dark", false, GeoBuilder.FACE_ALL, Basis.IDENTITY, false)
+		b.box(
+			Vector3(x, BY + h * 0.5, z0 + i * (z1 - z0) / maxf(n, 1)),
+			Vector3(0.012, h, 0.012),
+			"metal_dark",
+			false,
+			GeoBuilder.FACE_ALL,
+			Basis.IDENTITY,
+			false
+		)
 	for y in [0.05, 1.2, h - 0.03]:
 		b.box(Vector3(x, BY + y, (z0 + z1) * 0.5), Vector3(0.04, 0.04, z1 - z0), "metal", false)
 
@@ -171,8 +195,11 @@ func _outside() -> void:
 	b.floor_rect(-6, 0, 0, 18, 0.0, "ground", 0.3)
 	b.floor_rect(24, 0, 30, 18, 0.0, "ground", 0.3)
 	# Invisible boundary around the driveway.
-	for wall in [[Vector3(12, 1.5, -10), Vector3(0.2, 3, 20)], [Vector3(26, 1.5, -10), Vector3(0.2, 3, 20)],
-			[Vector3(19, 1.5, -12), Vector3(14, 3, 0.2)]]:
+	for wall in [
+		[Vector3(12, 1.5, -10), Vector3(0.2, 3, 20)],
+		[Vector3(26, 1.5, -10), Vector3(0.2, 3, 20)],
+		[Vector3(19, 1.5, -12), Vector3(14, 3, 0.2)]
+	]:
 		b.collider(wall[0], wall[1])
 	# Driveway, hedges and a distant gate: silhouettes against the night.
 	b.box(Vector3(19, 0.01, -5), Vector3(6.5, 0.02, 10), "concrete_floor", false, GeoBuilder.FACE_PY)
@@ -185,6 +212,7 @@ func _outside() -> void:
 
 
 # --- Props ----------------------------------------------------------------------------------
+
 
 func _props() -> void:
 	var b := builder
@@ -265,8 +293,14 @@ func _props() -> void:
 	PropFactory.debris(b, Vector3(18, BY, 23), 3.0, 10)
 	# Window boards (and the backing that hides the void outside).
 	b.room = "shell"
-	for w in [[Vector3(4, 1.5, 0), true], [Vector3(11, 1.5, 0), true], [Vector3(3, 1.5, 18), true],
-			[Vector3(12, 1.5, 18), true], [Vector3(16.75, 1.5, 18), true], [Vector3(0, 1.5, 14), false]]:
+	for w in [
+		[Vector3(4, 1.5, 0), true],
+		[Vector3(11, 1.5, 0), true],
+		[Vector3(3, 1.5, 18), true],
+		[Vector3(12, 1.5, 18), true],
+		[Vector3(16.75, 1.5, 18), true],
+		[Vector3(0, 1.5, 14), false]
+	]:
 		var p: Vector3 = w[0]
 		var axis_x: bool = w[1]
 		var inward := Vector3(0, 0, 0.02) if p.z == 0 else (Vector3(0, 0, -0.02) if axis_x else Vector3(0.02, 0, 0))
@@ -294,13 +328,23 @@ func _props() -> void:
 
 # --- Lighting --------------------------------------------------------------------------------
 
+
 func _lighting() -> void:
 	var lamp_points := [
-		["kitchen", Vector3(4, H, 3.5)], ["dining", Vector3(11, H, 3.5)], ["hallway", Vector3(3.5, H, 8.5)],
-		["hallway", Vector3(10.5, H, 8.5)], ["living", Vector3(3, H, 14)], ["foyer", Vector3(8, H, 14)],
-		["study", Vector3(12, H, 14.5)], ["utility", Vector3(17.5, H, 14)], ["garage", Vector3(19, H, 3)],
-		["garage", Vector3(17, H, 8.5)], ["stairwell", Vector3(22.5, H, 11)], ["basement", Vector3(16, -0.3, 21)],
-		["basement", Vector3(21, -0.3, 25)], ["basement", Vector3(14, -0.3, 26)],
+		["kitchen", Vector3(4, H, 3.5)],
+		["dining", Vector3(11, H, 3.5)],
+		["hallway", Vector3(3.5, H, 8.5)],
+		["hallway", Vector3(10.5, H, 8.5)],
+		["living", Vector3(3, H, 14)],
+		["foyer", Vector3(8, H, 14)],
+		["study", Vector3(12, H, 14.5)],
+		["utility", Vector3(17.5, H, 14)],
+		["garage", Vector3(19, H, 3)],
+		["garage", Vector3(17, H, 8.5)],
+		["stairwell", Vector3(22.5, H, 11)],
+		["basement", Vector3(16, -0.3, 21)],
+		["basement", Vector3(21, -0.3, 25)],
+		["basement", Vector3(14, -0.3, 26)],
 	]
 	for lp in lamp_points:
 		var top: Vector3 = lp[1]
@@ -330,6 +374,7 @@ func _lighting() -> void:
 
 
 # --- Entities ----------------------------------------------------------------------------
+
 
 func _entities() -> void:
 	# Doors (node origin = hinge, panel extends along local +X).
@@ -389,9 +434,12 @@ func _entities() -> void:
 	tape.line_keys = ["TAPE_HOUSE_1", "TAPE_HOUSE_2", "TAPE_HOUSE_3", "TAPE_HOUSE_4"]
 	add_entity(tape, Transform3D(Basis(Vector3.UP, 0.3), Vector3(12.8, 0.81, 12.0)))
 	var files := {
-		"file_kitchen": Vector3(6.9, 0.93, 0.45), "file_living": Vector3(3.2, 0.77, 11.7),
-		"file_study": Vector3(13.6, 1.12, 15.4), "file_garage": Vector3(22.6, 0.61, 8.6),
-		"file_utility": Vector3(17.95, 0.91, 17.55), "file_basement": Vector3(14.0, BY + 0.71, 19.2),
+		"file_kitchen": Vector3(6.9, 0.93, 0.45),
+		"file_living": Vector3(3.2, 0.77, 11.7),
+		"file_study": Vector3(13.6, 1.12, 15.4),
+		"file_garage": Vector3(22.6, 0.61, 8.6),
+		"file_utility": Vector3(17.95, 0.91, 17.55),
+		"file_basement": Vector3(14.0, BY + 0.71, 19.2),
 	}
 	for id in files:
 		var c := CollectibleEntity.new()
@@ -429,7 +477,9 @@ func _door_seconds() -> float:
 	return 40.0
 
 
-func _door(id: String, hinge: Vector3, rot_deg: float, width: float, lock: String = "", msg: String = "DOOR_LOCKED") -> DoorEntity:
+func _door(
+	id: String, hinge: Vector3, rot_deg: float, width: float, lock: String = "", msg: String = "DOOR_LOCKED"
+) -> DoorEntity:
 	var d := DoorEntity.new()
 	d.entity_id = id
 	d.width = width
@@ -473,6 +523,7 @@ func _switch(id: String, room: String, pos: Vector3, rot_deg: float) -> void:
 
 # --- Spawns / navigation hints ------------------------------------------------------------
 
+
 func _spawns() -> void:
 	player_spawns = [
 		Transform3D(Basis(Vector3.UP, 0.0), Vector3(8.0, 0.05, 15.6)),
@@ -489,28 +540,60 @@ func _spawns() -> void:
 		Transform3D(Basis(Vector3.UP, 0.0), Vector3(12.0, 0.05, 1.2)),
 	]
 	patrol_points = [
-		Vector3(4, 0, 3.5), Vector3(11, 0, 5.6), Vector3(3, 0, 8.5), Vector3(11, 0, 8.5), Vector3(3, 0, 15),
-		Vector3(8, 0, 12.5), Vector3(12, 0, 15), Vector3(17, 0, 8), Vector3(22, 0, 2.5), Vector3(17.5, 0, 14),
-		Vector3(22.5, 0, 10.7), Vector3(16, BY, 21), Vector3(21, BY, 21.5), Vector3(20, BY, 26),
+		Vector3(4, 0, 3.5),
+		Vector3(11, 0, 5.6),
+		Vector3(3, 0, 8.5),
+		Vector3(11, 0, 8.5),
+		Vector3(3, 0, 15),
+		Vector3(8, 0, 12.5),
+		Vector3(12, 0, 15),
+		Vector3(17, 0, 8),
+		Vector3(22, 0, 2.5),
+		Vector3(17.5, 0, 14),
+		Vector3(22.5, 0, 10.7),
+		Vector3(16, BY, 21),
+		Vector3(21, BY, 21.5),
+		Vector3(20, BY, 26),
 	]
 	prowl_points = [
-		Vector3(-1.5, 0, 4), Vector3(-1.5, 0, 14), Vector3(4, 0, 19.5), Vector3(12, 0, 19.5), Vector3(18, 0, 19.5),
-		Vector3(25.5, 0, 6), Vector3(25.5, 0, 15), Vector3(4, 0, -1.5), Vector3(11, 0, -1.5),
+		Vector3(-1.5, 0, 4),
+		Vector3(-1.5, 0, 14),
+		Vector3(4, 0, 19.5),
+		Vector3(12, 0, 19.5),
+		Vector3(18, 0, 19.5),
+		Vector3(25.5, 0, 6),
+		Vector3(25.5, 0, 15),
+		Vector3(4, 0, -1.5),
+		Vector3(11, 0, -1.5),
 	]
 	var spawns := {
-		"sp_kitchen_table": Vector3(4.3, 0.77, 4.7), "sp_kitchen_counter": Vector3(1.4, 0.93, 0.5),
-		"sp_dining_table": Vector3(11.2, 0.77, 3.2), "sp_dining_cabinet": Vector3(13.5, 0.94, 5.6),
-		"sp_living_shelf": Vector3(5.7, 1.06, 16.6), "sp_living_sofa": Vector3(2.6, 0.52, 13.15),
-		"sp_hall_table": Vector3(5.2, 0.84, 7.32), "sp_foyer_stand": Vector3(9.6, 0.87, 16.8),
-		"sp_garage_shelf": Vector3(14.35, 0.97, 3.0), "sp_garage_crate": Vector3(15.4, 0.71, 8.8),
-		"sp_utility_shelf": Vector3(20.65, 0.97, 14.2), "sp_utility_washer": Vector3(17.2, 0.91, 17.55),
-		"sp_study_desk": Vector3(12.0, 0.77, 12.2), "sp_study_shelf": Vector3(13.7, 1.55, 14.6),
-		"sp_base_shelf_a": Vector3(18.2, BY + 0.97, 27.6), "sp_base_shelf_b": Vector3(12.35, BY + 1.45, 21.3),
-		"sp_base_crate": Vector3(19.5, BY + 0.81, 22.0), "sp_base_boiler": Vector3(21.6, BY + 0.02, 25.6),
+		"sp_kitchen_table": Vector3(4.3, 0.77, 4.7),
+		"sp_kitchen_counter": Vector3(1.4, 0.93, 0.5),
+		"sp_dining_table": Vector3(11.2, 0.77, 3.2),
+		"sp_dining_cabinet": Vector3(13.5, 0.94, 5.6),
+		"sp_living_shelf": Vector3(5.7, 1.06, 16.6),
+		"sp_living_sofa": Vector3(2.6, 0.52, 13.15),
+		"sp_hall_table": Vector3(5.2, 0.84, 7.32),
+		"sp_foyer_stand": Vector3(9.6, 0.87, 16.8),
+		"sp_garage_shelf": Vector3(14.35, 0.97, 3.0),
+		"sp_garage_crate": Vector3(15.4, 0.71, 8.8),
+		"sp_utility_shelf": Vector3(20.65, 0.97, 14.2),
+		"sp_utility_washer": Vector3(17.2, 0.91, 17.55),
+		"sp_study_desk": Vector3(12.0, 0.77, 12.2),
+		"sp_study_shelf": Vector3(13.7, 1.55, 14.6),
+		"sp_base_shelf_a": Vector3(18.2, BY + 0.97, 27.6),
+		"sp_base_shelf_b": Vector3(12.35, BY + 1.45, 21.3),
+		"sp_base_crate": Vector3(19.5, BY + 0.81, 22.0),
+		"sp_base_boiler": Vector3(21.6, BY + 0.02, 25.6),
 		"sp_cage_shelf": Vector3(13.0, BY + 0.97, 27.6),
-		"bt_kitchen": Vector3(7.62, 0.93, 2.6), "bt_hall": Vector3(4.6, 0.84, 7.32), "bt_living": Vector3(3.6, 0.77, 11.7),
-		"bt_garage": Vector3(23.2, 0.93, 4.4), "bt_utility": Vector3(15.0, 0.51, 16.9), "bt_basement": Vector3(17.6, BY + 0.77, 19.8),
-		"bt_foyer": Vector3(9.6, 0.87, 16.0), "bt_dining": Vector3(10.7, 0.77, 4.6),
+		"bt_kitchen": Vector3(7.62, 0.93, 2.6),
+		"bt_hall": Vector3(4.6, 0.84, 7.32),
+		"bt_living": Vector3(3.6, 0.77, 11.7),
+		"bt_garage": Vector3(23.2, 0.93, 4.4),
+		"bt_utility": Vector3(15.0, 0.51, 16.9),
+		"bt_basement": Vector3(17.6, BY + 0.77, 19.8),
+		"bt_foyer": Vector3(9.6, 0.87, 16.0),
+		"bt_dining": Vector3(10.7, 0.77, 4.6),
 	}
 	for id in spawns:
 		add_spawn_point(id, Transform3D(Basis.IDENTITY, spawns[id]))
@@ -518,6 +601,7 @@ func _spawns() -> void:
 
 
 # --- Variant / tick ----------------------------------------------------------------------------
+
 
 func apply_variant(mc: MatchController, variant: Dictionary) -> void:
 	if not mc.is_authority or variant.is_empty():
@@ -547,6 +631,7 @@ func authority_tick(_match: MatchController, delta: float) -> void:
 
 
 # --- Helpers -------------------------------------------------------------------------------------
+
 
 static func _win(a: float, b: float) -> Dictionary:
 	return {"from": a, "to": b, "bottom": WIN_BOTTOM, "top": WIN_TOP}

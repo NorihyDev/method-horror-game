@@ -3,10 +3,10 @@ extends RefCounted
 ## Display-name rules shared by the client UI and (mirrored) by the lobby
 ## service. Display names are cosmetic: they never grant access to anything.
 
+enum Result { OK, TOO_SHORT, TOO_LONG, INVALID_CHARACTERS }
+
 const MIN_LENGTH := 2
 const MAX_LENGTH := 20
-
-enum Result { OK, TOO_SHORT, TOO_LONG, INVALID_CHARACTERS }
 
 
 ## Trims whitespace and collapses runs of inner whitespace to one space.

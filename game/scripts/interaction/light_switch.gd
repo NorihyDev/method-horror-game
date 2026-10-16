@@ -9,7 +9,11 @@ var _lever: MeshInstance3D
 
 func _ready() -> void:
 	add_mesh(box_mesh(Vector3(0.08, 0.12, 0.015)), MaterialLib.flat(Color(0.78, 0.74, 0.66), 0.6))
-	_lever = add_mesh(box_mesh(Vector3(0.015, 0.04, 0.02)), MaterialLib.flat(Color(0.3, 0.28, 0.25), 0.5), Transform3D(Basis.IDENTITY, Vector3(0, 0, 0.012)))
+	_lever = add_mesh(
+		box_mesh(Vector3(0.015, 0.04, 0.02)),
+		MaterialLib.flat(Color(0.3, 0.28, 0.25), 0.5),
+		Transform3D(Basis.IDENTITY, Vector3(0, 0, 0.012))
+	)
 	add_target(Vector3(0.2, 0.25, 0.1))
 
 

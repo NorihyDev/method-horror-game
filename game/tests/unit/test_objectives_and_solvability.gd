@@ -1,6 +1,8 @@
 extends TestCase
 ## Objective dependency graph and item-placement solvability.
 
+const HOUSE_RULES = preload("res://scripts/maps/house/house_rules.gd")
+
 
 func _graph() -> ObjectiveGraph:
 	var g := ObjectiveGraph.new()
@@ -92,7 +94,7 @@ func test_consumed_items_must_be_sufficient() -> void:
 
 
 func test_house_rules_validate_cleanly() -> void:
-	var rules: MapRules = load("res://scripts/maps/house/house_rules.gd").new()
+	var rules: MapRules = HOUSE_RULES.new()
 	rules.setup(1, Session.difficulty("normal"))
 	assert_empty(rules.validate(), "house rules validation")
 
@@ -104,7 +106,7 @@ func test_tutorial_rules_validate_cleanly() -> void:
 
 
 func test_house_every_seed_is_solvable_and_deterministic() -> void:
-	var rules: MapRules = load("res://scripts/maps/house/house_rules.gd").new()
+	var rules: MapRules = HOUSE_RULES.new()
 	rules.setup(2, Session.difficulty("hard"))
 	for seed_value in 300:
 		var v := rules.generate_variant(seed_value * 7919 + 13)
@@ -125,7 +127,7 @@ func test_house_every_seed_is_solvable_and_deterministic() -> void:
 
 
 func test_house_code_matches_clues() -> void:
-	var rules: MapRules = load("res://scripts/maps/house/house_rules.gd").new()
+	var rules: MapRules = HOUSE_RULES.new()
 	rules.setup(1, Session.difficulty("normal"))
 	var p: Dictionary = rules.generate_variant(1234)["puzzle"]
 	var expected := ""
@@ -135,7 +137,7 @@ func test_house_code_matches_clues() -> void:
 
 
 func test_validator_catches_broken_candidate() -> void:
-	var rules: MapRules = load("res://scripts/maps/house/house_rules.gd").new()
+	var rules: MapRules = HOUSE_RULES.new()
 	rules.setup(1, Session.difficulty("normal"))
 	# A study key that spawns inside the locked study must be rejected.
 	rules.item_slots[0]["candidates"] = PackedStringArray(["sp_kitchen_drawer", "sp_study_desk"])

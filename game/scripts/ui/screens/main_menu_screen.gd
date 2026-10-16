@@ -34,9 +34,14 @@ func build() -> void:
 	if not snap.is_empty():
 		var map := Session.map_def(str(snap.get("map_id", "")))
 		if map and map.is_playable():
-			var cont := UI.button(tr("MENU_CONTINUE") % tr(map.title_key), func() -> void:
-				if not Session.continue_from_checkpoint():
-					app.toast(tr("MENU_CONTINUE_FAILED")), true, 360)
+			var cont := UI.button(
+				tr("MENU_CONTINUE") % tr(map.title_key),
+				func() -> void:
+					if not Session.continue_from_checkpoint():
+						app.toast(tr("MENU_CONTINUE_FAILED")),
+				true,
+				360
+			)
 			cont.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			left.add_child(cont)
 	left.add_child(UI.button("MENU_SOLO", func() -> void: app.goto("solo_setup"), snap.is_empty(), 360))
@@ -47,14 +52,23 @@ func build() -> void:
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	left.add_child(grid)
-	for entry in [["MENU_SHOP", "shop"], ["MENU_PROGRESS", "progress"], ["MENU_SETTINGS", "settings"], ["MENU_PROFILE", "profile"]]:
+	for entry in [
+		["MENU_SHOP", "shop"], ["MENU_PROGRESS", "progress"], ["MENU_SETTINGS", "settings"], ["MENU_PROFILE", "profile"]
+	]:
 		var target: String = entry[1]
 		grid.add_child(UI.button(entry[0], func() -> void: app.goto(target), false, 176))
 	var bottom := UI.hbox(8)
 	bottom.add_child(UI.button("MENU_CREDITS", func() -> void: app.goto("credits"), false, 176))
 	if AppInfo.is_desktop():
-		bottom.add_child(UI.button("MENU_QUIT", func() -> void:
-			app.confirm("QUIT_TITLE", "QUIT_BODY", "QUIT_CONFIRM", func() -> void: get_tree().quit(), true), false, 176))
+		bottom.add_child(
+			UI.button(
+				"MENU_QUIT",
+				func() -> void:
+					app.confirm("QUIT_TITLE", "QUIT_BODY", "QUIT_CONFIRM", func() -> void: get_tree().quit(), true),
+				false,
+				176
+			)
+		)
 	left.add_child(bottom)
 	left.add_child(UI.spacer(10, true))
 	cols.add_child(UI.hspacer())
@@ -76,7 +90,11 @@ func build() -> void:
 	_coins.alignment = BoxContainer.ALIGNMENT_END
 	_coins.tooltip_text = "COINS_LOCAL_TOOLTIP"
 	right.add_child(_coins)
-	var ver := UI.label("v" + AppInfo.version() + ("  ·  DEV" if AppInfo.is_dev_build() else ""), ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT)
+	var ver := UI.label(
+		"v" + AppInfo.version() + ("  ·  DEV" if AppInfo.is_dev_build() else ""),
+		ThemeFactory.FONT_SMALL,
+		ThemeFactory.TEXT_FAINT
+	)
 	ver.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	right.add_child(ver)

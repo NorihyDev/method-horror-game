@@ -25,7 +25,11 @@ var _last_crank := -10.0
 func _ready() -> void:
 	var metal := MaterialLib.surface("metal_dark")
 	add_mesh(box_mesh(Vector3(0.6, 0.35, 0.45)), metal)
-	add_mesh(box_mesh(Vector3(0.12, 0.12, 0.6)), MaterialLib.surface("metal"), Transform3D(Basis.IDENTITY, Vector3(0.36, 0, 0)))
+	add_mesh(
+		box_mesh(Vector3(0.12, 0.12, 0.6)),
+		MaterialLib.surface("metal"),
+		Transform3D(Basis.IDENTITY, Vector3(0.36, 0, 0))
+	)
 	var crank := MaterialLib.flat(Color(0.5, 0.08, 0.07), 0.5, 0.4)
 	add_mesh(box_mesh(Vector3(0.04, 0.3, 0.04)), crank, Transform3D(Basis.IDENTITY, Vector3(-0.32, -0.28, 0.25)))
 	add_mesh(box_mesh(Vector3(0.14, 0.04, 0.04)), crank, Transform3D(Basis.IDENTITY, Vector3(-0.27, -0.43, 0.25)))
@@ -60,8 +64,12 @@ func interact_origin() -> Vector3:
 
 
 func is_crank_ready() -> bool:
-	return match_ctrl != null and bool(state.get("repaired", false)) and match_ctrl.state.has_flag(power_flag) \
+	return (
+		match_ctrl != null
+		and bool(state.get("repaired", false))
+		and match_ctrl.state.has_flag(power_flag)
 		and not bool(state.get("started", false))
+	)
 
 
 ## Needle phase 0..1 derived from match time (identical on authority and clients).
@@ -101,7 +109,10 @@ func _assisted(pid: int) -> bool:
 		if int(other) == pid:
 			continue
 		var p: Dictionary = match_ctrl.state.players[other]
-		if p["status"] == MatchState.STATUS_ALIVE and MatchState.array_to_vec(p["pos"]).distance_to(global_position) < ASSIST_RADIUS + 1.5:
+		if (
+			p["status"] == MatchState.STATUS_ALIVE
+			and MatchState.array_to_vec(p["pos"]).distance_to(global_position) < ASSIST_RADIUS + 1.5
+		):
 			return true
 	return false
 

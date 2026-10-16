@@ -43,9 +43,17 @@ func _init(p_root: Node3D) -> void:
 
 # --- Primitives ----------------------------------------------------------------
 
+
 ## Axis-aligned (optionally rotated) box. `faces` limits emitted faces.
-func box(center: Vector3, size: Vector3, mat: String, collide: bool = true,
-		faces: int = FACE_ALL, basis: Basis = Basis.IDENTITY, shadow: bool = true) -> void:
+func box(
+	center: Vector3,
+	size: Vector3,
+	mat: String,
+	collide: bool = true,
+	faces: int = FACE_ALL,
+	basis: Basis = Basis.IDENTITY,
+	shadow: bool = true
+) -> void:
 	if size.x <= 0.001 or size.y <= 0.001 or size.z <= 0.001:
 		return
 	if faces == 0:
@@ -55,8 +63,14 @@ func box(center: Vector3, size: Vector3, mat: String, collide: bool = true,
 	var st := _batch(mat, shadow)
 	var e := size * 0.5
 	var corners := [
-		Vector3(-e.x, -e.y, -e.z), Vector3(e.x, -e.y, -e.z), Vector3(e.x, e.y, -e.z), Vector3(-e.x, e.y, -e.z),
-		Vector3(-e.x, -e.y, e.z), Vector3(e.x, -e.y, e.z), Vector3(e.x, e.y, e.z), Vector3(-e.x, e.y, e.z),
+		Vector3(-e.x, -e.y, -e.z),
+		Vector3(e.x, -e.y, -e.z),
+		Vector3(e.x, e.y, -e.z),
+		Vector3(-e.x, e.y, -e.z),
+		Vector3(-e.x, -e.y, e.z),
+		Vector3(e.x, -e.y, e.z),
+		Vector3(e.x, e.y, e.z),
+		Vector3(-e.x, e.y, e.z),
 	]
 	var w: Array[Vector3] = []
 	for c in corners:
@@ -100,20 +114,43 @@ func _shape(owner: StaticBody3D, center: Vector3, size: Vector3, basis: Basis) -
 
 ## Floor slab whose top surface is at `top_y`.
 func floor_rect(x0: float, z0: float, x1: float, z1: float, top_y: float, mat: String, thickness: float = 0.3) -> void:
-	box(Vector3((x0 + x1) * 0.5, top_y - thickness * 0.5, (z0 + z1) * 0.5),
-		Vector3(x1 - x0, thickness, z1 - z0), mat, true, FACE_PY)
+	box(
+		Vector3((x0 + x1) * 0.5, top_y - thickness * 0.5, (z0 + z1) * 0.5),
+		Vector3(x1 - x0, thickness, z1 - z0),
+		mat,
+		true,
+		FACE_PY
+	)
 
 
 ## Ceiling slab whose bottom surface is at `bottom_y`. Visual only from below.
-func ceiling_rect(x0: float, z0: float, x1: float, z1: float, bottom_y: float, mat: String, thickness: float = 0.2) -> void:
-	box(Vector3((x0 + x1) * 0.5, bottom_y + thickness * 0.5, (z0 + z1) * 0.5),
-		Vector3(x1 - x0, thickness, z1 - z0), mat, true, FACE_NY, Basis.IDENTITY, false)
+func ceiling_rect(
+	x0: float, z0: float, x1: float, z1: float, bottom_y: float, mat: String, thickness: float = 0.2
+) -> void:
+	box(
+		Vector3((x0 + x1) * 0.5, bottom_y + thickness * 0.5, (z0 + z1) * 0.5),
+		Vector3(x1 - x0, thickness, z1 - z0),
+		mat,
+		true,
+		FACE_NY,
+		Basis.IDENTITY,
+		false
+	)
 
 
 ## Wall running along X at depth `z`, from x0 to x1. `mat_n` faces -Z, `mat_p` faces +Z.
 ## openings: Array of {"from": x, "to": x, "bottom": y offset, "top": y offset}
-func wall_x(z: float, x0: float, x1: float, y0: float, height: float, mat_n: String, mat_p: String,
-		openings: Array = [], thickness: float = 0.16) -> void:
+func wall_x(
+	z: float,
+	x0: float,
+	x1: float,
+	y0: float,
+	height: float,
+	mat_n: String,
+	mat_p: String,
+	openings: Array = [],
+	thickness: float = 0.16
+) -> void:
 	for seg in _segments(x0, x1, height, openings):
 		var a: float = seg[0]
 		var b: float = seg[1]
@@ -128,8 +165,17 @@ func wall_x(z: float, x0: float, x1: float, y0: float, height: float, mat_n: Str
 
 
 ## Wall running along Z at `x`, from z0 to z1. `mat_n` faces -X, `mat_p` faces +X.
-func wall_z(x: float, z0: float, z1: float, y0: float, height: float, mat_n: String, mat_p: String,
-		openings: Array = [], thickness: float = 0.16) -> void:
+func wall_z(
+	x: float,
+	z0: float,
+	z1: float,
+	y0: float,
+	height: float,
+	mat_n: String,
+	mat_p: String,
+	openings: Array = [],
+	thickness: float = 0.16
+) -> void:
 	for seg in _segments(z0, z1, height, openings):
 		var a: float = seg[0]
 		var b: float = seg[1]
@@ -145,15 +191,20 @@ func wall_z(x: float, z0: float, z1: float, y0: float, height: float, mat_n: Str
 
 ## Straight staircase along +Z (descending when y1 < y0). Visual solid steps
 ## plus one smooth ramp collider for stable movement and navigation.
-func stairs_z(x0: float, x1: float, z0: float, z1: float, y0: float, y1: float, steps: int,
-		mat: String, base_y: float) -> void:
+func stairs_z(
+	x0: float, x1: float, z0: float, z1: float, y0: float, y1: float, steps: int, mat: String, base_y: float
+) -> void:
 	var run := (z1 - z0) / steps
 	var rise := (y1 - y0) / steps
 	for i in steps:
 		var top := y0 + rise * (i + 1) if rise > 0.0 else y0 + rise * i
 		var za := z0 + run * i
-		box(Vector3((x0 + x1) * 0.5, (top + base_y) * 0.5, za + run * 0.5),
-			Vector3(x1 - x0, top - base_y, run), mat, false)
+		box(
+			Vector3((x0 + x1) * 0.5, (top + base_y) * 0.5, za + run * 0.5),
+			Vector3(x1 - x0, top - base_y, run),
+			mat,
+			false
+		)
 	var length := sqrt(pow(z1 - z0, 2) + pow(y1 - y0, 2))
 	var angle := atan2(y1 - y0, z1 - z0)
 	var ramp_basis := Basis(Vector3.RIGHT, -angle)
@@ -162,6 +213,7 @@ func stairs_z(x0: float, x1: float, z0: float, z1: float, y0: float, y1: float, 
 
 
 # --- Commit --------------------------------------------------------------------
+
 
 func commit() -> void:
 	for key in _batches:
@@ -175,7 +227,11 @@ func commit() -> void:
 		var mi := MeshInstance3D.new()
 		mi.name = str(key).replace("|", "_")
 		mi.mesh = mesh
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if batch["shadow"] else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.cast_shadow = (
+			GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+			if batch["shadow"]
+			else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		)
 		root.add_child(mi)
 		var r: String = batch["room"]
 		if not room_meshes.has(r):
@@ -185,6 +241,7 @@ func commit() -> void:
 
 
 # --- Internals -----------------------------------------------------------------
+
 
 func _batch(mat: String, shadow: bool) -> SurfaceTool:
 	var key := "%s|%s|%s" % [room, mat, "s" if shadow else "n"]
@@ -242,4 +299,3 @@ static func _segments(s0: float, s1: float, height: float, openings: Array) -> A
 	if cursor < s1:
 		out.append([cursor, s1, 0.0, height])
 	return out
-

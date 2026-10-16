@@ -20,14 +20,21 @@ var _last_attempt := -10.0
 
 func _ready() -> void:
 	prompt_key = "PROMPT_KEYPAD"
-	add_mesh(box_mesh(Vector3(0.26, 0.36, 0.06)), MaterialLib.surface("metal_dark"), Transform3D(Basis.IDENTITY, Vector3(0, 0, -0.03)))
+	add_mesh(
+		box_mesh(Vector3(0.26, 0.36, 0.06)),
+		MaterialLib.surface("metal_dark"),
+		Transform3D(Basis.IDENTITY, Vector3(0, 0, -0.03))
+	)
 	_screen_mat = MaterialLib.glow(Color(0.5, 0.08, 0.06), 1.4)
 	add_mesh(box_mesh(Vector3(0.2, 0.05, 0.01)), _screen_mat, Transform3D(Basis.IDENTITY, Vector3(0, 0.12, 0.002)))
 	var key_mat := MaterialLib.flat(Color(0.7, 0.68, 0.62), 0.6)
 	for row in 4:
 		for col in 3:
-			add_mesh(box_mesh(Vector3(0.05, 0.04, 0.015)), key_mat,
-				Transform3D(Basis.IDENTITY, Vector3(-0.065 + col * 0.065, 0.05 - row * 0.055, 0.005)))
+			add_mesh(
+				box_mesh(Vector3(0.05, 0.04, 0.015)),
+				key_mat,
+				Transform3D(Basis.IDENTITY, Vector3(-0.065 + col * 0.065, 0.05 - row * 0.055, 0.005))
+			)
 	_glyph_root = Node3D.new()
 	_glyph_root.position = Vector3(0, 0.3, 0.005)
 	add_child(_glyph_root)

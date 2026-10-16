@@ -48,16 +48,29 @@ func on_enter(_p: Dictionary) -> void:
 	body.add_child(UI.spacer(6))
 	body.add_child(UI.caption("PROFILE_IDENTITY"))
 	body.add_child(UI.para("PROFILE_IDENTITY_BODY", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM))
-	var lid := UI.label(tr("PROFILE_LOCAL_ID") % Saves.local_id().substr(0, 8), ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT)
+	var lid := UI.label(
+		tr("PROFILE_LOCAL_ID") % Saves.local_id().substr(0, 8), ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT
+	)
 	lid.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	body.add_child(lid)
 	body.add_child(UI.spacer(6))
 	body.add_child(UI.caption("PROFILE_DATA"))
 	body.add_child(UI.para("PROFILE_DATA_BODY", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM))
-	var reset := UI.button("PROFILE_RESET", func() -> void:
-		app.confirm("PROFILE_RESET_TITLE", "PROFILE_RESET_BODY", "PROFILE_RESET_CONFIRM", func() -> void:
-			Saves.reset_all_local_data()
-			app.reset_to("name_entry", {"first_run": true}), true), false, 300)
+	var reset := UI.button(
+		"PROFILE_RESET",
+		func() -> void:
+			app.confirm(
+				"PROFILE_RESET_TITLE",
+				"PROFILE_RESET_BODY",
+				"PROFILE_RESET_CONFIRM",
+				func() -> void:
+					Saves.reset_all_local_data()
+					app.reset_to("name_entry", {"first_run": true}),
+				true
+			),
+		false,
+		300
+	)
 	reset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	body.add_child(reset)
 	focus_first()

@@ -6,11 +6,11 @@ extends RefCounted
 ## The checksum detects corruption and casual edits. It is not a security
 ## boundary: local saves are always tamperable (see docs/economy.md).
 
+enum Source { PRIMARY, BACKUP, NONE }
+
 const FORMAT_TAG := "method-save"
 const BACKUP_SUFFIX := ".bak"
 const TEMP_SUFFIX := ".tmp"
-
-enum Source { PRIMARY, BACKUP, NONE }
 
 
 static func sha256_text(text: String) -> String:

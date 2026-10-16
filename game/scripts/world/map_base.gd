@@ -69,6 +69,7 @@ func _child(child_name: String) -> Node3D:
 
 # --- Overridable hooks -------------------------------------------------------------
 
+
 func build_level() -> void:
 	prepare()
 
@@ -88,6 +89,7 @@ func briefing_keys() -> PackedStringArray:
 
 # --- Construction helpers -------------------------------------------------------------
 
+
 func add_room(id: String, aabb: AABB, surface: String) -> void:
 	rooms[id] = {"aabb": aabb, "surface": surface}
 
@@ -99,8 +101,15 @@ func add_entity(ent: Interactable, xform: Transform3D) -> Interactable:
 	return ent
 
 
-func add_lamp(pos: Vector3, room: String, energy: float = 1.2, color: Color = Color(1.0, 0.8, 0.58),
-		needs_power: bool = true, shadows: bool = false, light_range: float = 6.5) -> FlickerLight:
+func add_lamp(
+	pos: Vector3,
+	room: String,
+	energy: float = 1.2,
+	color: Color = Color(1.0, 0.8, 0.58),
+	needs_power: bool = true,
+	shadows: bool = false,
+	light_range: float = 6.5
+) -> FlickerLight:
 	var lamp := FlickerLight.new()
 	lamp.position = pos
 	lamp.room = room
@@ -188,7 +197,7 @@ func configure_environment(ambient: Color, ambient_energy: float, fog_color: Col
 		Settings.changed.connect(_on_setting)
 
 
-func _on_setting(key: String, _v: Variant) -> void:
+func _on_setting(_key: String, _v: Variant) -> void:
 	apply_graphics_settings()
 
 
@@ -227,6 +236,7 @@ func rebake_navigation() -> void:
 
 
 # --- Queries -------------------------------------------------------------------------------
+
 
 func room_at(pos: Vector3) -> String:
 	for id in rooms:
@@ -299,7 +309,7 @@ func prowl_point(target: Vector3, rng: RandomNumberGenerator) -> Vector3:
 
 
 ## Spawns the enemy at a valid point far from (and out of sight of) every player.
-func spawn_enemy(mc: MatchController, rng: RandomNumberGenerator) -> Node:
+func spawn_enemy(mc: MatchController, _rng: RandomNumberGenerator) -> Node:
 	var candidates: Array[Transform3D] = enemy_spawns.duplicate()
 	candidates.shuffle()
 	for xf in candidates:

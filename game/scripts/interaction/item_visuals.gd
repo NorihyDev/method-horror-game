@@ -3,6 +3,7 @@ extends RefCounted
 ## Procedural item models (placeholder art). Replace per docs/asset-replacement.md
 ## by mapping an ItemDefinition.shape to an imported scene.
 
+
 static func build(item_id: String) -> Node3D:
 	var def: ItemDefinition = Session.item(item_id)
 	var shape := String(def.shape) if def else "box"
@@ -29,14 +30,36 @@ static func build(item_id: String) -> Node3D:
 			_gear(root, MaterialLib.flat(color, 0.35, 0.85))
 		"assembly":
 			_gear(root, MaterialLib.flat(Color(0.62, 0.63, 0.64), 0.35, 0.85))
-			_tor(root, 0.07, 0.085, MaterialLib.flat(Color(0.12, 0.12, 0.13), 0.9),
-				Transform3D(Basis(Vector3.RIGHT, PI / 2), Vector3(0, 0.03, 0)))
+			_tor(
+				root,
+				0.07,
+				0.085,
+				MaterialLib.flat(Color(0.12, 0.12, 0.13), 0.9),
+				Transform3D(Basis(Vector3.RIGHT, PI / 2), Vector3(0, 0.03, 0))
+			)
 		"battery":
-			_cyl(root, 0.017, 0.065, MaterialLib.flat(Color(0.12, 0.12, 0.13), 0.4, 0.3), Transform3D(Basis.IDENTITY, Vector3(0, 0.033, 0)))
-			_cyl(root, 0.0175, 0.02, MaterialLib.flat(Color(0.6, 0.12, 0.1), 0.4), Transform3D(Basis.IDENTITY, Vector3(0, 0.055, 0)))
+			_cyl(
+				root,
+				0.017,
+				0.065,
+				MaterialLib.flat(Color(0.12, 0.12, 0.13), 0.4, 0.3),
+				Transform3D(Basis.IDENTITY, Vector3(0, 0.033, 0))
+			)
+			_cyl(
+				root,
+				0.0175,
+				0.02,
+				MaterialLib.flat(Color(0.6, 0.12, 0.1), 0.4),
+				Transform3D(Basis.IDENTITY, Vector3(0, 0.055, 0))
+			)
 		"card":
 			_box(root, Vector3(0.085, 0.003, 0.054), MaterialLib.flat(color, 0.4), Vector3(0, 0.002, 0))
-			_box(root, Vector3(0.03, 0.004, 0.012), MaterialLib.flat(Color(0.55, 0.08, 0.08), 0.4), Vector3(-0.02, 0.003, -0.012))
+			_box(
+				root,
+				Vector3(0.03, 0.004, 0.012),
+				MaterialLib.flat(Color(0.55, 0.08, 0.08), 0.4),
+				Vector3(-0.02, 0.003, -0.012)
+			)
 		_:
 			_box(root, Vector3(0.08, 0.08, 0.08), MaterialLib.flat(color, 0.6), Vector3(0, 0.04, 0))
 	return root

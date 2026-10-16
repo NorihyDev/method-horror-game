@@ -45,17 +45,23 @@ func bind(p_player: PlayerController, p_match: MatchController, p_touch: bool) -
 	player.battery_changed.connect(_on_battery)
 	match_ctrl.notified.connect(push_notice)
 	match_ctrl.objectives_changed.connect(_refresh_objectives)
-	match_ctrl.hint_unlocked.connect(func(_id: String, _tier: int) -> void:
-		_hint_new = true
-		_refresh_objectives())
-	match_ctrl.inventory_changed.connect(func(pid: int) -> void:
-		if pid == player.player_id:
-			_refresh_inventory()
-			player.refresh_focus())
+	match_ctrl.hint_unlocked.connect(
+		func(_id: String, _tier: int) -> void:
+			_hint_new = true
+			_refresh_objectives()
+	)
+	match_ctrl.inventory_changed.connect(
+		func(pid: int) -> void:
+			if pid == player.player_id:
+				_refresh_inventory()
+				player.refresh_focus()
+	)
 	match_ctrl.entity_changed.connect(func(_id: String, _s: Dictionary) -> void: player.refresh_focus())
-	Settings.changed.connect(func(k: String, _v: Variant) -> void:
-		if k == "ui_scale" or k == "high_contrast":
-			_reticle.queue_redraw())
+	Settings.changed.connect(
+		func(k: String, _v: Variant) -> void:
+			if k == "ui_scale" or k == "high_contrast":
+				_reticle.queue_redraw()
+	)
 	_refresh_objectives()
 	_refresh_inventory()
 
@@ -211,7 +217,9 @@ func _on_battery(v: float) -> void:
 	_battery.value = v
 	_battery_label.text = "%d%%" % int(round(v * 100))
 	var low := v < 0.15
-	_battery.add_theme_stylebox_override("fill", ThemeFactory.flat(ThemeFactory.CRIMSON_HI if low else ThemeFactory.TEXT, Color.TRANSPARENT, 0, 2, 0, 0))
+	_battery.add_theme_stylebox_override(
+		"fill", ThemeFactory.flat(ThemeFactory.CRIMSON_HI if low else ThemeFactory.TEXT, Color.TRANSPARENT, 0, 2, 0, 0)
+	)
 	_battery_show_time = 3.0
 
 
@@ -242,7 +250,9 @@ func _refresh_objectives() -> void:
 		return
 	var graph := match_ctrl.rules.graph
 	var main := graph.active_ids(match_ctrl.state.objectives, false)
-	_objective_title.text = match_ctrl.objective_title(graph.get_def(main[0])) if not main.is_empty() else tr("HUD_ALL_DONE")
+	_objective_title.text = (
+		match_ctrl.objective_title(graph.get_def(main[0])) if not main.is_empty() else tr("HUD_ALL_DONE")
+	)
 	for c in _objective_list.get_children():
 		c.queue_free()
 	for def in graph.defs():
@@ -252,8 +262,7 @@ func _refresh_objectives() -> void:
 		if def.complete_flag == "unseen":
 			continue
 		var text := "• " + match_ctrl.objective_title(def) + ("  — " + tr("HUD_DONE") if done else "")
-		var l := UI.label(text, ThemeFactory.FONT_SMALL,
-			ThemeFactory.TEXT_FAINT if done else ThemeFactory.TEXT_DIM)
+		var l := UI.label(text, ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT if done else ThemeFactory.TEXT_DIM)
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.add_theme_constant_override("outline_size", 5)
 		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))

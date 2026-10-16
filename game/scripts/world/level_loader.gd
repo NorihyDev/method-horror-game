@@ -4,6 +4,7 @@ extends RefCounted
 ## dedicated server, automated tests and the screenshot tool, so all of them
 ## exercise the same construction path.
 
+
 ## Returns {"ok", "error", "map", "match"}. `parent` must be inside the tree.
 static func build(parent: Node, config: Dictionary) -> Dictionary:
 	var def := Session.map_def(str(config.get("map_id", "")))
@@ -27,8 +28,9 @@ static func build(parent: Node, config: Dictionary) -> Dictionary:
 
 
 ## Spawns the local first-person player for `pid`.
-static func spawn_local_player(map: MapBase, match_ctrl: MatchController, pid: int, display_name: String,
-		spawn_index: int = 0) -> PlayerController:
+static func spawn_local_player(
+	map: MapBase, match_ctrl: MatchController, pid: int, display_name: String, spawn_index: int = 0
+) -> PlayerController:
 	match_ctrl.add_player_record(pid, display_name)
 	match_ctrl.local_player_id = pid
 	var player := PlayerController.new()

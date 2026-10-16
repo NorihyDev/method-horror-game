@@ -61,8 +61,9 @@ func _load_registries() -> void:
 		var d: DifficultyDefinition = load(path)
 		if d:
 			difficulties.append(d)
-	difficulties.sort_custom(func(a: DifficultyDefinition, b: DifficultyDefinition) -> bool:
-		return a.sort_order < b.sort_order)
+	difficulties.sort_custom(
+		func(a: DifficultyDefinition, b: DifficultyDefinition) -> bool: return a.sort_order < b.sort_order
+	)
 	items.clear()
 	for path in ITEM_PATHS:
 		var it: ItemDefinition = load(path)
@@ -100,6 +101,7 @@ func new_match_id() -> String:
 
 
 # --- Solo flow --------------------------------------------------------------
+
 
 func start_solo(map_id: String, difficulty_id: String, resume_snapshot: Dictionary = {}) -> void:
 	var rng := RandomNumberGenerator.new()
@@ -158,12 +160,19 @@ func _apply_solo_progress(result: Dictionary) -> void:
 	var diff := difficulty(str(result.get("difficulty_id", "normal")))
 	var rewards := {}
 	if map and diff and not bool(result.get("tutorial", false)):
-		rewards = RewardCalculator.compute(map, diff, {
-			"escaped": escaped,
-			"optional_completed": int(result.get("optional_completed", 0)),
-			"new_collectibles": new_collectibles,
-			"first_completion": first,
-		})
+		rewards = (
+			RewardCalculator
+			. compute(
+				map,
+				diff,
+				{
+					"escaped": escaped,
+					"optional_completed": int(result.get("optional_completed", 0)),
+					"new_collectibles": new_collectibles,
+					"first_completion": first,
+				}
+			)
+		)
 	if escaped:
 		Saves.record_completion(map_id, str(result.get("difficulty_id", "")), float(result.get("time", 0.0)))
 		Saves.clear_checkpoint()
@@ -179,6 +188,7 @@ func _apply_solo_progress(result: Dictionary) -> void:
 
 # --- Dedicated server -------------------------------------------------------
 
+
 func start_dedicated_server() -> void:
 	var server_script: Script = load("res://scripts/network/dedicated_server.gd")
 	if server_script == null:
@@ -190,6 +200,7 @@ func start_dedicated_server() -> void:
 
 
 # --- Lifecycle ----------------------------------------------------------------
+
 
 func _notification(what: int) -> void:
 	match what:

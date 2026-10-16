@@ -56,12 +56,16 @@ static func button(text: String, on_pressed: Callable, primary: bool = false, mi
 		b.add_theme_stylebox_override("hover", T.flat(T.CRIMSON_HI, T.TEXT, 1, 2, 26, 12))
 		b.add_theme_stylebox_override("pressed", T.flat(Color(T.CRIMSON, 1.0).darkened(0.25), T.TEXT, 1, 2, 26, 12))
 	if on_pressed.is_valid():
-		b.pressed.connect(func() -> void:
-			AudioService.play_ui("ui_confirm" if primary else "ui_click")
-			on_pressed.call())
-	b.mouse_entered.connect(func() -> void:
-		if not b.disabled:
-			AudioService.play_ui("ui_hover", -8.0))
+		b.pressed.connect(
+			func() -> void:
+				AudioService.play_ui("ui_confirm" if primary else "ui_click")
+				on_pressed.call()
+		)
+	b.mouse_entered.connect(
+		func() -> void:
+			if not b.disabled:
+				AudioService.play_ui("ui_hover", -8.0)
+	)
 	b.focus_entered.connect(func() -> void: AudioService.play_ui("ui_hover", -10.0))
 	return b
 
@@ -170,9 +174,11 @@ static func toggle(value: bool, on_change: Callable) -> CheckButton:
 	c.button_pressed = value
 	c.custom_minimum_size = Vector2(0, T.MIN_TOUCH - 8)
 	c.focus_mode = Control.FOCUS_ALL
-	c.toggled.connect(func(on: bool) -> void:
-		AudioService.play_ui("ui_click")
-		on_change.call(on))
+	c.toggled.connect(
+		func(on: bool) -> void:
+			AudioService.play_ui("ui_click")
+			on_change.call(on)
+	)
 	return c
 
 
@@ -185,9 +191,11 @@ static func options(values: Array, labels: Array, current: Variant, on_change: C
 		o.add_item(str(labels[i]), i)
 		if str(values[i]) == str(current):
 			o.select(i)
-	o.item_selected.connect(func(idx: int) -> void:
-		AudioService.play_ui("ui_click")
-		on_change.call(values[idx]))
+	o.item_selected.connect(
+		func(idx: int) -> void:
+			AudioService.play_ui("ui_click")
+			on_change.call(values[idx])
+	)
 	return o
 
 

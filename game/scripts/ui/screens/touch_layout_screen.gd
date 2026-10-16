@@ -22,10 +22,17 @@ func build() -> void:
 	bar.position = Vector2(-330, 24 + app.safe_margins().y)
 	bar.add_child(UI.button("BACK", func() -> void: app.back(), false, 120))
 	bar.add_child(UI.button("TOUCH_LAYOUT_SAVE", _save, true, 160))
-	bar.add_child(UI.button("TOUCH_LAYOUT_RESET", func() -> void:
-		_layout.clear()
-		Settings.set_value("touch_layout", {})
-		_controls.queue_redraw(), false, 200))
+	bar.add_child(
+		UI.button(
+			"TOUCH_LAYOUT_RESET",
+			func() -> void:
+				_layout.clear()
+				Settings.set_value("touch_layout", {})
+				_controls.queue_redraw(),
+			false,
+			200
+		)
+	)
 	add_child(bar)
 	var hint := UI.label("TOUCH_LAYOUT_HINT", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM)
 	hint.set_anchors_and_offsets_preset(Control.PRESET_CENTER)

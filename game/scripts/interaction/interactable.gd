@@ -100,7 +100,9 @@ func add_target(size: Vector3, offset: Vector3 = Vector3.ZERO, sub: int = 0, par
 
 
 ## Convenience: mesh child with a material.
-func add_mesh(mesh: Mesh, material: Material, xform: Transform3D = Transform3D.IDENTITY, parent: Node3D = null) -> MeshInstance3D:
+func add_mesh(
+	mesh: Mesh, material: Material, xform: Transform3D = Transform3D.IDENTITY, parent: Node3D = null
+) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.material_override = material

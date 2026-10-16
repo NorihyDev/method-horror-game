@@ -35,9 +35,11 @@ func build() -> void:
 		b.add_child(icon)
 		_icons.append(icon)
 		var idx := i
-		b.pressed.connect(func() -> void:
-			AudioService.play_ui("ui_click")
-			_select(idx))
+		b.pressed.connect(
+			func() -> void:
+				AudioService.play_ui("ui_click")
+				_select(idx)
+		)
 		b.focus_entered.connect(func() -> void: _select(idx))
 		grid.add_child(b)
 	var detail := UI.vbox(10)
@@ -82,9 +84,11 @@ func build() -> void:
 	actions.add_child(UI.button("CLOSE", func() -> void: close(), false, 112))
 	detail.add_child(actions)
 	body.add_child(UI.para("INV_CONTEXT_HINT", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT))
-	match_ctrl.inventory_changed.connect(func(pid: int) -> void:
-		if pid == player_id and is_inside_tree():
-			_refresh())
+	match_ctrl.inventory_changed.connect(
+		func(pid: int) -> void:
+			if pid == player_id and is_inside_tree():
+				_refresh()
+	)
 	_refresh()
 
 

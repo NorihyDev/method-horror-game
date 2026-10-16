@@ -220,6 +220,7 @@ func begin() -> void:
 
 # --- Queries ---------------------------------------------------------------------
 
+
 func player_ids() -> Array:
 	return state.players.keys()
 
@@ -259,15 +260,25 @@ func perceivable_players() -> Array[Dictionary]:
 			continue
 		var node: Node = players.get(pid)
 		var pos := MatchState.array_to_vec(p["pos"])
-		out.append({
-			"pid": int(pid), "pos": pos, "hiding": str(p["hiding"]),
-			"flashlight": bool(p.get("flashlight", false)), "crouch": bool(p.get("crouch", false)),
-			"lit": map.is_lit_at(pos) if map else false, "node": node,
-		})
+		(
+			out
+			. append(
+				{
+					"pid": int(pid),
+					"pos": pos,
+					"hiding": str(p["hiding"]),
+					"flashlight": bool(p.get("flashlight", false)),
+					"crouch": bool(p.get("crouch", false)),
+					"lit": map.is_lit_at(pos) if map else false,
+					"node": node,
+				}
+			)
+		)
 	return out
 
 
 # --- Client → authority --------------------------------------------------------
+
 
 ## Entry point for local input. Routed to the authority.
 func request_interact(entity_id: String, sub: int, action: String = "use", args: Dictionary = {}) -> void:
@@ -308,7 +319,9 @@ func server_interact(pid: int, entity_id: String, sub: int, action: String, args
 
 
 ## Player motion report (local player each tick; remote players via net).
-func report_motion(pid: int, pos: Vector3, yaw: float, speed: float, crouch: bool, sprint: bool, flashlight: bool) -> void:
+func report_motion(
+	pid: int, pos: Vector3, yaw: float, speed: float, crouch: bool, sprint: bool, flashlight: bool
+) -> void:
 	var p := state.player(pid)
 	if p.is_empty() or not running:
 		return
@@ -335,6 +348,7 @@ func report_motion(pid: int, pos: Vector3, yaw: float, speed: float, crouch: boo
 
 
 # --- Authority mutations -------------------------------------------------------
+
 
 func set_entity_state(id: String, new_state: Dictionary) -> void:
 	state.entities[id] = new_state
@@ -495,6 +509,7 @@ func _set_phase(phase: MatchState.Phase) -> void:
 
 # --- Tick ----------------------------------------------------------------------------
 
+
 func _physics_process(delta: float) -> void:
 	if not running or _finished:
 		return
@@ -560,6 +575,7 @@ func _random_living_position() -> Vector3:
 
 # --- Objectives / hints / checkpoints ----------------------------------------------
 
+
 func _evaluate_objectives() -> void:
 	var changed := rules.graph.evaluate(state.objectives, state.flags, state.elapsed)
 	for id in changed:
@@ -612,6 +628,7 @@ func _save_checkpoint(objective_id: String) -> void:
 
 
 # --- End of match ----------------------------------------------------------------------
+
 
 func _check_end() -> void:
 	if _finished:
@@ -675,6 +692,7 @@ func is_finished() -> bool:
 
 
 # --- Internals -------------------------------------------------------------------------
+
 
 func _make_inventory(data: Array) -> Inventory:
 	var inv := Inventory.new(Inventory.DEFAULT_CAPACITY, Session.stack_limits())

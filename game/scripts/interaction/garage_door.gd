@@ -31,10 +31,18 @@ func _ready() -> void:
 	var sections := 5
 	for i in sections:
 		var h := height / sections
-		add_mesh(box_mesh(Vector3(width, h - 0.02, 0.06)), mat,
-			Transform3D(Basis.IDENTITY, Vector3(0, h * (i + 0.5), 0)), panel)
-		add_mesh(box_mesh(Vector3(width, 0.03, 0.09)), MaterialLib.surface("metal_dark"),
-			Transform3D(Basis.IDENTITY, Vector3(0, h * i + 0.01, 0)), panel)
+		add_mesh(
+			box_mesh(Vector3(width, h - 0.02, 0.06)),
+			mat,
+			Transform3D(Basis.IDENTITY, Vector3(0, h * (i + 0.5), 0)),
+			panel
+		)
+		add_mesh(
+			box_mesh(Vector3(width, 0.03, 0.09)),
+			MaterialLib.surface("metal_dark"),
+			Transform3D(Basis.IDENTITY, Vector3(0, h * i + 0.01, 0)),
+			panel
+		)
 	add_target(Vector3(width, height, 0.2), Vector3(0, height * 0.5, 0.05), 0, panel)
 	_emitter = AudioService.make_emitter("garage_loop", 4.0, 45.0)
 	_emitter.position = Vector3(0, height, 0.5)

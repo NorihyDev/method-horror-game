@@ -3,9 +3,9 @@ extends Node
 ## Chooses music and body sounds from threat proximity, enemy state and match
 ## phase. Changes are crossfaded and rate-limited so music never flip-flops.
 
-const MIN_STATE_TIME := 6.0
-
 enum Level { CALM, TENSION, CHASE }
+
+const MIN_STATE_TIME := 6.0
 
 var match_ctrl: MatchController
 var player: PlayerController
@@ -55,7 +55,11 @@ func _process(delta: float) -> void:
 	var wanted := Level.CALM
 	if chasing_me:
 		wanted = Level.CHASE
-	elif match_ctrl.state.phase >= MatchState.Phase.ESCALATE or nearest < 18.0 or match_ctrl.state.has_flag("enemy_arrived"):
+	elif (
+		match_ctrl.state.phase >= MatchState.Phase.ESCALATE
+		or nearest < 18.0
+		or match_ctrl.state.has_flag("enemy_arrived")
+	):
 		wanted = Level.TENSION
 	if wanted != level and (_since_change >= MIN_STATE_TIME or wanted == Level.CHASE):
 		level = wanted

@@ -4,7 +4,8 @@ extends Node
 ## Usage: godot --path game -- --autoshot=<absolute dir> [--map=house] [--power]
 
 const SHOTS := {
-	"house": [
+	"house":
+	[
 		["01_foyer_start", Vector3(8.0, 0.05, 15.6), 0.0, -0.05, false],
 		["02_hallway", Vector3(1.0, 0.05, 8.5), -PI / 2, -0.05, false],
 		["03_kitchen", Vector3(6.8, 0.05, 6.0), 0.7, -0.15, false],
@@ -29,8 +30,12 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var map_id := AppInfo.arg_value("--map", "house")
 	var config := {
-		"mode": "solo", "map_id": map_id, "difficulty_id": "normal", "seed": 12345,
-		"match_id": "autoshot", "player_count": 1,
+		"mode": "solo",
+		"map_id": map_id,
+		"difficulty_id": "normal",
+		"seed": 12345,
+		"match_id": "autoshot",
+		"player_count": 1,
 	}
 	Session.match_config = config
 	var built := LevelLoader.build(Session.app.world_root, config)

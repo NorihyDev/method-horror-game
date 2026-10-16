@@ -29,7 +29,11 @@ func on_enter(p: Dictionary) -> void:
 	col.add_child(UI.caption(map.location_key if map else ""))
 	col.add_child(UI.title(map.title_key if map else "MAP_UNAVAILABLE", 54))
 	col.add_child(UI.accent_bar(120))
-	var meta := UI.label(tr("BRIEF_META") % [tr(diff.title_key), map.estimated_minutes if map else 0], ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM)
+	var meta := UI.label(
+		tr("BRIEF_META") % [tr(diff.title_key), map.estimated_minutes if map else 0],
+		ThemeFactory.FONT_SMALL,
+		ThemeFactory.TEXT_DIM
+	)
 	meta.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(meta)
 	var brief := UI.vbox(10)

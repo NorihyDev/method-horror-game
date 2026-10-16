@@ -7,7 +7,9 @@ var body_text := ""
 
 
 func build() -> void:
-	panel.add_theme_stylebox_override("panel", ThemeFactory.flat(Color(0.8, 0.76, 0.66), Color(0.45, 0.4, 0.32), 1, 2, 40, 34))
+	panel.add_theme_stylebox_override(
+		"panel", ThemeFactory.flat(Color(0.8, 0.76, 0.66), Color(0.45, 0.4, 0.32), 1, 2, 40, 34)
+	)
 	panel.custom_minimum_size = Vector2(640, 0)
 	var t := UI.label(title_text, ThemeFactory.FONT_H2, Color(0.12, 0.1, 0.08))
 	t.add_theme_font_override("font", ThemeFactory.title_font())

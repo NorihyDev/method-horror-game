@@ -50,8 +50,9 @@ func _add(text: String, duration: float, color: Color) -> void:
 	var size_px := {"small": 18, "medium": 22, "large": 28}.get(Settings.s("caption_size"), 22) as int
 	var panel := PanelContainer.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_theme_stylebox_override("panel", ThemeFactory.flat(
-		Color(0, 0, 0, Settings.f("caption_background")), Color.TRANSPARENT, 0, 2, 14, 6))
+	panel.add_theme_stylebox_override(
+		"panel", ThemeFactory.flat(Color(0, 0, 0, Settings.f("caption_background")), Color.TRANSPARENT, 0, 2, 14, 6)
+	)
 	var l := Label.new()
 	l.text = text
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED

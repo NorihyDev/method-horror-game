@@ -14,10 +14,21 @@ func _ready() -> void:
 	tray.name = "Tray"
 	add_child(tray)
 	var mat := MaterialLib.surface(material)
-	add_mesh(box_mesh(Vector3(size.x, size.y, 0.02)), mat, Transform3D(Basis.IDENTITY, Vector3(0, 0, size.z * 0.5)), tray)
-	add_mesh(box_mesh(Vector3(size.x - 0.04, 0.01, size.z)), mat, Transform3D(Basis.IDENTITY, Vector3(0, -size.y * 0.5 + 0.01, 0)), tray)
-	add_mesh(box_mesh(Vector3(0.1, 0.02, 0.03)), MaterialLib.flat(Color(0.55, 0.45, 0.25), 0.35, 0.8),
-		Transform3D(Basis.IDENTITY, Vector3(0, 0, size.z * 0.5 + 0.02)), tray)
+	add_mesh(
+		box_mesh(Vector3(size.x, size.y, 0.02)), mat, Transform3D(Basis.IDENTITY, Vector3(0, 0, size.z * 0.5)), tray
+	)
+	add_mesh(
+		box_mesh(Vector3(size.x - 0.04, 0.01, size.z)),
+		mat,
+		Transform3D(Basis.IDENTITY, Vector3(0, -size.y * 0.5 + 0.01, 0)),
+		tray
+	)
+	add_mesh(
+		box_mesh(Vector3(0.1, 0.02, 0.03)),
+		MaterialLib.flat(Color(0.55, 0.45, 0.25), 0.35, 0.8),
+		Transform3D(Basis.IDENTITY, Vector3(0, 0, size.z * 0.5 + 0.02)),
+		tray
+	)
 	add_target(Vector3(size.x, size.y, 0.1), Vector3(0, 0, size.z * 0.5 + 0.02), 0, tray)
 
 

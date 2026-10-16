@@ -33,8 +33,13 @@ const CAPTIONS := {
 
 ## Variant counts must match SoundSynth.VARIANTS.
 const VARIANTS := {
-	"step_wood": 4, "step_concrete": 4, "step_carpet": 4, "step_metal": 4,
-	"distant_impact": 3, "creak": 3, "door_creak": 2,
+	"step_wood": 4,
+	"step_concrete": 4,
+	"step_carpet": 4,
+	"step_metal": 4,
+	"distant_impact": 3,
+	"creak": 3,
+	"door_creak": 2,
 }
 
 var _cache: Dictionary = {}
@@ -114,10 +119,16 @@ func apply_all() -> void:
 
 ## Preview a volume without persisting (settings screen sliders).
 func preview_volume(key: String, value: float) -> void:
-	var bus: StringName = {
-		"vol_master": &"Master", "vol_music": BUS_MUSIC, "vol_ambience": BUS_AMBIENCE,
-		"vol_sfx": BUS_SFX, "vol_ui": BUS_UI,
-	}.get(key, &"")
+	var bus: StringName = (
+		{
+			"vol_master": &"Master",
+			"vol_music": BUS_MUSIC,
+			"vol_ambience": BUS_AMBIENCE,
+			"vol_sfx": BUS_SFX,
+			"vol_ui": BUS_UI,
+		}
+		. get(key, &"")
+	)
 	if bus != &"":
 		_set_bus_volume(bus, value)
 
@@ -186,8 +197,14 @@ func play_2d(sound: String, bus: StringName = BUS_SFX, volume_db: float = 0.0, p
 
 
 ## Positional one-shot attached to `parent` (usually the level root).
-func play_3d(sound: String, parent: Node, position: Vector3, volume_db: float = 0.0,
-		max_distance: float = 30.0, pitch: float = 1.0) -> AudioStreamPlayer3D:
+func play_3d(
+	sound: String,
+	parent: Node,
+	position: Vector3,
+	volume_db: float = 0.0,
+	max_distance: float = 30.0,
+	pitch: float = 1.0
+) -> AudioStreamPlayer3D:
 	var s := stream(sound)
 	if s == null or parent == null or not parent.is_inside_tree():
 		return null
@@ -249,13 +266,15 @@ func play_ambience(sound: String, fade_time: float = 2.0, volume_db: float = 0.0
 	var t := create_tween()
 	if _ambience.playing:
 		t.tween_property(_ambience, "volume_db", -60.0, fade_time * 0.5)
-	t.tween_callback(func() -> void:
-		if sound.is_empty():
-			_ambience.stop()
-			return
-		_ambience.stream = stream(sound)
-		_ambience.volume_db = -60.0
-		_ambience.play())
+	t.tween_callback(
+		func() -> void:
+			if sound.is_empty():
+				_ambience.stop()
+				return
+			_ambience.stream = stream(sound)
+			_ambience.volume_db = -60.0
+			_ambience.play()
+	)
 	if not sound.is_empty():
 		t.tween_property(_ambience, "volume_db", volume_db, fade_time)
 

@@ -63,4 +63,6 @@ func _draw() -> void:
 			draw_rect(Rect2(c - Vector2(s, s) * 0.7, Vector2(s, s) * 1.4), col)
 	if count > 1:
 		var font := get_theme_default_font()
-		draw_string(font, Vector2(size.x - 20, size.y - 6), "×%d" % count, HORIZONTAL_ALIGNMENT_RIGHT, 18, 15, ThemeFactory.TEXT)
+		draw_string(
+			font, Vector2(size.x - 20, size.y - 6), "×%d" % count, HORIZONTAL_ALIGNMENT_RIGHT, 18, 15, ThemeFactory.TEXT
+		)

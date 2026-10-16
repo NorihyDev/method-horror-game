@@ -160,6 +160,7 @@ func place(xform: Transform3D) -> void:
 
 # --- Input ---------------------------------------------------------------------
 
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not input_enabled or dead:
 		return
@@ -250,6 +251,7 @@ func _wants_interact() -> bool:
 
 
 # --- Simulation ------------------------------------------------------------------
+
 
 func _physics_process(delta: float) -> void:
 	if dead or escaped:
@@ -365,7 +367,9 @@ func _tick_footsteps(_delta: float, speed: float) -> void:
 
 func _play_step(volume_db: float) -> void:
 	var surface := map.surface_at(global_position) if map else "wood"
-	var sound := {"wood": "step_wood", "carpet": "step_carpet", "metal": "step_metal"}.get(surface, "step_concrete") as String
+	var sound := (
+		{"wood": "step_wood", "carpet": "step_carpet", "metal": "step_metal"}.get(surface, "step_concrete") as String
+	)
 	AudioService.play_2d(sound, AudioService.BUS_SFX, volume_db, _rng.randf_range(0.92, 1.06))
 
 
@@ -418,15 +422,30 @@ func _report(delta: float) -> void:
 		return
 	_report_timer -= delta
 	if match_ctrl.is_authority:
-		match_ctrl.report_motion(player_id, global_position, _yaw, Vector2(velocity.x, velocity.z).length(),
-			crouching, sprinting, flashlight_on and battery > 0.0)
+		match_ctrl.report_motion(
+			player_id,
+			global_position,
+			_yaw,
+			Vector2(velocity.x, velocity.z).length(),
+			crouching,
+			sprinting,
+			flashlight_on and battery > 0.0
+		)
 	elif _report_timer <= 0.0 and match_ctrl.net:
 		_report_timer = 0.05
-		match_ctrl.net.call("send_motion", global_position, _yaw, Vector2(velocity.x, velocity.z).length(),
-			crouching, sprinting, flashlight_on and battery > 0.0)
+		match_ctrl.net.call(
+			"send_motion",
+			global_position,
+			_yaw,
+			Vector2(velocity.x, velocity.z).length(),
+			crouching,
+			sprinting,
+			flashlight_on and battery > 0.0
+		)
 
 
 # --- Interaction -------------------------------------------------------------------
+
 
 func _tick_interaction(delta: float) -> void:
 	var ent: Interactable = null
@@ -493,6 +512,7 @@ func refresh_focus() -> void:
 
 # --- Hiding ---------------------------------------------------------------------------
 
+
 func set_hidden_in(spot: Interactable) -> void:
 	if spot is HidingSpot:
 		var info := HiddenInfo.new()
@@ -532,6 +552,7 @@ func is_hidden() -> bool:
 
 
 # --- Damage / death ----------------------------------------------------------------------
+
 
 func on_damaged(hits: int) -> void:
 	_shake = 1.0

@@ -23,7 +23,9 @@ func build() -> void:
 	_display.add_theme_font_override("font", ThemeFactory.mono_font())
 	_display.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_display.custom_minimum_size = Vector2(360, 56)
-	_display.add_theme_stylebox_override("normal", ThemeFactory.flat(Color(0.05, 0.02, 0.02), ThemeFactory.CRIMSON, 1, 2, 10, 4))
+	_display.add_theme_stylebox_override(
+		"normal", ThemeFactory.flat(Color(0.05, 0.02, 0.02), ThemeFactory.CRIMSON, 1, 2, 10, 4)
+	)
 	_display.add_theme_color_override("font_color", Color(0.95, 0.35, 0.25))
 	body.add_child(_display)
 	var grid := GridContainer.new()
@@ -43,9 +45,11 @@ func build() -> void:
 		grid.add_child(b)
 	body.add_child(UI.button("CLOSE", func() -> void: close()))
 	_update()
-	match_ctrl.entity_changed.connect(func(id: String, s: Dictionary) -> void:
-		if id == keypad.entity_id and bool(s.get("solved", false)) and is_inside_tree():
-			close())
+	match_ctrl.entity_changed.connect(
+		func(id: String, s: Dictionary) -> void:
+			if id == keypad.entity_id and bool(s.get("solved", false)) and is_inside_tree():
+				close()
+	)
 
 
 func _press(k: String) -> void:
@@ -98,4 +102,9 @@ class SymbolStrip:
 			var c := Vector2(cell * (i + 0.5), size.y * 0.5)
 			Glyphs.draw_2d(self, int(order[i]), c, size.y * 0.8, ThemeFactory.TEXT, 3.0)
 			if i < order.size() - 1:
-				draw_line(Vector2(cell * (i + 1) - 6, size.y * 0.5), Vector2(cell * (i + 1) + 6, size.y * 0.5), ThemeFactory.TEXT_FAINT, 2.0)
+				draw_line(
+					Vector2(cell * (i + 1) - 6, size.y * 0.5),
+					Vector2(cell * (i + 1) + 6, size.y * 0.5),
+					ThemeFactory.TEXT_FAINT,
+					2.0
+				)

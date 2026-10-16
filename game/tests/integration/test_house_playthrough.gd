@@ -33,7 +33,10 @@ func test_full_escape() -> void:
 	assert_true(has("fuse", 2), "shorted fuse left the inventory")
 	var drop_id := ""
 	for id in mc.state.entities:
-		if str(mc.state.entities[id].get("kind", "")) == "dropped" and str(mc.state.entities[id].get("item", "")) == "fuse":
+		if (
+			str(mc.state.entities[id].get("kind", "")) == "dropped"
+			and str(mc.state.entities[id].get("item", "")) == "fuse"
+		):
 			drop_id = id
 	assert_ne(drop_id, "", "fuse dropped on the floor")
 	await take(drop_id)

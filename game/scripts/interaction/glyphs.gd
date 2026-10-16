@@ -55,14 +55,22 @@ static func _add(root: Node3D, mesh: Mesh, mat: Material, xform: Transform3D) ->
 
 
 ## 2D drawing for UI (keypad panel, notes).
-static func draw_2d(canvas: CanvasItem, symbol: int, center: Vector2, size: float, color: Color, width: float = 3.0) -> void:
+static func draw_2d(
+	canvas: CanvasItem, symbol: int, center: Vector2, size: float, color: Color, width: float = 3.0
+) -> void:
 	var h := size * 0.45
 	match symbol:
 		0:
 			canvas.draw_arc(center, h, 0, TAU, 32, color, width, true)
 		1:
-			var pts := PackedVector2Array([center + Vector2(0, -h), center + Vector2(h, h * 0.8),
-				center + Vector2(-h, h * 0.8), center + Vector2(0, -h)])
+			var pts := PackedVector2Array(
+				[
+					center + Vector2(0, -h),
+					center + Vector2(h, h * 0.8),
+					center + Vector2(-h, h * 0.8),
+					center + Vector2(0, -h)
+				]
+			)
 			canvas.draw_polyline(pts, color, width, true)
 		2:
 			canvas.draw_rect(Rect2(center - Vector2(h, h) * 0.9, Vector2(h, h) * 1.8), color, false, width)

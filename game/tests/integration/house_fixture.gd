@@ -8,10 +8,17 @@ var mc: MatchController
 var player: PlayerController
 
 
-func build(map_id: String = "house", difficulty_id: String = "normal", seed_value: int = 777, resume: Dictionary = {}) -> bool:
+func build(
+	map_id: String = "house", difficulty_id: String = "normal", seed_value: int = 777, resume: Dictionary = {}
+) -> bool:
 	var cfg := {
-		"mode": "solo", "map_id": map_id, "difficulty_id": difficulty_id, "seed": seed_value,
-		"match_id": "it-%s-%d" % [map_id, seed_value], "player_count": 1, "resume": resume,
+		"mode": "solo",
+		"map_id": map_id,
+		"difficulty_id": difficulty_id,
+		"seed": seed_value,
+		"match_id": "it-%s-%d" % [map_id, seed_value],
+		"player_count": 1,
+		"resume": resume,
 	}
 	Session.match_config = cfg
 	Log.min_level = Log.Level.DEBUG

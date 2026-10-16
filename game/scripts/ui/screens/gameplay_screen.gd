@@ -69,29 +69,39 @@ func _exit_tree() -> void:
 
 
 func _connect_match() -> void:
-	mc.player_damaged.connect(func(pid: int, hits: int) -> void:
-		if pid == player.player_id:
-			player.on_damaged(hits)
-			app.post_fx.damage = 0.9
-			create_tween().tween_property(app.post_fx, "damage", clampf(float(hits) / mc.difficulty.player_hits, 0.0, 0.6) * 0.6, 1.6))
+	mc.player_damaged.connect(
+		func(pid: int, hits: int) -> void:
+			if pid == player.player_id:
+				player.on_damaged(hits)
+				app.post_fx.damage = 0.9
+				create_tween().tween_property(
+					app.post_fx, "damage", clampf(float(hits) / mc.difficulty.player_hits, 0.0, 0.6) * 0.6, 1.6
+				)
+	)
 	mc.local_player_died.connect(_on_died)
-	mc.player_status_changed.connect(func(pid: int, status: String) -> void:
-		if pid != player.player_id:
-			return
-		if status == MatchState.STATUS_ESCAPED:
-			player.on_escaped()
-			hud.set_status("HUD_ESCAPED")
-			AudioService.play_2d("escape_sting", AudioService.BUS_MUSIC, -2.0)
-		elif status == MatchState.STATUS_DOWNED:
-			hud.set_status("HUD_DOWNED"))
+	mc.player_status_changed.connect(
+		func(pid: int, status: String) -> void:
+			if pid != player.player_id:
+				return
+			if status == MatchState.STATUS_ESCAPED:
+				player.on_escaped()
+				hud.set_status("HUD_ESCAPED")
+				AudioService.play_2d("escape_sting", AudioService.BUS_MUSIC, -2.0)
+			elif status == MatchState.STATUS_DOWNED:
+				hud.set_status("HUD_DOWNED")
+	)
 	mc.match_finished.connect(_on_finished)
-	mc.phase_changed.connect(func(phase: int) -> void:
-		if phase == MatchState.Phase.FINAL:
-			hud.push_notice(tr("NOTE_FINAL_PHASE")))
-	player.hiding_changed.connect(func(hidden: bool) -> void:
-		create_tween().tween_property(app.post_fx, "slats", 1.0 if hidden else 0.0, 0.35)
-		if touch:
-			touch.enabled_buttons = ["interact", "pause"] if hidden else _default_touch_buttons())
+	mc.phase_changed.connect(
+		func(phase: int) -> void:
+			if phase == MatchState.Phase.FINAL:
+				hud.push_notice(tr("NOTE_FINAL_PHASE"))
+	)
+	player.hiding_changed.connect(
+		func(hidden: bool) -> void:
+			create_tween().tween_property(app.post_fx, "slats", 1.0 if hidden else 0.0, 0.35)
+			if touch:
+				touch.enabled_buttons = ["interact", "pause"] if hidden else _default_touch_buttons()
+	)
 	for ent in mc.entities.values():
 		_connect_entity(ent)
 	Session.app_paused_changed.connect(_on_app_paused)
@@ -113,6 +123,7 @@ func _connect_entity(ent: Interactable) -> void:
 
 # --- Input -----------------------------------------------------------------------------
 
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _ending or _overlay:
 		return
@@ -122,7 +133,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("inventory"):
 		get_viewport().set_input_as_handled()
 		_open_inventory()
-	elif event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_F3 and inspector:
+	elif (
+		event is InputEventKey
+		and event.pressed
+		and not event.echo
+		and (event as InputEventKey).keycode == KEY_F3
+		and inspector
+	):
 		inspector.visible = not inspector.visible
 	elif event is InputEventMouseButton and event.pressed and not TouchControls.should_show():
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
@@ -177,18 +194,21 @@ func _refresh_input_mode() -> void:
 
 # --- Overlays ----------------------------------------------------------------------------
 
+
 func _show_overlay(o: OverlayPanel, pause_world: bool) -> void:
 	if _overlay:
 		_overlay.queue_free()
 	_overlay = o
 	o.screen = self
 	add_child(o)
-	o.closed.connect(func() -> void:
-		if _overlay == o:
-			_overlay = null
-		if pause_world and not _online:
-			get_tree().paused = false
-		_refresh_input_mode())
+	o.closed.connect(
+		func() -> void:
+			if _overlay == o:
+				_overlay = null
+			if pause_world and not _online:
+				get_tree().paused = false
+			_refresh_input_mode()
+	)
 	if pause_world and not _online:
 		get_tree().paused = true
 	_refresh_input_mode()
@@ -203,19 +223,43 @@ func open_pause() -> void:
 	hud.clear_hint_badge()
 	pm.resume_requested.connect(func() -> void: pm.close())
 	pm.settings_requested.connect(func() -> void: app.goto("settings", {"in_game": true}))
-	pm.restart_checkpoint_requested.connect(func() -> void:
-		app.confirm("RESTART_TITLE", "RESTART_CHECKPOINT_BODY", "RESTART_CONFIRM", func() -> void:
-			_leave_world()
-			Session.continue_from_checkpoint(), true))
-	pm.restart_requested.connect(func() -> void:
-		app.confirm("RESTART_TITLE", "RESTART_BODY", "RESTART_CONFIRM", func() -> void:
-			_leave_world()
-			Saves.clear_checkpoint()
-			Session.start_solo(String(mc.map_def.id), String(mc.difficulty.id)), true))
-	pm.quit_requested.connect(func() -> void:
-		app.confirm("LEAVE_TITLE", "LEAVE_BODY_PROGRESS" if mc.is_solo else "LEAVE_BODY", "LEAVE_CONFIRM", func() -> void:
-			_leave_world()
-			Session.quit_to_menu(), true))
+	pm.restart_checkpoint_requested.connect(
+		func() -> void:
+			app.confirm(
+				"RESTART_TITLE",
+				"RESTART_CHECKPOINT_BODY",
+				"RESTART_CONFIRM",
+				func() -> void:
+					_leave_world()
+					Session.continue_from_checkpoint(),
+				true
+			)
+	)
+	pm.restart_requested.connect(
+		func() -> void:
+			app.confirm(
+				"RESTART_TITLE",
+				"RESTART_BODY",
+				"RESTART_CONFIRM",
+				func() -> void:
+					_leave_world()
+					Saves.clear_checkpoint()
+					Session.start_solo(String(mc.map_def.id), String(mc.difficulty.id)),
+				true
+			)
+	)
+	pm.quit_requested.connect(
+		func() -> void:
+			app.confirm(
+				"LEAVE_TITLE",
+				"LEAVE_BODY_PROGRESS" if mc.is_solo else "LEAVE_BODY",
+				"LEAVE_CONFIRM",
+				func() -> void:
+					_leave_world()
+					Session.quit_to_menu(),
+				true
+			)
+	)
 	_show_overlay(pm, true)
 
 
@@ -260,16 +304,22 @@ func _on_died() -> void:
 	var d := DeathOverlay.new()
 	var snap := Saves.load_checkpoint()
 	d.can_checkpoint = mc.difficulty.checkpoints_enabled and str(snap.get("match_id", "")) == mc.state.match_id
-	d.retry_checkpoint.connect(func() -> void:
-		_leave_world()
-		Session.continue_from_checkpoint())
-	d.restart.connect(func() -> void:
-		_leave_world()
-		Saves.clear_checkpoint()
-		Session.start_solo(String(mc.map_def.id), String(mc.difficulty.id)))
-	d.give_up.connect(func() -> void:
-		d.close()
-		mc.give_up())
+	d.retry_checkpoint.connect(
+		func() -> void:
+			_leave_world()
+			Session.continue_from_checkpoint()
+	)
+	d.restart.connect(
+		func() -> void:
+			_leave_world()
+			Saves.clear_checkpoint()
+			Session.start_solo(String(mc.map_def.id), String(mc.difficulty.id))
+	)
+	d.give_up.connect(
+		func() -> void:
+			d.close()
+			mc.give_up()
+	)
 	_show_overlay(d, false)
 
 

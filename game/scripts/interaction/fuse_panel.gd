@@ -18,8 +18,11 @@ var _lamp_mat: StandardMaterial3D
 func _ready() -> void:
 	var body := MaterialLib.surface("metal_green")
 	add_mesh(box_mesh(Vector3(0.7, 0.9, 0.14)), body, Transform3D(Basis.IDENTITY, Vector3(0, 0, -0.07)))
-	add_mesh(box_mesh(Vector3(0.62, 0.82, 0.02)), MaterialLib.flat(Color(0.08, 0.08, 0.08), 0.8),
-		Transform3D(Basis.IDENTITY, Vector3(0, 0, 0.005)))
+	add_mesh(
+		box_mesh(Vector3(0.62, 0.82, 0.02)),
+		MaterialLib.flat(Color(0.08, 0.08, 0.08), 0.8),
+		Transform3D(Basis.IDENTITY, Vector3(0, 0, 0.005))
+	)
 	# Open hinged cover.
 	add_mesh(box_mesh(Vector3(0.02, 0.9, 0.66)), body, Transform3D(Basis.IDENTITY, Vector3(-0.36, 0, 0.33)))
 	var stencil := Label3D.new()
@@ -33,8 +36,11 @@ func _ready() -> void:
 	for i in SOCKETS:
 		var x := -0.21 + i * 0.14
 		var socket_pos := Vector3(x, -0.02, 0.02)
-		add_mesh(box_mesh(Vector3(0.1, 0.22, 0.03)), MaterialLib.flat(Color(0.75, 0.72, 0.62), 0.6),
-			Transform3D(Basis.IDENTITY, socket_pos))
+		add_mesh(
+			box_mesh(Vector3(0.1, 0.22, 0.03)),
+			MaterialLib.flat(Color(0.75, 0.72, 0.62), 0.6),
+			Transform3D(Basis.IDENTITY, socket_pos)
+		)
 		var label := Label3D.new()
 		label.text = LABELS[i]
 		label.font_size = 40
@@ -52,7 +58,9 @@ func _ready() -> void:
 		_fuse_nodes.append(fuse)
 		add_target(Vector3(0.13, 0.3, 0.12), socket_pos + Vector3(0, 0, 0.04), i + 1)
 	_lamp_mat = MaterialLib.glow(Color(0.8, 0.1, 0.08), 0.0)
-	var lamp := add_mesh(box_mesh(Vector3(0.05, 0.05, 0.02)), _lamp_mat, Transform3D(Basis.IDENTITY, Vector3(0.24, -0.33, 0.02)))
+	var lamp := add_mesh(
+		box_mesh(Vector3(0.05, 0.05, 0.02)), _lamp_mat, Transform3D(Basis.IDENTITY, Vector3(0.24, -0.33, 0.02))
+	)
 	lamp.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
@@ -114,7 +122,9 @@ func authority_interact(ctx: Dictionary) -> void:
 		var drop_pos := match_ctrl.map.safe_drop_position(Vector3(front.x, global_position.y - 1.0, front.z), 0.0)
 		var id := match_ctrl.state.allocate_dynamic_id("drop")
 		match_ctrl.map.spawn_dropped_item(match_ctrl, id, "fuse", drop_pos)
-		match_ctrl.set_entity_state(id, {"kind": "dropped", "item": "fuse", "pos": MatchState.vec_to_array(drop_pos), "taken": false})
+		match_ctrl.set_entity_state(
+			id, {"kind": "dropped", "item": "fuse", "pos": MatchState.vec_to_array(drop_pos), "taken": false}
+		)
 		if match_ctrl.net:
 			match_ctrl.net.call("broadcast_spawn_drop", id, "fuse", drop_pos)
 		var node: Node = match_ctrl.players.get(pid)

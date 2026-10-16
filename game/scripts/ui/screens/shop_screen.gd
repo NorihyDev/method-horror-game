@@ -118,14 +118,21 @@ func _on_action() -> void:
 		app.alert("SHOP_INSUFFICIENT_TITLE", tr("SHOP_INSUFFICIENT_BODY") % [price - Saves.wallet.balance])
 		return
 	var id := _selected
-	app.confirm("SHOP_CONFIRM_TITLE", "SHOP_CONFIRM_BODY", "SHOP_CONFIRM", func() -> void:
-		var result := Saves.purchase(id)
-		match result:
-			Wallet.PurchaseResult.OK:
-				Saves.equip(id)
-				app.toast(tr("SHOP_PURCHASED") % tr(item["name_key"]))
-			Wallet.PurchaseResult.INSUFFICIENT_FUNDS:
-				app.toast(tr("SHOP_INSUFFICIENT_TITLE"))
-			_:
-				app.toast(tr("SHOP_FAILED"))
-		_fill(), false, [tr(item["name_key"]), price])
+	app.confirm(
+		"SHOP_CONFIRM_TITLE",
+		"SHOP_CONFIRM_BODY",
+		"SHOP_CONFIRM",
+		func() -> void:
+			var result := Saves.purchase(id)
+			match result:
+				Wallet.PurchaseResult.OK:
+					Saves.equip(id)
+					app.toast(tr("SHOP_PURCHASED") % tr(item["name_key"]))
+				Wallet.PurchaseResult.INSUFFICIENT_FUNDS:
+					app.toast(tr("SHOP_INSUFFICIENT_TITLE"))
+				_:
+					app.toast(tr("SHOP_FAILED"))
+			_fill(),
+		false,
+		[tr(item["name_key"]), price]
+	)

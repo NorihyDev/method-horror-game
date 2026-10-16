@@ -11,6 +11,8 @@ extends CharacterBody3D
 ## * Lamps flicker and its key ring jingles when it is near: the warning cue.
 ## * It never teleports and never spawns near or in sight of a player.
 
+enum S { PATROL, INVESTIGATE, SEARCH, CHASE, ATTACK, RECOVER, LOST, CHECK_HIDING }
+
 const LAYER_ENEMY := 1 << 2
 const BASE_SIGHT := 13.0
 const FOV_HALF := deg_to_rad(60.0)
@@ -24,8 +26,6 @@ const TRACK_AFTER_LOS := 1.4
 const SEARCH_TIME := 11.0
 const GRAVITY := 18.0
 const SCARE_COOLDOWN := 75.0
-
-enum S { PATROL, INVESTIGATE, SEARCH, CHASE, ATTACK, RECOVER, LOST, CHECK_HIDING }
 
 var match_ctrl: MatchController
 var map: MapBase
@@ -105,6 +105,7 @@ func _ready() -> void:
 
 # --- Senses (authority) ---------------------------------------------------------------
 
+
 ## Noise event: `radius` already includes difficulty scaling.
 func hear(pos: Vector3, radius: float, kind: String) -> void:
 	if not _authority():
@@ -140,7 +141,11 @@ func on_player_hid(pid: int, spot: HidingSpot) -> void:
 	if not _authority():
 		return
 	# It only "knows" if it was actively chasing and could see the player.
-	if (state == S.CHASE or state == S.ATTACK) and _chase_pid == pid and match_ctrl.state.elapsed - _last_seen_time < 0.6:
+	if (
+		(state == S.CHASE or state == S.ATTACK)
+		and _chase_pid == pid
+		and match_ctrl.state.elapsed - _last_seen_time < 0.6
+	):
 		_seen_hiding[pid] = {"spot": spot, "time": match_ctrl.state.elapsed}
 
 
@@ -148,7 +153,11 @@ func _sense() -> void:
 	var elapsed := match_ctrl.state.elapsed
 	var eye := global_position + Vector3(0, 1.85, 0)
 	var forward := -global_basis.z
-	var phase_mult := 1.15 if match_ctrl.state.phase == MatchState.Phase.FINAL else (1.05 if match_ctrl.state.phase == MatchState.Phase.ESCALATE else 1.0)
+	var phase_mult := (
+		1.15
+		if match_ctrl.state.phase == MatchState.Phase.FINAL
+		else (1.05 if match_ctrl.state.phase == MatchState.Phase.ESCALATE else 1.0)
+	)
 	var best_pid := 0
 	var best_pos := Vector3.ZERO
 	for target in match_ctrl.perceivable_players():
@@ -218,6 +227,7 @@ func _start_chase(pos: Vector3) -> void:
 
 
 # --- Tick ------------------------------------------------------------------------------
+
 
 func _physics_process(delta: float) -> void:
 	if not _authority():
@@ -362,7 +372,10 @@ func _strike(pos: Vector3) -> void:
 	to.y = 0.0
 	var in_front := (-global_basis.z).dot(to.normalized()) > 0.25
 	var hiding := str(p["hiding"])
-	if (to.length() <= STRIKE_RANGE and in_front and hiding.is_empty()) or (not hiding.is_empty() and _check_spot != null):
+	if (
+		(to.length() <= STRIKE_RANGE and in_front and hiding.is_empty())
+		or (not hiding.is_empty() and _check_spot != null)
+	):
 		match_ctrl.damage_player(_chase_pid)
 		match_ctrl.world_sound("door_close", global_position + Vector3(0, 1.2, 0), 0.0, 20.0)
 
@@ -411,6 +424,7 @@ func _maybe_check_spot_near(center: Vector3) -> void:
 
 
 # --- Movement --------------------------------------------------------------------------
+
 
 func _follow(speed: float, delta: float) -> void:
 	if agent.is_navigation_finished():
@@ -477,7 +491,9 @@ func _open_doors_ahead(dir: Vector3) -> void:
 		return
 	_door_timer = 0.2
 	var from := global_position + Vector3(0, 1.1, 0)
-	var q := PhysicsRayQueryParameters3D.create(from, from + dir * 1.4, DoorEntity.LAYER_DOOR | Interactable.LAYER_INTERACT)
+	var q := PhysicsRayQueryParameters3D.create(
+		from, from + dir * 1.4, DoorEntity.LAYER_DOOR | Interactable.LAYER_INTERACT
+	)
 	q.exclude = [get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if hit.is_empty():
@@ -559,12 +575,15 @@ func _enter(s: S) -> void:
 
 # --- Presentation cues ----------------------------------------------------------------
 
+
 func _tick_cues(delta: float) -> void:
 	_lamp_timer -= delta
 	if _lamp_timer <= 0.0:
 		_lamp_timer = 0.25
 		for lamp in map.lamps:
-			lamp.enemy_proximity = clampf(1.0 - lamp.global_position.distance_to(global_position) / FlickerLight.NEAR_ENEMY, 0.0, 1.0)
+			lamp.enemy_proximity = clampf(
+				1.0 - lamp.global_position.distance_to(global_position) / FlickerLight.NEAR_ENEMY, 0.0, 1.0
+			)
 		rig.set_lens_intensity(1.0 if state in [S.CHASE, S.ATTACK] else 0.2)
 	_keys_timer -= delta
 	if _keys_timer <= 0.0:
@@ -588,7 +607,9 @@ func _on_foot() -> void:
 
 ## Sight/hearing line: walls, doors and large furniture block it.
 func _clear_line(from: Vector3, to: Vector3) -> bool:
-	var q := PhysicsRayQueryParameters3D.create(from, to, GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP | DoorEntity.LAYER_DOOR)
+	var q := PhysicsRayQueryParameters3D.create(
+		from, to, GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP | DoorEntity.LAYER_DOOR
+	)
 	q.exclude = [get_rid()]
 	return get_world_3d().direct_space_state.intersect_ray(q).is_empty()
 
@@ -599,5 +620,7 @@ func _authority() -> bool:
 
 ## Debug summary for the dev objective inspector.
 func debug_text() -> String:
-	return "Watcher: %s  target=%s  chase=%d  susp=%s" % [S.keys()[state], str(_target.snapped(Vector3.ONE * 0.1)),
-		_chase_pid, str(_suspicion)]
+	return (
+		"Watcher: %s  target=%s  chase=%d  susp=%s"
+		% [S.keys()[state], str(_target.snapped(Vector3.ONE * 0.1)), _chase_pid, str(_suspicion)]
+	)

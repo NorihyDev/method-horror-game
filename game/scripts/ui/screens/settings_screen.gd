@@ -47,9 +47,14 @@ func on_enter(p: Dictionary) -> void:
 	var tabs := UI.hbox(4)
 	for i in TABS.size():
 		var idx := i
-		var b := UI.button(TABS[i][0], func() -> void:
-			_tab = idx
-			_render(), false, 150)
+		var b := UI.button(
+			TABS[i][0],
+			func() -> void:
+				_tab = idx
+				_render(),
+			false,
+			150
+		)
 		b.toggle_mode = true
 		_tab_buttons.append(b)
 		tabs.add_child(b)
@@ -85,10 +90,21 @@ func _render() -> void:
 		_content.add_child(UI.spacer(8))
 		_content.add_child(UI.para("SET_MP_NOTE", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT))
 	_content.add_child(UI.spacer(12))
-	var reset := UI.button("SET_RESET_CATEGORY", func() -> void:
-		app.confirm("SET_RESET_TITLE", "SET_RESET_BODY", "SET_RESET_CONFIRM", func() -> void:
-			Settings.reset_category(cat)
-			_render(), true), false, 260)
+	var reset := UI.button(
+		"SET_RESET_CATEGORY",
+		func() -> void:
+			app.confirm(
+				"SET_RESET_TITLE",
+				"SET_RESET_BODY",
+				"SET_RESET_CONFIRM",
+				func() -> void:
+					Settings.reset_category(cat)
+					_render(),
+				true
+			),
+		false,
+		260
+	)
 	reset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_content.add_child(reset)
 
@@ -115,16 +131,24 @@ func _row(key: String, spec: Dictionary) -> Control:
 		var readout := UI.label(_format_value(key, float(value)), ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM)
 		readout.custom_minimum_size.x = 64
 		readout.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		var s := UI.slider(float(spec["min"]), float(spec["max"]), float(spec["step"]), float(value), func(v: float) -> void:
-			readout.text = _format_value(key, v)
-			if key.begins_with("vol_"):
-				AudioService.preview_volume(key, v))
+		var s := UI.slider(
+			float(spec["min"]),
+			float(spec["max"]),
+			float(spec["step"]),
+			float(value),
+			func(v: float) -> void:
+				readout.text = _format_value(key, v)
+				if key.begins_with("vol_"):
+					AudioService.preview_volume(key, v)
+		)
 		s.drag_ended.connect(func(_changed: bool) -> void: Settings.set_value(key, s.value))
 		s.focus_exited.connect(func() -> void: Settings.set_value(key, s.value))
-		s.value_changed.connect(func(v: float) -> void:
-			# Keyboard/controller steps commit immediately.
-			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-				Settings.set_value(key, v))
+		s.value_changed.connect(
+			func(v: float) -> void:
+				# Keyboard/controller steps commit immediately.
+				if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+					Settings.set_value(key, v)
+		)
 		h.add_child(s)
 		h.add_child(readout)
 		control = h
@@ -150,7 +174,10 @@ func _format_value(key: String, v: float) -> String:
 		return "%d%%" % int(round(v * 100))
 	if key == "fov":
 		return "%d°" % int(v)
-	if key in ["exposure", "mouse_sensitivity", "touch_sensitivity", "pad_sensitivity", "touch_button_scale", "ui_scale"]:
+	if (
+		key
+		in ["exposure", "mouse_sensitivity", "touch_sensitivity", "pad_sensitivity", "touch_button_scale", "ui_scale"]
+	):
 		return "%.2f×" % v
 	return "%.2f" % v
 

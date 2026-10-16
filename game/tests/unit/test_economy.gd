@@ -72,11 +72,17 @@ func test_reward_calculation() -> void:
 	var map := Session.map_def("house")
 	var normal := Session.difficulty("normal")
 	var hard := Session.difficulty("hard")
-	var r := RewardCalculator.compute(map, normal, {"escaped": true, "optional_completed": 2, "new_collectibles": 3, "first_completion": true})
+	var r := RewardCalculator.compute(
+		map, normal, {"escaped": true, "optional_completed": 2, "new_collectibles": 3, "first_completion": true}
+	)
 	assert_eq(int(r["total"]), 100 + 50 + 150 + 30)
-	var h := RewardCalculator.compute(map, hard, {"escaped": true, "optional_completed": 0, "new_collectibles": 0, "first_completion": false})
+	var h := RewardCalculator.compute(
+		map, hard, {"escaped": true, "optional_completed": 0, "new_collectibles": 0, "first_completion": false}
+	)
 	assert_eq(int(h["total"]), 150)
-	var lost := RewardCalculator.compute(map, hard, {"escaped": false, "optional_completed": 3, "new_collectibles": 1, "first_completion": true})
+	var lost := RewardCalculator.compute(
+		map, hard, {"escaped": false, "optional_completed": 3, "new_collectibles": 1, "first_completion": true}
+	)
 	assert_eq(int(lost["total"]), 10, "defeat: only new collectibles, no multiplier")
 
 

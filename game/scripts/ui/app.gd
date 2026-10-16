@@ -73,6 +73,11 @@ func _ready() -> void:
 
 
 func _start() -> void:
+	for dev_arg in ["--test", "--autoshot", "--uishots"]:
+		if AppInfo.has_arg(dev_arg) and not ResourceLoader.exists("res://tests/test_runner.gd"):
+			printerr("%s is a development option; tests/tools are not included in exported builds." % dev_arg)
+			get_tree().quit(1)
+			return
 	if AppInfo.has_arg("--test"):
 		var runner: Node = load("res://tests/test_runner.gd").new()
 		add_child(runner)
@@ -84,6 +89,9 @@ func _start() -> void:
 	if AppInfo.has_arg("--uishots"):
 		var ui_shots: Node = load("res://tools/uishots.gd").new()
 		add_child(ui_shots)
+		return
+	if AppInfo.has_arg("--smoke"):
+		_run_smoke()
 		return
 	if AppInfo.is_dedicated_server():
 		Session.start_dedicated_server()
@@ -101,6 +109,7 @@ func _layer(layer_name: String, index: int) -> CanvasLayer:
 
 
 # --- Screens -----------------------------------------------------------------
+
 
 func current() -> Screen:
 	return _stack.back() if not _stack.is_empty() else null
@@ -187,6 +196,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # --- World ---------------------------------------------------------------------
 
+
 func set_world(node: Node) -> void:
 	if _world_node and is_instance_valid(_world_node) and _world_node != node:
 		_world_node.queue_free()
@@ -202,6 +212,7 @@ func world() -> Node:
 
 
 # --- Modals --------------------------------------------------------------------
+
 
 func show_modal(control: Control) -> void:
 	var dim := ColorRect.new()
@@ -241,8 +252,14 @@ func has_modal() -> bool:
 
 ## Confirmation dialog. Destructive actions get a crimson confirm button and
 ## focus starts on Cancel.
-func confirm(title_key: String, body_key: String, confirm_key: String, on_confirm: Callable,
-		destructive: bool = false, body_args: Array = []) -> void:
+func confirm(
+	title_key: String,
+	body_key: String,
+	confirm_key: String,
+	on_confirm: Callable,
+	destructive: bool = false,
+	body_args: Array = []
+) -> void:
 	var p := UI.panel(28)
 	p.custom_minimum_size = Vector2(520, 0)
 	var cc := UI.center(p)
@@ -256,9 +273,13 @@ func confirm(title_key: String, body_key: String, confirm_key: String, on_confir
 	var row := UI.hbox(12)
 	row.alignment = BoxContainer.ALIGNMENT_END
 	var cancel := UI.button("CANCEL", func() -> void: close_modal(cc))
-	var ok := UI.button(confirm_key, func() -> void:
-		close_modal(cc)
-		on_confirm.call(), destructive)
+	var ok := UI.button(
+		confirm_key,
+		func() -> void:
+			close_modal(cc)
+			on_confirm.call(),
+		destructive
+	)
 	row.add_child(cancel)
 	row.add_child(ok)
 	v.add_child(row)
@@ -276,10 +297,14 @@ func alert(title_key: String, body: String, on_close: Callable = Callable()) -> 
 	v.add_child(UI.para(body))
 	var cc := UI.center(p)
 	cc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var ok := UI.button("OK", func() -> void:
-		close_modal(cc)
-		if on_close.is_valid():
-			on_close.call(), true)
+	var ok := UI.button(
+		"OK",
+		func() -> void:
+			close_modal(cc)
+			if on_close.is_valid():
+				on_close.call(),
+		true
+	)
 	ok.size_flags_horizontal = Control.SIZE_SHRINK_END
 	v.add_child(ok)
 	show_modal(cc)
@@ -288,7 +313,9 @@ func alert(title_key: String, body: String, on_close: Callable = Callable()) -> 
 
 func toast(text: String, duration: float = 2.6) -> void:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", ThemeFactory.flat(Color(0.04, 0.04, 0.05, 0.9), ThemeFactory.LINE, 1, 2, 18, 10))
+	p.add_theme_stylebox_override(
+		"panel", ThemeFactory.flat(Color(0.04, 0.04, 0.05, 0.9), ThemeFactory.LINE, 1, 2, 18, 10)
+	)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var l := UI.label(text, ThemeFactory.FONT_SMALL + 2)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -326,6 +353,7 @@ func _first_focus(node: Node) -> Control:
 
 # --- Fades / layout --------------------------------------------------------------
 
+
 func fade_out(duration: float = 0.35) -> Signal:
 	_fade.mouse_filter = Control.MOUSE_FILTER_STOP
 	var t := create_tween()
@@ -352,5 +380,46 @@ func safe_margins() -> Vector4:
 		return Vector4.ZERO
 	var k := get_viewport().get_visible_rect().size / win
 	return Vector4(
-		safe.position.x * k.x, safe.position.y * k.y,
-		maxf(0.0, screen.x - safe.end.x) * k.x, maxf(0.0, screen.y - safe.end.y) * k.y)
+		safe.position.x * k.x,
+		safe.position.y * k.y,
+		maxf(0.0, screen.x - safe.end.x) * k.x,
+		maxf(0.0, screen.y - safe.end.y) * k.y
+	)
+
+
+## Startup smoke check usable in exported builds (CI): builds the first map,
+## spawns a player and the enemy, simulates 300 physics frames and exits with
+## a non-zero code on any failure.
+func _run_smoke() -> void:
+	var failed := func(reason: String) -> void:
+		printerr("SMOKE FAILED: " + reason)
+		get_tree().quit(1)
+	var cfg := {
+		"mode": "solo", "map_id": "house", "difficulty_id": "normal", "seed": 1, "match_id": "smoke", "player_count": 1
+	}
+	Session.match_config = cfg
+	var t0 := Time.get_ticks_msec()
+	var built := LevelLoader.build(world_root, cfg)
+	if not built["ok"]:
+		failed.call(str(built["error"]))
+		return
+	var map: MapBase = built["map"]
+	var mc: MatchController = built["match"]
+	LevelLoader.spawn_local_player(map, mc, 1, "Smoke")
+	mc.apply_all_states()
+	mc.begin()
+	await map.wait_for_navigation()
+	if not map.navigation_ready():
+		failed.call("navigation did not sync")
+		return
+	mc.set("_enemy_arrival_at", 0.0)
+	for i in 300:
+		await get_tree().physics_frame
+	if mc.enemies.size() != 1:
+		failed.call("enemy did not spawn")
+		return
+	if mc.rules.validate().size() > 0:
+		failed.call("rules invalid: " + str(mc.rules.validate()))
+		return
+	print("SMOKE OK: house built, nav ready, enemy active, %d ms" % (Time.get_ticks_msec() - t0))
+	get_tree().quit(0)

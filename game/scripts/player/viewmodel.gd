@@ -114,7 +114,9 @@ func set_lens_glow(k: float) -> void:
 
 
 ## Called every physics tick by the controller.
-func update_motion(delta: float, speed: float, sprinting: bool, crouching: bool, grounded: bool, bob_phase: float) -> void:
+func update_motion(
+	delta: float, speed: float, sprinting: bool, crouching: bool, grounded: bool, bob_phase: float
+) -> void:
 	var cam := get_parent() as Node3D
 	if cam == null:
 		return

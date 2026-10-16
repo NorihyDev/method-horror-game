@@ -4,8 +4,16 @@ extends RefCounted
 ## rebinding, controller defaults, and touch controls share one source.
 
 const REBINDABLE: PackedStringArray = [
-	"move_forward", "move_back", "move_left", "move_right",
-	"sprint", "crouch", "interact", "flashlight", "inventory", "ping",
+	"move_forward",
+	"move_back",
+	"move_left",
+	"move_right",
+	"sprint",
+	"crouch",
+	"interact",
+	"flashlight",
+	"inventory",
+	"ping",
 ]
 
 const DEFAULT_KEYS := {
@@ -56,9 +64,21 @@ const PAD_AXES := {
 }
 
 const ALL_ACTIONS: PackedStringArray = [
-	"move_forward", "move_back", "move_left", "move_right",
-	"look_up", "look_down", "look_left", "look_right",
-	"sprint", "crouch", "interact", "flashlight", "inventory", "ping", "pause",
+	"move_forward",
+	"move_back",
+	"move_left",
+	"move_right",
+	"look_up",
+	"look_down",
+	"look_left",
+	"look_right",
+	"sprint",
+	"crouch",
+	"interact",
+	"flashlight",
+	"inventory",
+	"ping",
+	"pause",
 ]
 
 

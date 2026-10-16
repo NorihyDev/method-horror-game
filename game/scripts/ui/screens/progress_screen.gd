@@ -45,14 +45,24 @@ func build() -> void:
 			v.add_child(UI.para(m.description_key, ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT))
 			list.add_child(p)
 			continue
-		var stats := UI.label(tr("PROGRESS_STATS") % [int(prog.get("completions", 0)),
-			UI.format_time(float(prog.get("best_time", 0.0))) if float(prog.get("best_time", 0.0)) > 0 else "—"],
-			ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM)
+		var stats := UI.label(
+			(
+				tr("PROGRESS_STATS")
+				% [
+					int(prog.get("completions", 0)),
+					UI.format_time(float(prog.get("best_time", 0.0))) if float(prog.get("best_time", 0.0)) > 0 else "—"
+				]
+			),
+			ThemeFactory.FONT_SMALL,
+			ThemeFactory.TEXT_DIM
+		)
 		stats.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		v.add_child(stats)
 		var found: Array = prog.get("collectibles", [])
 		var files: Array = FILES.get(id, [])
-		v.add_child(UI.label(tr("PROGRESS_FILES") % [found.size(), files.size()], ThemeFactory.FONT_SMALL, ThemeFactory.TEXT))
+		v.add_child(
+			UI.label(tr("PROGRESS_FILES") % [found.size(), files.size()], ThemeFactory.FONT_SMALL, ThemeFactory.TEXT)
+		)
 		var row := HFlowContainer.new()
 		row.add_theme_constant_override("h_separation", 8)
 		row.add_theme_constant_override("v_separation", 8)

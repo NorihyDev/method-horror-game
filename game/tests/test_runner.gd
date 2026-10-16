@@ -13,9 +13,11 @@ var _failed := 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var watchdog := get_tree().create_timer(WATCHDOG_SECONDS, true, false, true)
-	watchdog.timeout.connect(func() -> void:
-		printerr("TEST WATCHDOG: tests exceeded %ds" % WATCHDOG_SECONDS)
-		get_tree().quit(2))
+	watchdog.timeout.connect(
+		func() -> void:
+			printerr("TEST WATCHDOG: tests exceeded %ds" % WATCHDOG_SECONDS)
+			get_tree().quit(2)
+	)
 	_run.call_deferred()
 
 

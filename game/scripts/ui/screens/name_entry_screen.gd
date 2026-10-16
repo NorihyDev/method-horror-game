@@ -44,10 +44,12 @@ func build() -> void:
 		b.focus_mode = Control.FOCUS_ALL
 		b.tooltip_text = tr("NAME_COLOR_N") % (i + 1)
 		var idx := i
-		b.pressed.connect(func() -> void:
-			AudioService.play_ui("ui_click")
-			_color_index = idx
-			_paint_colors())
+		b.pressed.connect(
+			func() -> void:
+				AudioService.play_ui("ui_click")
+				_color_index = idx
+				_paint_colors()
+		)
 		_colors.add_child(b)
 	_paint_colors()
 	var privacy := UI.para("NAME_PRIVACY", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT)
@@ -69,7 +71,9 @@ func _paint_colors() -> void:
 		var b: Button = _colors.get_child(i)
 		var c := Saves.AVATAR_COLORS[i]
 		var selected := i == _color_index
-		var sb := ThemeFactory.flat(c, ThemeFactory.TEXT if selected else ThemeFactory.LINE, 3 if selected else 1, 2, 0, 0)
+		var sb := ThemeFactory.flat(
+			c, ThemeFactory.TEXT if selected else ThemeFactory.LINE, 3 if selected else 1, 2, 0, 0
+		)
 		for state in ["normal", "hover", "pressed", "focus"]:
 			b.add_theme_stylebox_override(state, sb)
 		b.text = "•" if selected else ""

@@ -35,8 +35,17 @@ func _process(delta: float) -> void:
 	var graph := match_ctrl.rules.graph
 	for def in graph.defs():
 		var st: Dictionary = match_ctrl.state.objectives.get(def.id, {})
-		lines.append("  %-8s %-9s hint=%d %s" % [def.id, ["LOCKED", "ACTIVE", "COMPLETE"][int(st.get("state", 0))],
-			match_ctrl.hint_tier(def.id), "(opt)" if def.optional else ""])
+		lines.append(
+			(
+				"  %-8s %-9s hint=%d %s"
+				% [
+					def.id,
+					["LOCKED", "ACTIVE", "COMPLETE"][int(st.get("state", 0))],
+					match_ctrl.hint_tier(def.id),
+					"(opt)" if def.optional else ""
+				]
+			)
+		)
 	lines.append("flags: " + ", ".join(PackedStringArray(match_ctrl.state.flags.keys())))
 	lines.append("counters: " + str(match_ctrl.state.counters))
 	var puzzle := match_ctrl.puzzle()

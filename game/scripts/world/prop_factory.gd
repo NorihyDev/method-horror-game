@@ -12,8 +12,16 @@ static func _basis(rot: float) -> Basis:
 
 
 ## Adds a box at a local offset from `pos` rotated by `rot`.
-static func part(b: GeoBuilder, pos: Vector3, rot: float, offset: Vector3, size: Vector3, mat: String,
-		collide: bool = false, shadow: bool = true) -> void:
+static func part(
+	b: GeoBuilder,
+	pos: Vector3,
+	rot: float,
+	offset: Vector3,
+	size: Vector3,
+	mat: String,
+	collide: bool = false,
+	shadow: bool = true
+) -> void:
 	var basis := _basis(rot)
 	b.box(pos + basis * offset, size, mat, false, GeoBuilder.FACE_ALL, basis, shadow)
 	if collide:
@@ -25,8 +33,9 @@ static func solid(b: GeoBuilder, pos: Vector3, rot: float, offset: Vector3, size
 	b.prop_collider(pos + basis * offset, size, basis)
 
 
-static func cylinder(b: GeoBuilder, mat: String, xform: Transform3D, radius: float, height: float,
-		segments: int = 12) -> void:
+static func cylinder(
+	b: GeoBuilder, mat: String, xform: Transform3D, radius: float, height: float, segments: int = 12
+) -> void:
 	var cm := CylinderMesh.new()
 	cm.top_radius = radius
 	cm.bottom_radius = radius
@@ -39,11 +48,16 @@ static func cylinder(b: GeoBuilder, mat: String, xform: Transform3D, radius: flo
 
 # --- Furniture --------------------------------------------------------------------
 
-static func table(b: GeoBuilder, pos: Vector3, rot: float, w: float = 1.6, d: float = 0.9, mat: String = "dark_wood") -> void:
+
+static func table(
+	b: GeoBuilder, pos: Vector3, rot: float, w: float = 1.6, d: float = 0.9, mat: String = "dark_wood"
+) -> void:
 	part(b, pos, rot, Vector3(0, 0.74, 0), Vector3(w, 0.05, d), mat)
 	for sx in [-1, 1]:
 		for sz in [-1, 1]:
-			part(b, pos, rot, Vector3(sx * (w * 0.5 - 0.08), 0.36, sz * (d * 0.5 - 0.08)), Vector3(0.07, 0.72, 0.07), mat)
+			part(
+				b, pos, rot, Vector3(sx * (w * 0.5 - 0.08), 0.36, sz * (d * 0.5 - 0.08)), Vector3(0.07, 0.72, 0.07), mat
+			)
 	solid(b, pos, rot, Vector3(0, 0.4, 0), Vector3(w, 0.8, d))
 
 
@@ -51,7 +65,14 @@ static func chair(b: GeoBuilder, pos: Vector3, rot: float, tipped: bool = false,
 	if tipped:
 		var basis := _basis(rot) * Basis(Vector3.RIGHT, deg_to_rad(-88))
 		b.box(pos + Vector3(0, 0.24, 0), Vector3(0.45, 0.05, 0.45), mat, false, GeoBuilder.FACE_ALL, basis)
-		b.box(pos + _basis(rot) * Vector3(0, 0.03, -0.4), Vector3(0.45, 0.05, 0.5), mat, false, GeoBuilder.FACE_ALL, _basis(rot))
+		b.box(
+			pos + _basis(rot) * Vector3(0, 0.03, -0.4),
+			Vector3(0.45, 0.05, 0.5),
+			mat,
+			false,
+			GeoBuilder.FACE_ALL,
+			_basis(rot)
+		)
 		return
 	part(b, pos, rot, Vector3(0, 0.45, 0), Vector3(0.45, 0.05, 0.45), mat)
 	part(b, pos, rot, Vector3(0, 0.75, -0.2), Vector3(0.45, 0.55, 0.05), mat)
@@ -81,8 +102,16 @@ static func bed(b: GeoBuilder, pos: Vector3, rot: float) -> void:
 	part(b, pos, rot, Vector3(0, 0.7, -1.0), Vector3(1.45, 1.1, 0.08), "dark_wood", true)
 
 
-static func shelf(b: GeoBuilder, pos: Vector3, rot: float, w: float = 1.2, h: float = 1.9, d: float = 0.38,
-		mat: String = "dark_wood", clutter: bool = true) -> void:
+static func shelf(
+	b: GeoBuilder,
+	pos: Vector3,
+	rot: float,
+	w: float = 1.2,
+	h: float = 1.9,
+	d: float = 0.38,
+	mat: String = "dark_wood",
+	clutter: bool = true
+) -> void:
 	part(b, pos, rot, Vector3(-w * 0.5 + 0.02, h * 0.5, 0), Vector3(0.04, h, d), mat)
 	part(b, pos, rot, Vector3(w * 0.5 - 0.02, h * 0.5, 0), Vector3(0.04, h, d), mat)
 	part(b, pos, rot, Vector3(0, h * 0.5, -d * 0.5 + 0.01), Vector3(w, h, 0.02), mat)
@@ -113,13 +142,21 @@ static func _clutter(b: GeoBuilder, pos: Vector3, rot: float, y: float, w: float
 		if rng.randf() < 0.12:
 			lean = Basis(Vector3.BACK, deg_to_rad(rng.randf_range(-20, 20)))
 		var basis := _basis(rot) * lean
-		b.box(pos + _basis(rot) * Vector3(x + bw * 0.5, y + bh * 0.5, 0), Vector3(bw, bh, bd),
-			mats[rng.randi_range(0, mats.size() - 1)], false, GeoBuilder.FACE_ALL, basis, false)
+		b.box(
+			pos + _basis(rot) * Vector3(x + bw * 0.5, y + bh * 0.5, 0),
+			Vector3(bw, bh, bd),
+			mats[rng.randi_range(0, mats.size() - 1)],
+			false,
+			GeoBuilder.FACE_ALL,
+			basis,
+			false
+		)
 		x += bw + rng.randf_range(0.0, 0.015)
 
 
-static func cabinet(b: GeoBuilder, pos: Vector3, rot: float, w: float = 1.0, h: float = 0.9, d: float = 0.5,
-		mat: String = "dark_wood") -> void:
+static func cabinet(
+	b: GeoBuilder, pos: Vector3, rot: float, w: float = 1.0, h: float = 0.9, d: float = 0.5, mat: String = "dark_wood"
+) -> void:
 	part(b, pos, rot, Vector3(0, h * 0.5, 0), Vector3(w, h, d), mat, true)
 	part(b, pos, rot, Vector3(0, h + 0.015, 0.01), Vector3(w + 0.04, 0.03, d + 0.04), mat)
 	part(b, pos, rot, Vector3(-w * 0.25, h * 0.55, d * 0.5 + 0.01), Vector3(w * 0.44, h * 0.8, 0.02), mat)
@@ -186,8 +223,15 @@ static func clock(b: GeoBuilder, pos: Vector3, rot: float) -> void:
 static func picture(b: GeoBuilder, pos: Vector3, rot: float, w: float, h: float, tilt: float = 0.0) -> void:
 	var basis := _basis(rot) * Basis(Vector3.BACK, deg_to_rad(tilt))
 	b.box(pos, Vector3(w, h, 0.04), "dark_wood", false, GeoBuilder.FACE_ALL, basis, false)
-	b.box(pos + _basis(rot) * Vector3(0, 0, 0.022), Vector3(w * 0.82, h * 0.82, 0.005), "fabric",
-		false, GeoBuilder.FACE_ALL, basis, false)
+	b.box(
+		pos + _basis(rot) * Vector3(0, 0, 0.022),
+		Vector3(w * 0.82, h * 0.82, 0.005),
+		"fabric",
+		false,
+		GeoBuilder.FACE_ALL,
+		basis,
+		false
+	)
 
 
 ## Planks nailed across a window opening. `axis_x` = wall runs along X.
@@ -198,13 +242,17 @@ static func boarded_window(b: GeoBuilder, center: Vector3, width: float, height:
 		var y := -height * 0.5 + (i + 0.5) * height / planks
 		var tilt := rng.randf_range(-8, 8)
 		var basis := _basis(rot) * Basis(Vector3.BACK, deg_to_rad(tilt))
-		b.box(center + Vector3(0, y, 0), Vector3(width + 0.3, 0.16, 0.04), "dark_wood", false, GeoBuilder.FACE_ALL, basis)
+		b.box(
+			center + Vector3(0, y, 0), Vector3(width + 0.3, 0.16, 0.04), "dark_wood", false, GeoBuilder.FACE_ALL, basis
+		)
 	# Dark backing so the void outside never reads as a hole.
 	var back := center + _basis(rot) * Vector3(0, 0, -0.12)
 	b.box(back, Vector3(width, height, 0.02) if axis_x else Vector3(0.02, height, width), "exterior", true)
 
 
-static func pipe_run(b: GeoBuilder, from: Vector3, to: Vector3, radius: float = 0.06, mat: String = "metal_dark") -> void:
+static func pipe_run(
+	b: GeoBuilder, from: Vector3, to: Vector3, radius: float = 0.06, mat: String = "metal_dark"
+) -> void:
 	var dir := to - from
 	var length := dir.length()
 	if length < 0.01:
@@ -241,17 +289,40 @@ static func covered_car(b: GeoBuilder, pos: Vector3, rot: float) -> void:
 	part(b, pos, rot, Vector3(0, 0.55, 0), Vector3(1.8, 0.75, 4.3), "fabric", true)
 	part(b, pos, rot, Vector3(0, 1.1, -0.2), Vector3(1.5, 0.5, 2.2), "fabric", true)
 	var basis := _basis(rot) * Basis(Vector3.RIGHT, deg_to_rad(28))
-	b.box(pos + _basis(rot) * Vector3(0, 1.0, 1.15), Vector3(1.55, 0.06, 0.8), "fabric", false, GeoBuilder.FACE_ALL, basis)
+	b.box(
+		pos + _basis(rot) * Vector3(0, 1.0, 1.15), Vector3(1.55, 0.06, 0.8), "fabric", false, GeoBuilder.FACE_ALL, basis
+	)
 	basis = _basis(rot) * Basis(Vector3.RIGHT, deg_to_rad(-35))
-	b.box(pos + _basis(rot) * Vector3(0, 1.0, -1.45), Vector3(1.55, 0.06, 0.6), "fabric", false, GeoBuilder.FACE_ALL, basis)
+	b.box(
+		pos + _basis(rot) * Vector3(0, 1.0, -1.45),
+		Vector3(1.55, 0.06, 0.6),
+		"fabric",
+		false,
+		GeoBuilder.FACE_ALL,
+		basis
+	)
 	for sx in [-1, 1]:
 		var skirt := _basis(rot) * Basis(Vector3.BACK, deg_to_rad(sx * 8))
-		b.box(pos + _basis(rot) * Vector3(sx * 0.92, 0.35, 0), Vector3(0.05, 0.7, 4.2), "fabric", false, GeoBuilder.FACE_ALL, skirt)
+		b.box(
+			pos + _basis(rot) * Vector3(sx * 0.92, 0.35, 0),
+			Vector3(0.05, 0.7, 4.2),
+			"fabric",
+			false,
+			GeoBuilder.FACE_ALL,
+			skirt
+		)
 
 
 static func washer(b: GeoBuilder, pos: Vector3, rot: float) -> void:
 	part(b, pos, rot, Vector3(0, 0.45, 0), Vector3(0.65, 0.9, 0.65), "painted_wood", true)
-	cylinder(b, "metal_dark", Transform3D(_basis(rot) * Basis(Vector3.RIGHT, PI / 2), pos + _basis(rot) * Vector3(0, 0.45, 0.33)), 0.2, 0.02, 16)
+	cylinder(
+		b,
+		"metal_dark",
+		Transform3D(_basis(rot) * Basis(Vector3.RIGHT, PI / 2), pos + _basis(rot) * Vector3(0, 0.45, 0.33)),
+		0.2,
+		0.02,
+		16
+	)
 
 
 static func radiator(b: GeoBuilder, pos: Vector3, rot: float, w: float = 0.9) -> void:
@@ -268,13 +339,45 @@ static func debris(b: GeoBuilder, center: Vector3, radius: float, count: int) ->
 		var basis := Basis(Vector3.UP, rng.randf() * TAU)
 		match kind:
 			0:
-				b.box(p + Vector3(0, 0.003, 0), Vector3(0.21, 0.004, 0.29), "plaster", false, GeoBuilder.FACE_ALL, basis, false)
+				b.box(
+					p + Vector3(0, 0.003, 0),
+					Vector3(0.21, 0.004, 0.29),
+					"plaster",
+					false,
+					GeoBuilder.FACE_ALL,
+					basis,
+					false
+				)
 			1:
-				b.box(p + Vector3(0, 0.02, 0), Vector3(0.15, 0.04, 0.22), "fabric", false, GeoBuilder.FACE_ALL, basis, false)
+				b.box(
+					p + Vector3(0, 0.02, 0),
+					Vector3(0.15, 0.04, 0.22),
+					"fabric",
+					false,
+					GeoBuilder.FACE_ALL,
+					basis,
+					false
+				)
 			2:
-				b.box(p + Vector3(0, 0.015, 0), Vector3(rng.randf_range(0.3, 0.9), 0.03, 0.08), "dark_wood", false, GeoBuilder.FACE_ALL, basis, false)
+				b.box(
+					p + Vector3(0, 0.015, 0),
+					Vector3(rng.randf_range(0.3, 0.9), 0.03, 0.08),
+					"dark_wood",
+					false,
+					GeoBuilder.FACE_ALL,
+					basis,
+					false
+				)
 			_:
-				b.box(p + Vector3(0, 0.03, 0), Vector3(0.06, 0.06, 0.06), "plaster", false, GeoBuilder.FACE_ALL, basis, false)
+				b.box(
+					p + Vector3(0, 0.03, 0),
+					Vector3(0.06, 0.06, 0.06),
+					"plaster",
+					false,
+					GeoBuilder.FACE_ALL,
+					basis,
+					false
+				)
 
 
 static func lamp_fixture(b: GeoBuilder, ceiling_point: Vector3) -> void:

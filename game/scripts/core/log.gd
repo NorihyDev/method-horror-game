@@ -7,7 +7,14 @@ enum Level { DEBUG, INFO, WARN, ERROR }
 
 const REDACTED := "[redacted]"
 const SENSITIVE_KEYS: PackedStringArray = [
-	"token", "ticket", "password", "secret", "session", "authorization", "key", "signature",
+	"token",
+	"ticket",
+	"password",
+	"secret",
+	"session",
+	"authorization",
+	"key",
+	"signature",
 ]
 
 static var min_level: Level = Level.INFO

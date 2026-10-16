@@ -11,7 +11,11 @@ extends Interactable
 func _ready() -> void:
 	prompt_key = "PROMPT_TAKE_FILE"
 	add_mesh(box_mesh(Vector3(0.24, 0.02, 0.32)), MaterialLib.flat(Color(0.42, 0.07, 0.06), 0.8))
-	add_mesh(box_mesh(Vector3(0.22, 0.024, 0.3)), MaterialLib.flat(Color(0.82, 0.78, 0.68), 0.9), Transform3D(Basis.IDENTITY, Vector3(0.006, 0.0, 0.004)))
+	add_mesh(
+		box_mesh(Vector3(0.22, 0.024, 0.3)),
+		MaterialLib.flat(Color(0.82, 0.78, 0.68), 0.9),
+		Transform3D(Basis.IDENTITY, Vector3(0.006, 0.0, 0.004))
+	)
 	var stamp := Label3D.new()
 	stamp.text = "METHOD"
 	stamp.font_size = 40

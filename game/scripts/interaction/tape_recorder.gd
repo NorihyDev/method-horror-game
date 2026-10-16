@@ -17,14 +17,22 @@ var _playing_until := -1.0
 func _ready() -> void:
 	prompt_key = "PROMPT_PLAY_TAPE"
 	add_mesh(box_mesh(Vector3(0.32, 0.09, 0.22)), MaterialLib.flat(Color(0.16, 0.15, 0.14), 0.6, 0.3))
-	add_mesh(box_mesh(Vector3(0.3, 0.005, 0.2)), MaterialLib.flat(Color(0.32, 0.3, 0.27), 0.5, 0.4), Transform3D(Basis.IDENTITY, Vector3(0, 0.047, 0)))
+	add_mesh(
+		box_mesh(Vector3(0.3, 0.005, 0.2)),
+		MaterialLib.flat(Color(0.32, 0.3, 0.27), 0.5, 0.4),
+		Transform3D(Basis.IDENTITY, Vector3(0, 0.047, 0))
+	)
 	var reel := CylinderMesh.new()
 	reel.top_radius = 0.045
 	reel.bottom_radius = 0.045
 	reel.height = 0.012
 	reel.radial_segments = 10
-	_reel_a = add_mesh(reel, MaterialLib.flat(Color(0.7, 0.68, 0.6), 0.5), Transform3D(Basis.IDENTITY, Vector3(-0.07, 0.055, 0)))
-	_reel_b = add_mesh(reel, MaterialLib.flat(Color(0.7, 0.68, 0.6), 0.5), Transform3D(Basis.IDENTITY, Vector3(0.07, 0.055, 0)))
+	_reel_a = add_mesh(
+		reel, MaterialLib.flat(Color(0.7, 0.68, 0.6), 0.5), Transform3D(Basis.IDENTITY, Vector3(-0.07, 0.055, 0))
+	)
+	_reel_b = add_mesh(
+		reel, MaterialLib.flat(Color(0.7, 0.68, 0.6), 0.5), Transform3D(Basis.IDENTITY, Vector3(0.07, 0.055, 0))
+	)
 	add_target(Vector3(0.4, 0.2, 0.3))
 
 
@@ -52,9 +60,11 @@ func _present() -> void:
 	if cam and cam.global_position.distance_to(global_position) > subtitle_radius:
 		return
 	for i in line_keys.size():
-		get_tree().create_timer(i * line_seconds).timeout.connect(func() -> void:
-			if is_inside_tree():
-				AudioService.play_dialogue("tape_voice", speaker_key, line_keys[i], line_seconds - 0.3))
+		get_tree().create_timer(i * line_seconds).timeout.connect(
+			func() -> void:
+				if is_inside_tree():
+					AudioService.play_dialogue("tape_voice", speaker_key, line_keys[i], line_seconds - 0.3)
+		)
 
 
 func authority_interact(_ctx: Dictionary) -> void:

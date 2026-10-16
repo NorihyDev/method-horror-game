@@ -46,10 +46,12 @@ func _init() -> void:
 
 func _ready() -> void:
 	_layout = Settings.get_value("touch_layout")
-	Settings.changed.connect(func(k: String, _v: Variant) -> void:
-		if k.begins_with("touch_") or k == "left_handed" or k == "joystick_mode":
-			_layout = Settings.get_value("touch_layout")
-			queue_redraw())
+	Settings.changed.connect(
+		func(k: String, _v: Variant) -> void:
+			if k.begins_with("touch_") or k == "left_handed" or k == "joystick_mode":
+				_layout = Settings.get_value("touch_layout")
+				queue_redraw()
+	)
 
 
 ## Whether on-screen controls should show on this device.
@@ -212,7 +214,15 @@ func _draw() -> void:
 		var label := tr(str(BUTTONS[b][2]))
 		var fs := int(clampf(br * 0.36, 13, 22))
 		var w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, fs).x
-		draw_string(font, c + Vector2(-w * 0.5, fs * 0.35), label, HORIZONTAL_ALIGNMENT_CENTER, -1, fs, Color(ThemeFactory.TEXT, minf(1.0, alpha + 0.3)))
+		draw_string(
+			font,
+			c + Vector2(-w * 0.5, fs * 0.35),
+			label,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			-1,
+			fs,
+			Color(ThemeFactory.TEXT, minf(1.0, alpha + 0.3))
+		)
 
 
 func _process(_delta: float) -> void:

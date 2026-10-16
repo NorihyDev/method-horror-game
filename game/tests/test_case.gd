@@ -30,8 +30,16 @@ func assert_false(cond: bool, message: String = "expected false") -> void:
 
 
 func assert_eq(actual: Variant, expected: Variant, message: String = "") -> void:
-	if typeof(actual) != typeof(expected) and not ((actual is int or actual is float) and (expected is int or expected is float)):
-		fail("%s expected %s (%s) got %s (%s)" % [message, str(expected), type_string(typeof(expected)), str(actual), type_string(typeof(actual))])
+	if (
+		typeof(actual) != typeof(expected)
+		and not ((actual is int or actual is float) and (expected is int or expected is float))
+	):
+		fail(
+			(
+				"%s expected %s (%s) got %s (%s)"
+				% [message, str(expected), type_string(typeof(expected)), str(actual), type_string(typeof(actual))]
+			)
+		)
 	elif actual != expected:
 		fail("%s expected %s got %s" % [message, str(expected), str(actual)])
 

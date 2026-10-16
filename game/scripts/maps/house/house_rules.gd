@@ -6,9 +6,18 @@ extends MapRules
 ## gear at the workbench) → crank-start the motor (timing) → escape.
 
 const CLUE_IDS: PackedStringArray = ["clue_kitchen", "clue_living", "clue_garage", "clue_basement"]
-const FILE_IDS: PackedStringArray = ["file_kitchen", "file_living", "file_study", "file_garage", "file_utility", "file_basement"]
+const FILE_IDS: PackedStringArray = [
+	"file_kitchen", "file_living", "file_study", "file_garage", "file_utility", "file_basement"
+]
 const BATTERY_SPAWNS: PackedStringArray = [
-	"bt_kitchen", "bt_hall", "bt_living", "bt_garage", "bt_utility", "bt_basement", "bt_foyer", "bt_dining",
+	"bt_kitchen",
+	"bt_hall",
+	"bt_living",
+	"bt_garage",
+	"bt_utility",
+	"bt_basement",
+	"bt_foyer",
+	"bt_dining",
 ]
 const FILES_NEEDED := 3
 
@@ -60,9 +69,21 @@ func _solvability() -> void:
 	solver.add_action("crank", "ground", {}, ["motor_repaired", "power_on"], ["garage_open"])
 	solver.add_action("escape", "ground", {}, ["garage_open"], ["escaped"])
 
-	for sp in ["sp_kitchen_table", "sp_kitchen_counter", "sp_kitchen_drawer", "sp_dining_table", "sp_dining_cabinet",
-			"sp_living_shelf", "sp_living_sofa", "sp_hall_table", "sp_foyer_stand", "sp_garage_shelf",
-			"sp_garage_crate", "sp_utility_shelf", "sp_utility_washer"]:
+	for sp in [
+		"sp_kitchen_table",
+		"sp_kitchen_counter",
+		"sp_kitchen_drawer",
+		"sp_dining_table",
+		"sp_dining_cabinet",
+		"sp_living_shelf",
+		"sp_living_sofa",
+		"sp_hall_table",
+		"sp_foyer_stand",
+		"sp_garage_shelf",
+		"sp_garage_crate",
+		"sp_utility_shelf",
+		"sp_utility_washer"
+	]:
 		add_spawn(sp, "ground")
 	for sp in ["sp_study_desk", "sp_study_shelf"]:
 		add_spawn(sp, "study")
@@ -71,13 +92,36 @@ func _solvability() -> void:
 	add_spawn("sp_cage_shelf", "cage")
 
 	# First candidate of each slot = canonical layout used for validation.
-	add_slot("study_key", "study_key", ["sp_kitchen_drawer", "sp_living_shelf", "sp_dining_cabinet", "sp_foyer_stand",
-		"sp_garage_shelf", "sp_hall_table"])
-	add_slot("fuse_1", "fuse", ["sp_dining_table", "sp_living_sofa", "sp_kitchen_counter", "sp_hall_table", "sp_utility_washer"])
-	add_slot("fuse_2", "fuse", ["sp_study_desk", "sp_study_shelf", "sp_garage_crate", "sp_kitchen_table", "sp_living_shelf"])
-	add_slot("fuse_3", "fuse", ["sp_garage_shelf", "sp_utility_shelf", "sp_foyer_stand", "sp_dining_cabinet", "sp_kitchen_drawer"])
-	add_slot("drive_belt", "drive_belt", ["sp_base_shelf_a", "sp_study_shelf", "sp_base_crate", "sp_utility_shelf",
-		"sp_base_boiler", "sp_garage_crate"])
+	add_slot(
+		"study_key",
+		"study_key",
+		[
+			"sp_kitchen_drawer",
+			"sp_living_shelf",
+			"sp_dining_cabinet",
+			"sp_foyer_stand",
+			"sp_garage_shelf",
+			"sp_hall_table"
+		]
+	)
+	add_slot(
+		"fuse_1",
+		"fuse",
+		["sp_dining_table", "sp_living_sofa", "sp_kitchen_counter", "sp_hall_table", "sp_utility_washer"]
+	)
+	add_slot(
+		"fuse_2", "fuse", ["sp_study_desk", "sp_study_shelf", "sp_garage_crate", "sp_kitchen_table", "sp_living_shelf"]
+	)
+	add_slot(
+		"fuse_3",
+		"fuse",
+		["sp_garage_shelf", "sp_utility_shelf", "sp_foyer_stand", "sp_dining_cabinet", "sp_kitchen_drawer"]
+	)
+	add_slot(
+		"drive_belt",
+		"drive_belt",
+		["sp_base_shelf_a", "sp_study_shelf", "sp_base_crate", "sp_utility_shelf", "sp_base_boiler", "sp_garage_crate"]
+	)
 	add_slot("drive_gear", "drive_gear", ["sp_cage_shelf"])
 
 

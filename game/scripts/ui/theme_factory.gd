@@ -36,9 +36,16 @@ static func theme() -> Theme:
 static func title_font() -> Font:
 	if _title_font == null:
 		var sys := SystemFont.new()
-		sys.font_names = PackedStringArray([
-			"Georgia", "Times New Roman", "Noto Serif", "DejaVu Serif", "Liberation Serif", "serif",
-		])
+		sys.font_names = PackedStringArray(
+			[
+				"Georgia",
+				"Times New Roman",
+				"Noto Serif",
+				"DejaVu Serif",
+				"Liberation Serif",
+				"serif",
+			]
+		)
 		sys.font_weight = 400
 		var variation := FontVariation.new()
 		variation.base_font = sys
@@ -50,13 +57,21 @@ static func title_font() -> Font:
 static func mono_font() -> Font:
 	if _mono_font == null:
 		var sys := SystemFont.new()
-		sys.font_names = PackedStringArray(["Consolas", "Courier New", "Noto Sans Mono", "DejaVu Sans Mono", "monospace"])
+		sys.font_names = PackedStringArray(
+			["Consolas", "Courier New", "Noto Sans Mono", "DejaVu Sans Mono", "monospace"]
+		)
 		_mono_font = sys
 	return _mono_font
 
 
-static func flat(bg: Color, border: Color = Color.TRANSPARENT, border_width: int = 0, radius: int = 2,
-		pad_h: int = 18, pad_v: int = 10) -> StyleBoxFlat:
+static func flat(
+	bg: Color,
+	border: Color = Color.TRANSPARENT,
+	border_width: int = 0,
+	radius: int = 2,
+	pad_h: int = 18,
+	pad_v: int = 10
+) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.border_color = border

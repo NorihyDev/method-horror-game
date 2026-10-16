@@ -53,28 +53,60 @@ func _build_visual() -> void:
 	if style == "cage":
 		var steel := MaterialLib.surface("metal_dark")
 		for i in 7:
-			add_mesh(box_mesh(Vector3(0.025, height, 0.025)), steel,
-				Transform3D(Basis.IDENTITY, Vector3(0.05 + i * (width - 0.1) / 6.0, height * 0.5, 0)), panel)
+			add_mesh(
+				box_mesh(Vector3(0.025, height, 0.025)),
+				steel,
+				Transform3D(Basis.IDENTITY, Vector3(0.05 + i * (width - 0.1) / 6.0, height * 0.5, 0)),
+				panel
+			)
 		for y in [0.1, height * 0.5, height - 0.08]:
-			add_mesh(box_mesh(Vector3(width, 0.04, 0.03)), steel, Transform3D(Basis.IDENTITY, Vector3(width * 0.5, y, 0)), panel)
+			add_mesh(
+				box_mesh(Vector3(width, 0.04, 0.03)),
+				steel,
+				Transform3D(Basis.IDENTITY, Vector3(width * 0.5, y, 0)),
+				panel
+			)
 		return
-	add_mesh(box_mesh(Vector3(width, height, thickness)), mat,
-		Transform3D(Basis.IDENTITY, Vector3(width * 0.5, height * 0.5, 0)), panel)
+	add_mesh(
+		box_mesh(Vector3(width, height, thickness)),
+		mat,
+		Transform3D(Basis.IDENTITY, Vector3(width * 0.5, height * 0.5, 0)),
+		panel
+	)
 	# Raised panels for silhouette and handle.
 	for y in [height * 0.3, height * 0.72]:
-		add_mesh(box_mesh(Vector3(width * 0.7, height * 0.32, thickness + 0.02)), mat,
-			Transform3D(Basis.IDENTITY, Vector3(width * 0.5, y, 0)), panel)
+		add_mesh(
+			box_mesh(Vector3(width * 0.7, height * 0.32, thickness + 0.02)),
+			mat,
+			Transform3D(Basis.IDENTITY, Vector3(width * 0.5, y, 0)),
+			panel
+		)
 	var brass := MaterialLib.flat(Color(0.55, 0.45, 0.25), 0.35, 0.8)
 	for side in [-1, 1]:
-		add_mesh(box_mesh(Vector3(0.12, 0.03, 0.05)), brass,
-			Transform3D(Basis.IDENTITY, Vector3(width - 0.12, 1.0, side * (thickness * 0.5 + 0.03))), panel)
+		add_mesh(
+			box_mesh(Vector3(0.12, 0.03, 0.05)),
+			brass,
+			Transform3D(Basis.IDENTITY, Vector3(width - 0.12, 1.0, side * (thickness * 0.5 + 0.03))),
+			panel
+		)
 	if lock == "chained":
 		var chain := MaterialLib.flat(Color(0.3, 0.3, 0.32), 0.4, 0.9)
 		for i in 5:
-			add_mesh(box_mesh(Vector3(0.05, 0.05, 0.02)), chain,
-				Transform3D(Basis(Vector3.BACK, 0.4 * (1 if i % 2 == 0 else -1)), Vector3(width - 0.3 + i * 0.12, 1.05, -thickness)), panel)
-		add_mesh(box_mesh(Vector3(0.1, 0.14, 0.05)), chain,
-			Transform3D(Basis.IDENTITY, Vector3(width - 0.05, 0.95, -thickness - 0.03)), panel)
+			add_mesh(
+				box_mesh(Vector3(0.05, 0.05, 0.02)),
+				chain,
+				Transform3D(
+					Basis(Vector3.BACK, 0.4 * (1 if i % 2 == 0 else -1)),
+					Vector3(width - 0.3 + i * 0.12, 1.05, -thickness)
+				),
+				panel
+			)
+		add_mesh(
+			box_mesh(Vector3(0.1, 0.14, 0.05)),
+			chain,
+			Transform3D(Basis.IDENTITY, Vector3(width - 0.05, 0.95, -thickness - 0.03)),
+			panel
+		)
 
 
 func initial_state() -> Dictionary:
@@ -86,7 +118,13 @@ func apply_state(new_state: Dictionary) -> void:
 	super.apply_state(new_state)
 	var target := (open_angle * swing) if bool(new_state.get("open", false)) else 0.0
 	_update_layers(bool(new_state.get("locked", false)))
-	if was_locked and not bool(new_state.get("locked", false)) and is_inside_tree() and match_ctrl and match_ctrl.is_authority:
+	if (
+		was_locked
+		and not bool(new_state.get("locked", false))
+		and is_inside_tree()
+		and match_ctrl
+		and match_ctrl.is_authority
+	):
 		var map := _map()
 		if map:
 			map.rebake_navigation()

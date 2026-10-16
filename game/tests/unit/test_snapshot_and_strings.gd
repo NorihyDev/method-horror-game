@@ -39,8 +39,15 @@ func test_client_snapshot_hides_answers() -> void:
 
 func test_malformed_snapshot_is_sanitized_or_rejected() -> void:
 	assert_eq(MatchState.from_snapshot({"v": 999}), null, "unknown version rejected")
-	var weird := {"v": 1, "player_count": 50, "phase": 77, "elapsed": -5, "flags": "nope",
-		"players": {"0": {}, "-3": {}, "2": {"pos": ["a"], "inventory": "x"}}, "objectives": {"o": {"state": 9}}}
+	var weird := {
+		"v": 1,
+		"player_count": 50,
+		"phase": 77,
+		"elapsed": -5,
+		"flags": "nope",
+		"players": {"0": {}, "-3": {}, "2": {"pos": ["a"], "inventory": "x"}},
+		"objectives": {"o": {"state": 9}}
+	}
 	var s := MatchState.from_snapshot(weird)
 	assert_true(s != null)
 	assert_eq(s.player_count, 6)
@@ -62,7 +69,21 @@ func test_string_tables_cover_code_keys() -> void:
 	for key in fr:
 		assert_true(en.has(key), "en missing " + key)
 	var referenced := _referenced_keys()
-	var ignore := ["ACTIVE", "COMPLETE", "LOCKED", "METHOD", "III", "ORDER", "SFX", "ACTION_", "FILE_", "OPT_", "SET_", "SHOP_SLOT_", "CLR"]
+	var ignore := [
+		"ACTIVE",
+		"COMPLETE",
+		"LOCKED",
+		"METHOD",
+		"III",
+		"ORDER",
+		"SFX",
+		"ACTION_",
+		"FILE_",
+		"OPT_",
+		"SET_",
+		"SHOP_SLOT_",
+		"CLR"
+	]
 	for key in referenced:
 		if ignore.has(key):
 			continue
@@ -75,7 +96,7 @@ func _table(locale: String) -> Dictionary:
 
 func _referenced_keys() -> Dictionary:
 	var out := {}
-	var re := RegEx.create_from_string("\"([A-Z][A-Z0-9_]{2,})\"")
+	var re := RegEx.create_from_string('"([A-Z][A-Z0-9_]{2,})"')
 	var stack: Array[String] = ["res://scripts"]
 	while not stack.is_empty():
 		var d: String = stack.pop_back()

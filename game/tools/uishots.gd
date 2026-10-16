@@ -2,8 +2,8 @@ extends Node
 ## Development tool: walks the UI and captures screenshots of each screen.
 ## Requires a display/GPU. Usage: godot --path game -- --uishots=<dir>
 
-var _out := ""
 var app: App
+var _out := ""
 
 
 func _ready() -> void:

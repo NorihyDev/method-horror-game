@@ -8,7 +8,16 @@ extends Node3D
 signal foot_planted
 
 const ANIMS: PackedStringArray = [
-	"idle", "walk", "run", "search", "alert", "windup", "strike", "recover", "hit", "open_door",
+	"idle",
+	"walk",
+	"run",
+	"search",
+	"alert",
+	"windup",
+	"strike",
+	"recover",
+	"hit",
+	"open_door",
 ]
 
 var anim: AnimationPlayer
@@ -66,6 +75,7 @@ func _on_foot() -> void:
 
 # --- Body ----------------------------------------------------------------------------
 
+
 func _joint(joint_name: String, parent: Node3D, pos: Vector3) -> Node3D:
 	var j := Node3D.new()
 	j.name = joint_name
@@ -95,15 +105,15 @@ func _limb(parent: Node3D, size: Vector3, offset: Vector3, mat: Material, capsul
 
 
 func _build_body() -> void:
-	var skin := MaterialLib.flat(Color(0.55, 0.52, 0.47), 0.85)
+	var skin := MaterialLib.flat(Color(0.36, 0.34, 0.31), 0.85)
 	var cloth := MaterialLib.flat(Color(0.07, 0.07, 0.075), 0.95)
 	var coat := MaterialLib.flat(Color(0.11, 0.1, 0.09), 0.95)
-	var bandage := MaterialLib.flat(Color(0.6, 0.56, 0.48), 0.95)
+	var bandage := MaterialLib.flat(Color(0.34, 0.31, 0.26), 0.95)
 	var brass := MaterialLib.flat(Color(0.45, 0.36, 0.18), 0.35, 0.8)
 	lens_mat = StandardMaterial3D.new()
 	lens_mat.albedo_color = Color(0.5, 0.05, 0.03)
 	lens_mat.emission_enabled = true
-	lens_mat.emission = Color(0.9, 0.12, 0.06)
+	lens_mat.emission = Color(0.75, 0.08, 0.04)
 	lens_mat.emission_energy_multiplier = 0.6
 	lens_mat.roughness = 0.1
 
@@ -135,8 +145,8 @@ func _build_body() -> void:
 	for lens_pos in [Vector3(-0.035, 0.17, 0.12), Vector3(0.04, 0.155, 0.12), Vector3(0.0, 0.11, 0.12)]:
 		var lens := MeshInstance3D.new()
 		var sphere := SphereMesh.new()
-		sphere.radius = 0.022
-		sphere.height = 0.044
+		sphere.radius = 0.017
+		sphere.height = 0.034
 		sphere.radial_segments = 8
 		sphere.rings = 4
 		lens.mesh = sphere
@@ -173,6 +183,7 @@ func _build_body() -> void:
 
 
 # --- Animation authoring -----------------------------------------------------------------
+
 
 func _track(a: Animation, joint: String, keys: Array, interp: int = Animation.INTERPOLATION_CUBIC) -> void:
 	var t := a.add_track(Animation.TYPE_VALUE)
@@ -215,12 +226,24 @@ func _idle() -> Animation:
 	_track(a, "Spine", [[0, Vector3(14, 0, 0)], [1.6, Vector3(17, 0, 1)], [3.2, Vector3(14, 0, 0)]])
 	_track(a, "Chest", [[0, Vector3(8, 0, 0)], [1.6, Vector3(11, 0, 0)], [3.2, Vector3(8, 0, 0)]])
 	_track(a, "Neck", [[0, Vector3(10, 0, 0)], [2.2, Vector3(8, 0, 0)], [3.2, Vector3(10, 0, 0)]])
-	_track(a, "Head", [[0, Vector3(-6, 0, 8)], [1.4, Vector3(-4, 12, 14)], [2.4, Vector3(-8, -6, 4)], [3.2, Vector3(-6, 0, 8)]])
+	_track(
+		a,
+		"Head",
+		[[0, Vector3(-6, 0, 8)], [1.4, Vector3(-4, 12, 14)], [2.4, Vector3(-8, -6, 4)], [3.2, Vector3(-6, 0, 8)]]
+	)
 	for s in ["L", "R"]:
 		var sign := -1.0 if s == "L" else 1.0
-		_track(a, "Shoulder" + s, [[0, Vector3(4, 0, sign * 6)], [1.6, Vector3(8, 0, sign * 8)], [3.2, Vector3(4, 0, sign * 6)]])
+		_track(
+			a,
+			"Shoulder" + s,
+			[[0, Vector3(4, 0, sign * 6)], [1.6, Vector3(8, 0, sign * 8)], [3.2, Vector3(4, 0, sign * 6)]]
+		)
 		_track(a, "Elbow" + s, [[0, Vector3(-12, 0, 0)], [1.6, Vector3(-16, 0, 0)], [3.2, Vector3(-12, 0, 0)]])
-		_track(a, "Hand" + s, [[0, Vector3(0, 0, 0)], [0.8, Vector3(-18, 0, 0)], [0.9, Vector3(5, 0, 0)], [3.2, Vector3(0, 0, 0)]])
+		_track(
+			a,
+			"Hand" + s,
+			[[0, Vector3(0, 0, 0)], [0.8, Vector3(-18, 0, 0)], [0.9, Vector3(5, 0, 0)], [3.2, Vector3(0, 0, 0)]]
+		)
 		_track(a, "Hip" + s, [[0, Vector3(-6, 0, 0)], [3.2, Vector3(-6, 0, 0)]])
 		_track(a, "Knee" + s, [[0, Vector3(10, 0, 0)], [3.2, Vector3(10, 0, 0)]])
 		_track(a, "Foot" + s, [[0, Vector3(-4, 0, 0)], [3.2, Vector3(-4, 0, 0)]])
@@ -233,12 +256,37 @@ func _gait(length: float, swing: float, arm: float, lean: float, bounce: float, 
 	var a := _anim(length, true)
 	var h := length * 0.5
 	var q := length * 0.25
-	_track(a, "Spine", [[0, Vector3(16 + lean * 0.5, 4, 0)], [h, Vector3(16 + lean * 0.5, -4, 0)], [length, Vector3(16 + lean * 0.5, 4, 0)]])
-	_track(a, "Chest", [[0, Vector3(6 + lean * 0.5, -6, 0)], [h, Vector3(6 + lean * 0.5, 6, 0)], [length, Vector3(6 + lean * 0.5, -6, 0)]])
+	_track(
+		a,
+		"Spine",
+		[
+			[0, Vector3(16 + lean * 0.5, 4, 0)],
+			[h, Vector3(16 + lean * 0.5, -4, 0)],
+			[length, Vector3(16 + lean * 0.5, 4, 0)]
+		]
+	)
+	_track(
+		a,
+		"Chest",
+		[
+			[0, Vector3(6 + lean * 0.5, -6, 0)],
+			[h, Vector3(6 + lean * 0.5, 6, 0)],
+			[length, Vector3(6 + lean * 0.5, -6, 0)]
+		]
+	)
 	_track(a, "Neck", [[0, Vector3(-lean * 0.4, 0, 0)], [length, Vector3(-lean * 0.4, 0, 0)]])
 	_track(a, "Head", [[0, Vector3(-8, 4, 3)], [h, Vector3(-6, -4, -3)], [length, Vector3(-8, 4, 3)]])
-	_pos_track(a, "Hips", [[0, Vector3(0, 1.06, 0)], [q, Vector3(0, 1.06 - bounce, 0)], [h, Vector3(0, 1.06, 0)],
-		[h + q, Vector3(0, 1.06 - bounce, 0)], [length, Vector3(0, 1.06, 0)]])
+	_pos_track(
+		a,
+		"Hips",
+		[
+			[0, Vector3(0, 1.06, 0)],
+			[q, Vector3(0, 1.06 - bounce, 0)],
+			[h, Vector3(0, 1.06, 0)],
+			[h + q, Vector3(0, 1.06 - bounce, 0)],
+			[length, Vector3(0, 1.06, 0)]
+		]
+	)
 	for s in ["L", "R"]:
 		var phase := 0.0 if s == "L" else h
 		var sign := -1.0 if s == "L" else 1.0
@@ -266,12 +314,26 @@ func _gait(length: float, swing: float, arm: float, lean: float, bounce: float, 
 		var arm_phase := h - phase
 		if reaching:
 			# Arms stretched forward while running: a key part of its silhouette.
-			_track(a, "Shoulder" + s, [[0, Vector3(-62 + sign * 6, 0, sign * 10)], [h, Vector3(-58 - sign * 6, 0, sign * 10)], [length, Vector3(-62 + sign * 6, 0, sign * 10)]])
+			_track(
+				a,
+				"Shoulder" + s,
+				[
+					[0, Vector3(-62 + sign * 6, 0, sign * 10)],
+					[h, Vector3(-58 - sign * 6, 0, sign * 10)],
+					[length, Vector3(-62 + sign * 6, 0, sign * 10)]
+				]
+			)
 			_track(a, "Elbow" + s, [[0, Vector3(-18, 0, 0)], [h, Vector3(-28, 0, 0)], [length, Vector3(-18, 0, 0)]])
 		else:
-			_track(a, "Shoulder" + s, [[0, Vector3(arm * (1.0 if arm_phase == 0.0 else -1.0), 0, sign * 6)],
-				[h, Vector3(arm * (-1.0 if arm_phase == 0.0 else 1.0), 0, sign * 6)],
-				[length, Vector3(arm * (1.0 if arm_phase == 0.0 else -1.0), 0, sign * 6)]])
+			_track(
+				a,
+				"Shoulder" + s,
+				[
+					[0, Vector3(arm * (1.0 if arm_phase == 0.0 else -1.0), 0, sign * 6)],
+					[h, Vector3(arm * (-1.0 if arm_phase == 0.0 else 1.0), 0, sign * 6)],
+					[length, Vector3(arm * (1.0 if arm_phase == 0.0 else -1.0), 0, sign * 6)]
+				]
+			)
 			_track(a, "Elbow" + s, [[0, Vector3(-14, 0, 0)], [length, Vector3(-14, 0, 0)]])
 	_method_track(a, [0.0, h])
 	return a
@@ -288,9 +350,31 @@ static func _close_loop(keys: Array, length: float) -> void:
 func _search() -> Animation:
 	var a := _anim(3.0, true)
 	_track(a, "Spine", [[0, Vector3(12, 0, 0)], [3.0, Vector3(12, 0, 0)]])
-	_track(a, "Chest", [[0, Vector3(4, 0, 0)], [0.8, Vector3(4, 25, 0)], [1.6, Vector3(4, 25, 0)], [2.2, Vector3(4, -25, 0)], [3.0, Vector3(4, 0, 0)]])
-	_track(a, "Head", [[0, Vector3(-4, 0, 0)], [0.5, Vector3(-4, 35, 10)], [0.6, Vector3(-4, 40, 12)], [1.7, Vector3(0, 40, 5)],
-		[1.9, Vector3(-4, -45, -10)], [2.6, Vector3(-2, -40, -8)], [3.0, Vector3(-4, 0, 0)]], Animation.INTERPOLATION_LINEAR)
+	_track(
+		a,
+		"Chest",
+		[
+			[0, Vector3(4, 0, 0)],
+			[0.8, Vector3(4, 25, 0)],
+			[1.6, Vector3(4, 25, 0)],
+			[2.2, Vector3(4, -25, 0)],
+			[3.0, Vector3(4, 0, 0)]
+		]
+	)
+	_track(
+		a,
+		"Head",
+		[
+			[0, Vector3(-4, 0, 0)],
+			[0.5, Vector3(-4, 35, 10)],
+			[0.6, Vector3(-4, 40, 12)],
+			[1.7, Vector3(0, 40, 5)],
+			[1.9, Vector3(-4, -45, -10)],
+			[2.6, Vector3(-2, -40, -8)],
+			[3.0, Vector3(-4, 0, 0)]
+		],
+		Animation.INTERPOLATION_LINEAR
+	)
 	for s in ["L", "R"]:
 		var sign := -1.0 if s == "L" else 1.0
 		_track(a, "Shoulder" + s, [[0, Vector3(-10, 0, sign * 12)], [3.0, Vector3(-10, 0, sign * 12)]])
@@ -303,11 +387,25 @@ func _search() -> Animation:
 func _alert() -> Animation:
 	var a := _anim(0.7, false)
 	_track(a, "Spine", [[0, Vector3(14, 0, 0)], [0.25, Vector3(2, 0, 0)], [0.7, Vector3(6, 0, 0)]])
-	_track(a, "Neck", [[0, Vector3(10, 0, 0)], [0.15, Vector3(-10, 0, 0)], [0.7, Vector3(-4, 0, 0)]], Animation.INTERPOLATION_LINEAR)
-	_track(a, "Head", [[0, Vector3(0, 0, 0)], [0.12, Vector3(-15, 0, 25)], [0.7, Vector3(-8, 0, 15)]], Animation.INTERPOLATION_LINEAR)
+	_track(
+		a,
+		"Neck",
+		[[0, Vector3(10, 0, 0)], [0.15, Vector3(-10, 0, 0)], [0.7, Vector3(-4, 0, 0)]],
+		Animation.INTERPOLATION_LINEAR
+	)
+	_track(
+		a,
+		"Head",
+		[[0, Vector3(0, 0, 0)], [0.12, Vector3(-15, 0, 25)], [0.7, Vector3(-8, 0, 15)]],
+		Animation.INTERPOLATION_LINEAR
+	)
 	for s in ["L", "R"]:
 		var sign := -1.0 if s == "L" else 1.0
-		_track(a, "Shoulder" + s, [[0, Vector3(0, 0, sign * 6)], [0.3, Vector3(-25, 0, sign * 30)], [0.7, Vector3(-20, 0, sign * 20)]])
+		_track(
+			a,
+			"Shoulder" + s,
+			[[0, Vector3(0, 0, sign * 6)], [0.3, Vector3(-25, 0, sign * 30)], [0.7, Vector3(-20, 0, sign * 20)]]
+		)
 		_track(a, "Elbow" + s, [[0, Vector3(-12, 0, 0)], [0.3, Vector3(-40, 0, 0)], [0.7, Vector3(-30, 0, 0)]])
 	return a
 
@@ -332,7 +430,12 @@ func _strike() -> Animation:
 	_track(a, "Head", [[0, Vector3(-30, 0, 10)], [0.28, Vector3(10, 0, 0)]], Animation.INTERPOLATION_LINEAR)
 	for s in ["L", "R"]:
 		var sign := -1.0 if s == "L" else 1.0
-		_track(a, "Shoulder" + s, [[0, Vector3(-165, 0, sign * 25)], [0.28, Vector3(-40, 0, sign * 8)]], Animation.INTERPOLATION_LINEAR)
+		_track(
+			a,
+			"Shoulder" + s,
+			[[0, Vector3(-165, 0, sign * 25)], [0.28, Vector3(-40, 0, sign * 8)]],
+			Animation.INTERPOLATION_LINEAR
+		)
 		_track(a, "Elbow" + s, [[0, Vector3(-45, 0, 0)], [0.28, Vector3(-5, 0, 0)]], Animation.INTERPOLATION_LINEAR)
 	return a
 

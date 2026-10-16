@@ -22,12 +22,27 @@ func add_zone(id: String, gate_items: PackedStringArray = [], gate_flags: Packed
 	zones[id] = {"items": gate_items, "flags": gate_flags}
 
 
-func add_action(id: String, zone: String, needs_items: Dictionary, needs_flags: PackedStringArray,
-		gives_flags: PackedStringArray, gives_items: Dictionary = {}) -> void:
-	actions.append({
-		"id": id, "zone": zone, "needs_items": needs_items, "needs_flags": needs_flags,
-		"gives_flags": gives_flags, "gives_items": gives_items,
-	})
+func add_action(
+	id: String,
+	zone: String,
+	needs_items: Dictionary,
+	needs_flags: PackedStringArray,
+	gives_flags: PackedStringArray,
+	gives_items: Dictionary = {}
+) -> void:
+	(
+		actions
+		. append(
+			{
+				"id": id,
+				"zone": zone,
+				"needs_items": needs_items,
+				"needs_flags": needs_flags,
+				"gives_flags": gives_flags,
+				"gives_items": gives_items,
+			}
+		)
+	)
 
 
 ## `placements` is an Array of {"item": id, "zone": zone_id}.

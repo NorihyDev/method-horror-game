@@ -14,8 +14,12 @@ func build_level() -> void:
 	add_room("b", AABB(Vector3(0, 0, 6), Vector3(6, H, 6)), "wood")
 	add_room("c", AABB(Vector3(0, 0, 12), Vector3(6, H, 6)), "concrete")
 	add_room("d", AABB(Vector3(0, 0, 18), Vector3(6, H, 6)), "concrete")
-	for r in [["a", 0.0, "concrete_floor", "blocks"], ["b", 6.0, "wood_floor", "wallpaper"],
-			["c", 12.0, "concrete_floor", "plaster"], ["d", 18.0, "concrete_floor", "blocks"]]:
+	for r in [
+		["a", 0.0, "concrete_floor", "blocks"],
+		["b", 6.0, "wood_floor", "wallpaper"],
+		["c", 12.0, "concrete_floor", "plaster"],
+		["d", 18.0, "concrete_floor", "blocks"]
+	]:
 		b.room = r[0]
 		var z0: float = r[1]
 		b.floor_rect(0, z0, 6, z0 + 6, 0.0, r[2])
@@ -114,7 +118,9 @@ func _entities() -> void:
 	locker.entity_id = "t_locker"
 	locker.hide_flag = "t_hidden"
 	add_entity(locker, Transform3D(Basis(Vector3.UP, -PI / 2), Vector3(5.55, 0, 14.4)))
-	var clue_positions := [Vector3(0.09, 1.5, 13.4), Vector3(0.09, 1.5, 14.6), Vector3(0.09, 1.5, 15.8), Vector3(0.09, 1.5, 17.0)]
+	var clue_positions := [
+		Vector3(0.09, 1.5, 13.4), Vector3(0.09, 1.5, 14.6), Vector3(0.09, 1.5, 15.8), Vector3(0.09, 1.5, 17.0)
+	]
 	for i in 4:
 		var c := ClueMark.new()
 		c.entity_id = "t_clue_%d" % i
@@ -139,5 +145,7 @@ func apply_variant(mc: MatchController, variant: Dictionary) -> void:
 		place_pickup_state(mc, "pickup_" + str(slot), mc.rules.item_for_slot(slot), variant["placements"][slot])
 	var puzzle: Dictionary = variant.get("puzzle", {})
 	for i in 4:
-		seed_state(mc, "t_clue_%d" % i, {"digit": int(puzzle["clue_digits"][i]), "symbol": int(puzzle["clue_symbols"][i])})
+		seed_state(
+			mc, "t_clue_%d" % i, {"digit": int(puzzle["clue_digits"][i]), "symbol": int(puzzle["clue_symbols"][i])}
+		)
 	seed_state(mc, "t_keypad", {"solved": false, "order": puzzle.get("keypad_order", [])})

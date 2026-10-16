@@ -66,8 +66,13 @@ static func surface(mat_name: String) -> Material:
 
 
 ## Untextured material for small props, emissive parts and interactables.
-static func flat(color: Color, roughness: float = 0.8, metallic: float = 0.0,
-		emission: Color = Color.BLACK, emission_energy: float = 0.0) -> StandardMaterial3D:
+static func flat(
+	color: Color,
+	roughness: float = 0.8,
+	metallic: float = 0.0,
+	emission: Color = Color.BLACK,
+	emission_energy: float = 0.0
+) -> StandardMaterial3D:
 	var key := "%s|%.2f|%.2f|%s|%.2f" % [color.to_html(), roughness, metallic, emission.to_html(), emission_energy]
 	if _flat_cache.has(key):
 		return _flat_cache[key]

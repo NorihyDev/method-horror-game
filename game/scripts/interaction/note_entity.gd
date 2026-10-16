@@ -18,13 +18,25 @@ func _ready() -> void:
 		"clipboard":
 			add_mesh(box_mesh(Vector3(0.24, 0.012, 0.32)), MaterialLib.surface("dark_wood"))
 			add_mesh(box_mesh(Vector3(0.21, 0.004, 0.28)), paper, Transform3D(Basis.IDENTITY, Vector3(0, 0.008, 0.01)))
-			add_mesh(box_mesh(Vector3(0.08, 0.012, 0.025)), MaterialLib.surface("metal"), Transform3D(Basis.IDENTITY, Vector3(0, 0.012, -0.14)))
+			add_mesh(
+				box_mesh(Vector3(0.08, 0.012, 0.025)),
+				MaterialLib.surface("metal"),
+				Transform3D(Basis.IDENTITY, Vector3(0, 0.012, -0.14))
+			)
 		"wall":
 			add_mesh(box_mesh(Vector3(0.21, 0.29, 0.004)), paper)
-			add_mesh(box_mesh(Vector3(0.02, 0.02, 0.01)), MaterialLib.flat(Color(0.6, 0.1, 0.1), 0.5), Transform3D(Basis.IDENTITY, Vector3(0, 0.12, 0.004)))
+			add_mesh(
+				box_mesh(Vector3(0.02, 0.02, 0.01)),
+				MaterialLib.flat(Color(0.6, 0.1, 0.1), 0.5),
+				Transform3D(Basis.IDENTITY, Vector3(0, 0.12, 0.004))
+			)
 		_:
 			add_mesh(box_mesh(Vector3(0.21, 0.004, 0.29)), paper)
-			add_mesh(box_mesh(Vector3(0.2, 0.004, 0.27)), paper, Transform3D(Basis(Vector3.UP, 0.25), Vector3(0.03, 0.004, 0.02)))
+			add_mesh(
+				box_mesh(Vector3(0.2, 0.004, 0.27)),
+				paper,
+				Transform3D(Basis(Vector3.UP, 0.25), Vector3(0.03, 0.004, 0.02))
+			)
 	var size := Vector3(0.3, 0.38, 0.12) if style == "wall" else Vector3(0.35, 0.1, 0.4)
 	add_target(size)
 

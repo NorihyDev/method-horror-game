@@ -25,8 +25,11 @@ func build() -> void:
 	body.add_child(UI.para("CREDITS_ASSETS", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM))
 	body.add_child(UI.spacer(8))
 	body.add_child(UI.caption("CREDITS_ENGINE"))
-	var engine := UI.para("Godot Engine %s — MIT License. %s" % [AppInfo.ENGINE_VERSION, str(Engine.get_license_text()).substr(0, 1200)],
-		ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT)
+	var engine := UI.para(
+		"Godot Engine %s — MIT License. %s" % [AppInfo.ENGINE_VERSION, str(Engine.get_license_text()).substr(0, 1200)],
+		ThemeFactory.FONT_SMALL,
+		ThemeFactory.TEXT_FAINT
+	)
 	engine.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	body.add_child(engine)
 	body.add_child(UI.caption("CREDITS_THIRD_PARTY"))

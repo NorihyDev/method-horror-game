@@ -50,12 +50,18 @@ func _ready() -> void:
 	_door = Node3D.new()
 	_door.position = Vector3(-w * 0.5, 0, d * 0.5)
 	add_child(_door)
-	add_mesh(box_mesh(Vector3(w, h - 0.02, 0.03)), mat, Transform3D(Basis.IDENTITY, Vector3(w * 0.5, h * 0.5, 0)), _door)
+	add_mesh(
+		box_mesh(Vector3(w, h - 0.02, 0.03)), mat, Transform3D(Basis.IDENTITY, Vector3(w * 0.5, h * 0.5, 0)), _door
+	)
 	if style == "locker":
 		var slat_mat := MaterialLib.flat(Color(0.05, 0.05, 0.05), 0.9)
 		for i in 5:
-			add_mesh(box_mesh(Vector3(w * 0.6, 0.02, 0.035)), slat_mat,
-				Transform3D(Basis.IDENTITY, Vector3(w * 0.5, 1.45 + i * 0.06, 0)), _door)
+			add_mesh(
+				box_mesh(Vector3(w * 0.6, 0.02, 0.035)),
+				slat_mat,
+				Transform3D(Basis.IDENTITY, Vector3(w * 0.5, 1.45 + i * 0.06, 0)),
+				_door
+			)
 	add_target(Vector3(w, h, 0.2), Vector3(0, h * 0.5, d * 0.5))
 
 

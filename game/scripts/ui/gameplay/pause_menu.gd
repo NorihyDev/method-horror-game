@@ -27,7 +27,9 @@ func build() -> void:
 	left.add_child(UI.button("MENU_SETTINGS", func() -> void: settings_requested.emit(), false, 240))
 	if not is_online:
 		if Saves.has_checkpoint() and match_ctrl.difficulty.checkpoints_enabled and not match_ctrl.map_def.is_tutorial:
-			left.add_child(UI.button("PAUSE_CHECKPOINT", func() -> void: restart_checkpoint_requested.emit(), false, 240))
+			left.add_child(
+				UI.button("PAUSE_CHECKPOINT", func() -> void: restart_checkpoint_requested.emit(), false, 240)
+			)
 		left.add_child(UI.button("PAUSE_RESTART", func() -> void: restart_requested.emit(), false, 240))
 	left.add_child(UI.button("PAUSE_QUIT", func() -> void: quit_requested.emit(), false, 240))
 	var right := UI.vbox(8)
@@ -40,8 +42,11 @@ func build() -> void:
 		var def := graph.get_def(id)
 		if def.complete_flag == "unseen":
 			continue
-		var title := UI.label(("" if not def.optional else tr("PAUSE_OPTIONAL") + " ") + match_ctrl.objective_title(def),
-			ThemeFactory.FONT_BODY, ThemeFactory.TEXT)
+		var title := UI.label(
+			("" if not def.optional else tr("PAUSE_OPTIONAL") + " ") + match_ctrl.objective_title(def),
+			ThemeFactory.FONT_BODY,
+			ThemeFactory.TEXT
+		)
 		title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		right.add_child(title)
@@ -49,7 +54,9 @@ func build() -> void:
 			continue
 		var tier := match_ctrl.hint_tier(id)
 		for i in tier:
-			var h := UI.para(tr("HINT_PREFIX") % (i + 1) + " " + tr(def.hint_keys[i]), ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM)
+			var h := UI.para(
+				tr("HINT_PREFIX") % (i + 1) + " " + tr(def.hint_keys[i]), ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM
+			)
 			h.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			right.add_child(h)
 		if tier < def.hint_keys.size():
@@ -63,8 +70,18 @@ func build() -> void:
 				hint_text = tr("HINT_NEXT_IN") % UI.format_time(maxf(0.0, next_at - match_ctrl.state.elapsed))
 			right.add_child(UI.label(hint_text, ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT))
 	right.add_child(UI.spacer(8))
-	var meta := UI.label(tr("PAUSE_META") % [tr(match_ctrl.map_def.title_key), tr(match_ctrl.difficulty.title_key),
-		UI.format_time(match_ctrl.state.elapsed)], ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT)
+	var meta := UI.label(
+		(
+			tr("PAUSE_META")
+			% [
+				tr(match_ctrl.map_def.title_key),
+				tr(match_ctrl.difficulty.title_key),
+				UI.format_time(match_ctrl.state.elapsed)
+			]
+		),
+		ThemeFactory.FONT_SMALL,
+		ThemeFactory.TEXT_FAINT
+	)
 	meta.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	right.add_child(meta)
 

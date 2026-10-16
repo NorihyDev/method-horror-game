@@ -95,7 +95,9 @@ func _map_card(m: MapDefinition) -> Button:
 		status = tr(m.location_key)
 		if bool(prog.get("completed", false)):
 			status += "  ·  " + tr("SOLO_BEST") % UI.format_time(float(prog.get("best_time", 0.0)))
-	var s := UI.label(status, ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM if m.is_playable() else ThemeFactory.TEXT_FAINT)
+	var s := UI.label(
+		status, ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM if m.is_playable() else ThemeFactory.TEXT_FAINT
+	)
 	s.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	v.add_child(s)
 	h.add_child(v)
@@ -103,9 +105,11 @@ func _map_card(m: MapDefinition) -> Button:
 	var id := String(m.id)
 	_map_buttons[id] = b
 	if m.is_playable():
-		b.pressed.connect(func() -> void:
-			AudioService.play_ui("ui_click")
-			_select_map(id))
+		b.pressed.connect(
+			func() -> void:
+				AudioService.play_ui("ui_click")
+				_select_map(id)
+		)
 	else:
 		b.disabled = true
 		b.tooltip_text = "MAP_COMING_LATER_TIP"
@@ -130,9 +134,15 @@ func _select_diff(id: String) -> void:
 
 func _on_start() -> void:
 	if Saves.has_checkpoint():
-		app.confirm("SOLO_OVERWRITE_TITLE", "SOLO_OVERWRITE_BODY", "SOLO_START", func() -> void:
-			Saves.clear_checkpoint()
-			Session.start_solo(_map_id, _diff_id), true)
+		app.confirm(
+			"SOLO_OVERWRITE_TITLE",
+			"SOLO_OVERWRITE_BODY",
+			"SOLO_START",
+			func() -> void:
+				Saves.clear_checkpoint()
+				Session.start_solo(_map_id, _diff_id),
+			true
+		)
 		return
 	Session.start_solo(_map_id, _diff_id)
 

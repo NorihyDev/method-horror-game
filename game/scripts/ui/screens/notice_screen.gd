@@ -29,9 +29,11 @@ func build() -> void:
 func on_enter(_p: Dictionary) -> void:
 	focus_first()
 	if Saves.has_name():
-		get_tree().create_timer(3.5).timeout.connect(func() -> void:
-			if is_inside_tree() and visible:
-				_next())
+		get_tree().create_timer(3.5).timeout.connect(
+			func() -> void:
+				if is_inside_tree() and visible:
+					_next()
+		)
 
 
 func _next() -> void:

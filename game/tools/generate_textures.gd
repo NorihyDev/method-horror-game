@@ -88,7 +88,9 @@ func _wallpaper() -> Dictionary:
 			var stripe_mask := 1.0 if (sx > 0.42 and sx < 0.58) else 0.0
 			var mx := float(x % 64) - 32.0
 			var my := float(y % 96) - 48.0
-			var diamond := 1.0 if (absf(mx) / 14.0 + absf(my) / 22.0) < 1.0 and (absf(mx) / 10.0 + absf(my) / 16.0) > 1.0 else 0.0
+			var diamond := (
+				1.0 if (absf(mx) / 14.0 + absf(my) / 22.0) < 1.0 and (absf(mx) / 10.0 + absf(my) / 16.0) > 1.0 else 0.0
+			)
 			var c := base.lerp(stripe, maxf(stripe_mask * 0.6, diamond * 0.8))
 			var s := v(stain, x, y)
 			var f := v(fine, x, y)

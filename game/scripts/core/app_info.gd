@@ -49,9 +49,13 @@ static func arg_value(arg_name: String, default_value: String = "") -> String:
 	return default_value
 
 
-## Automated runs (tests, screenshot tools) use separate test_* save files.
+## Automated runs (tests, smoke, screenshot and --script tools) use separate
+## test_* save files so they never touch a player's real profile.
 static func uses_isolated_storage() -> bool:
-	return has_arg("--test") or has_arg("--autoshot") or has_arg("--uishots")
+	if has_arg("--test") or has_arg("--autoshot") or has_arg("--uishots") or has_arg("--smoke"):
+		return true
+	var args := OS.get_cmdline_args()
+	return args.has("--script") or args.has("-s")
 
 
 static func touch_available() -> bool:
