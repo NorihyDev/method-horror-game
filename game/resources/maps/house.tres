@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/map_definition.gd" id="1_map"]
+[ext_resource type="Script" path="res://scripts/maps/house/house_map.gd" id="2_builder"]
+[ext_resource type="Script" path="res://scripts/maps/house/house_rules.gd" id="3_rules"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"house"
+title_key = "MAP_HOUSE"
+description_key = "MAP_HOUSE_DESC"
+location_key = "MAP_HOUSE_LOC"
+status = 0
+sort_order = 1
+builder_script = ExtResource("2_builder")
+rules_script = ExtResource("3_rules")
+max_players = 6
+is_tutorial = false
+estimated_minutes = 20
+preview_color = Color(0.24, 0.17, 0.13, 1)
+base_escape_reward = 100
+first_completion_bonus = 150
+optional_objective_reward = 25
+collectible_reward = 10

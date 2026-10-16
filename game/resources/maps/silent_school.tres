@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=1 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/map_definition.gd" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"silent_school"
+title_key = "MAP_SILENT_SCHOOL"
+description_key = "MAP_SILENT_SCHOOL_DESC"
+location_key = "MAP_SILENT_SCHOOL_LOC"
+status = 1
+sort_order = 4
+
+max_players = 6
+is_tutorial = false
+estimated_minutes = 22
+preview_color = Color(0.2, 0.19, 0.14, 1)
+base_escape_reward = 130
+first_completion_bonus = 200
+optional_objective_reward = 25
+collectible_reward = 10

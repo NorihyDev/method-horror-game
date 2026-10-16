@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=1 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/map_definition.gd" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"method_facility"
+title_key = "MAP_METHOD_FACILITY"
+description_key = "MAP_METHOD_FACILITY_DESC"
+location_key = "MAP_METHOD_FACILITY_LOC"
+status = 1
+sort_order = 5
+
+max_players = 6
+is_tutorial = false
+estimated_minutes = 25
+preview_color = Color(0.22, 0.06, 0.07, 1)
+base_escape_reward = 160
+first_completion_bonus = 250
+optional_objective_reward = 30
+collectible_reward = 15

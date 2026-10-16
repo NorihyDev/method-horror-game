@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/map_definition.gd" id="1_map"]
+[ext_resource type="Script" path="res://scripts/maps/tutorial/tutorial_map.gd" id="2_builder"]
+[ext_resource type="Script" path="res://scripts/maps/tutorial/tutorial_rules.gd" id="3_rules"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"tutorial"
+title_key = "MAP_TUTORIAL"
+description_key = "MAP_TUTORIAL_DESC"
+location_key = "MAP_TUTORIAL_LOC"
+status = 0
+sort_order = 0
+builder_script = ExtResource("2_builder")
+rules_script = ExtResource("3_rules")
+max_players = 1
+is_tutorial = true
+estimated_minutes = 4
+preview_color = Color(0.16, 0.17, 0.18, 1)
+base_escape_reward = 0
+first_completion_bonus = 0
+optional_objective_reward = 0
+collectible_reward = 0

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=1 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/map_definition.gd" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+id = &"last_train"
+title_key = "MAP_LAST_TRAIN"
+description_key = "MAP_LAST_TRAIN_DESC"
+location_key = "MAP_LAST_TRAIN_LOC"
+status = 1
+sort_order = 3
+
+max_players = 6
+is_tutorial = false
+estimated_minutes = 22
+preview_color = Color(0.12, 0.13, 0.18, 1)
+base_escape_reward = 120
+first_completion_bonus = 175
+optional_objective_reward = 25
+collectible_reward = 10

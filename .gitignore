@@ -1,0 +1,49 @@
+# Godot editor/import cache
+.godot/
+game/.godot/
+*.translation
+# Godot generates these on export/debug
+game/android/build/
+game/android/.build_version
+*.tmp
+
+# Build outputs
+build/
+builds/
+dist/
+exports/
+*.apk
+*.aab
+*.ipa
+*.pck
+*.zip
+*.tpz
+
+# Signing material and secrets — never commit
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.mobileprovision
+export_credentials.cfg
+.env
+.env.*
+!.env.example
+secrets/
+
+# Backend
+services/lobby/node_modules/
+services/lobby/data/
+services/lobby/*.sqlite
+services/lobby/*.sqlite-*
+coverage/
+
+# Tooling
+.venv/
+__pycache__/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

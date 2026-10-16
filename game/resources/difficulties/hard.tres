@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="DifficultyDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/difficulty_definition.gd" id="1_diff"]
+
+[resource]
+script = ExtResource("1_diff")
+id = &"hard"
+title_key = "DIFF_HARD"
+description_key = "DIFF_HARD_DESC"
+sort_order = 2
+enemy_speed = 1.1
+enemy_hearing = 1.25
+enemy_sight = 1.2
+enemy_persistence = 1.35
+attack_cooldown = 1.8
+attack_windup = 0.55
+grace_period = 30.0
+player_hits = 2
+battery_drain = 1.35
+extra_batteries = 0
+revive_time = 5.0
+bleedout_time = 30.0
+timing_window = 0.12
+hint_delay = 240.0
+checkpoints_enabled = true
+reward_multiplier = 1.5

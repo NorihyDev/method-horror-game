@@ -1,0 +1,73 @@
+; Engine configuration file.
+; METHOD HORROR — pinned to Godot 4.7.2-stable (see /tools/godot-version.txt).
+
+config_version=5
+
+[application]
+
+config/name="METHOD HORROR"
+config/description="First-person cooperative escape horror by METHOD."
+config/version="0.2.0"
+run/main_scene="res://scenes/boot/boot.tscn"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="method_horror"
+config/features=PackedStringArray("4.7", "Mobile")
+boot_splash/bg_color=Color(0.027, 0.027, 0.031, 1)
+boot_splash/show_image=false
+config/icon="res://icon.svg"
+
+[autoload]
+
+Settings="*res://scripts/core/settings_service.gd"
+Saves="*res://scripts/core/save_service.gd"
+AudioService="*res://scripts/audio/audio_service.gd"
+Session="*res://scripts/core/session_service.gd"
+
+[debug]
+
+gdscript/warnings/unused_parameter=0
+gdscript/warnings/unused_signal=0
+gdscript/warnings/integer_division=0
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=4
+window/energy_saving/keep_screen_on=true
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=false
+pointing/emulate_mouse_from_touch=true
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="player"
+3d_physics/layer_3="enemy"
+3d_physics/layer_4="interactable"
+3d_physics/layer_5="door"
+3d_physics/layer_6="trigger"
+3d_physics/layer_7="prop"
+
+[navigation]
+
+3d/default_cell_size=0.1
+3d/default_cell_height=0.1
+
+[physics]
+
+common/physics_ticks_per_second=60
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0, 0, 0, 1)
+anti_aliasing/quality/msaa_3d=0
+lights_and_shadows/positional_shadow/atlas_size=2048
+lights_and_shadows/positional_shadow/atlas_size.mobile=2048
