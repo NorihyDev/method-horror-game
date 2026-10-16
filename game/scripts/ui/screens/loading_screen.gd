@@ -70,7 +70,10 @@ func on_enter(p: Dictionary) -> void:
 	col.add_child(_error_box)
 	AudioService.stop_music(1.0)
 	AudioService.play_ambience("", 1.0)
-	_load.call_deferred()
+	if bool(p.get("online", false)):
+		_load_online.call_deferred()
+	else:
+		_load.call_deferred()
 
 
 func _briefing_keys(map: MapDefinition) -> PackedStringArray:
@@ -118,6 +121,29 @@ func _load() -> void:
 	_begin.grab_focus()
 
 
+## Multiplayer: build the level the server announced (a LAN host already
+## built it), report loaded, then wait for the server's start barrier.
+func _load_online() -> void:
+	var flow: OnlineFlow = params["flow"]
+	var net := flow.net
+	await _step("LOADING_BUILD", 0.3)
+	if not net.is_server():
+		if not net.client_build_level(params["config"]):
+			_fail("MAP_VARIANT_FAILED")
+			return
+	app.set_world(net.map)
+	await _step("LOADING_WAITING_PLAYERS", 0.8)
+	if not flow.in_match:
+		await flow.begun
+	if not is_inside_tree() or net.map == null:
+		return
+	await _step("LOADING_READY", 1.0)
+	_level = {"map": net.map, "match": net.mc, "player": net.local_player, "flow": flow}
+	await app.fade_out(0.3)
+	app.goto("gameplay", _level, true)
+	app.fade_in(0.6)
+
+
 func _fail(error_key: String) -> void:
 	_status.text = "LOADING_FAILED"
 	_error_box.visible = true
@@ -135,6 +161,9 @@ func _on_begin() -> void:
 
 
 func handle_back() -> bool:
+	if bool(params.get("online", false)):
+		app.confirm("LEAVE_TITLE", "LEAVE_BODY", "LEAVE_CONFIRM", func() -> void: Session.quit_to_menu(), true)
+		return true
 	if not _level.is_empty():
 		app.confirm("LEAVE_TITLE", "LEAVE_BODY", "LEAVE_CONFIRM", func() -> void: Session.quit_to_menu(), true)
 	return true

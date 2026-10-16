@@ -10,6 +10,8 @@ const STATUS_ALIVE := "alive"
 const STATUS_DOWNED := "downed"
 const STATUS_DEAD := "dead"
 const STATUS_ESCAPED := "escaped"
+## Disconnected past the reconnect window.
+const STATUS_LEFT := "left"
 
 const SNAPSHOT_VERSION := 1
 
@@ -45,6 +47,7 @@ func add_player(player_id: int, display_name: String) -> Dictionary:
 		"hiding": "",
 		"downed_at": -1.0,
 		"caught": 0,
+		"away": false,
 	}
 	players[player_id] = record
 	return record
@@ -157,6 +160,7 @@ static func from_snapshot(data: Dictionary) -> MatchState:
 		record["hiding"] = str(p.get("hiding", ""))
 		record["downed_at"] = float(p.get("downed_at", -1.0))
 		record["caught"] = int(p.get("caught", 0))
+		record["away"] = bool(p.get("away", false))
 	return s
 
 

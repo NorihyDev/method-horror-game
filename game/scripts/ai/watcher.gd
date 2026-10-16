@@ -61,6 +61,11 @@ var _seen_hiding: Dictionary = {}
 var _check_spot: HidingSpot
 var _pause := 0.0
 var _breath: AudioStreamPlayer3D
+## Client puppets: last state received from the server.
+var _net_pos := Vector3.ZERO
+var _net_yaw := 0.0
+var _net_has := false
+var _shown_speed := 0.0
 
 
 func setup(p_match: MatchController, p_map: MapBase) -> void:
@@ -577,14 +582,7 @@ func _enter(s: S) -> void:
 
 
 func _tick_cues(delta: float) -> void:
-	_lamp_timer -= delta
-	if _lamp_timer <= 0.0:
-		_lamp_timer = 0.25
-		for lamp in map.lamps:
-			lamp.enemy_proximity = clampf(
-				1.0 - lamp.global_position.distance_to(global_position) / FlickerLight.NEAR_ENEMY, 0.0, 1.0
-			)
-		rig.set_lens_intensity(1.0 if state in [S.CHASE, S.ATTACK] else 0.2)
+	rig.set_lens_intensity(net_lens())
 	_keys_timer -= delta
 	if _keys_timer <= 0.0:
 		_keys_timer = _rng.randf_range(9.0, 18.0)
@@ -601,7 +599,7 @@ func _vocal(sound: String, cooldown: float, force: bool = false) -> void:
 
 func _on_foot() -> void:
 	# Local presentation on every peer (driven by animation, not replicated).
-	var speed := Vector2(velocity.x, velocity.z).length()
+	var speed := Vector2(velocity.x, velocity.z).length() if _authority() else _shown_speed
 	AudioService.play_3d("watcher_step", get_parent(), global_position, -4.0 if speed > 2.6 else -8.0, 24.0)
 
 
@@ -624,3 +622,45 @@ func debug_text() -> String:
 		"Watcher: %s  target=%s  chase=%d  susp=%s"
 		% [S.keys()[state], str(_target.snapped(Vector3.ONE * 0.1)), _chase_pid, str(_suspicion)]
 	)
+
+
+# --- Presentation on every peer / client puppets ------------------------------------------
+
+
+func _process(delta: float) -> void:
+	if map == null:
+		return
+	if not _authority() and _net_has:
+		var before := global_position
+		global_position = global_position.lerp(_net_pos, clampf(delta * 10.0, 0.0, 1.0))
+		rotation.y = lerp_angle(rotation.y, _net_yaw, clampf(delta * 10.0, 0.0, 1.0))
+		_shown_speed = (global_position - before).length() / maxf(delta, 0.001)
+	_lamp_timer -= delta
+	if _lamp_timer <= 0.0:
+		_lamp_timer = 0.25
+		for lamp in map.lamps:
+			lamp.enemy_proximity = clampf(
+				1.0 - lamp.global_position.distance_to(global_position) / FlickerLight.NEAR_ENEMY, 0.0, 1.0
+			)
+
+
+## Client puppet update from the server (15 Hz, unreliable).
+func apply_net(pos: Vector3, yaw: float, anim: String, lens: float) -> void:
+	_net_pos = pos
+	_net_yaw = yaw
+	if not _net_has:
+		global_position = pos
+		rotation.y = yaw
+	_net_has = true
+	if rig and anim in WatcherRig.ANIMS:
+		rig.play(anim, 0.2)
+	if rig:
+		rig.set_lens_intensity(lens)
+
+
+func net_anim() -> String:
+	return rig.current() if rig else "idle"
+
+
+func net_lens() -> float:
+	return 1.0 if state in [S.CHASE, S.ATTACK] else 0.2

@@ -36,6 +36,8 @@ var items: Dictionary = {}
 var match_config: Dictionary = {}
 var last_result: Dictionary = {}
 var in_background := false
+## Active multiplayer session (online room or LAN), if any.
+var online: OnlineFlow
 
 
 func _ready() -> void:
@@ -136,13 +138,29 @@ func continue_from_checkpoint() -> bool:
 ## Called by the match when it ends. `result` comes from MatchController.
 func finish_match(result: Dictionary) -> void:
 	last_result = result
-	if str(match_config.get("mode", "")) == "solo":
+	var mode := str(result.get("mode", match_config.get("mode", "solo")))
+	if mode == "solo":
 		_apply_solo_progress(result)
+	else:
+		# Online rewards are computed and credited by the server to the verified
+		# wallet; LAN sessions never award coins.
+		result["online_rewards"] = mode == "online"
+	if online:
+		online.leave()
 	app.post_fx.set_active(false)
 	app.reset_to("results", result)
 
 
+func ensure_online() -> OnlineFlow:
+	if online == null or not is_instance_valid(online):
+		online = OnlineFlow.create(app)
+	return online
+
+
 func quit_to_menu() -> void:
+	if online and is_instance_valid(online):
+		online.leave()
+	online = null
 	app.post_fx.set_active(false)
 	app._dynres.active_in_gameplay = false
 	AudioService.stop_all_world()

@@ -57,6 +57,10 @@ var _prowl_timer := 8.0
 var _ambient_timer := 25.0
 var _hint_timer := 0.0
 var _rng := RandomNumberGenerator.new()
+## target pid -> {"reviver": pid, "started": elapsed}
+var _revives: Dictionary = {}
+
+const REVIVE_RADIUS := 2.2
 
 
 func setup(p_map: MapBase, p_config: Dictionary) -> void:
@@ -256,7 +260,7 @@ func perceivable_players() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for pid in state.players:
 		var p: Dictionary = state.players[pid]
-		if p["status"] != MatchState.STATUS_ALIVE:
+		if p["status"] != MatchState.STATUS_ALIVE or bool(p.get("away", false)):
 			continue
 		var node: Node = players.get(pid)
 		var pos := MatchState.array_to_vec(p["pos"])
@@ -363,6 +367,8 @@ func set_entity_state(id: String, new_state: Dictionary) -> void:
 ## Client side: apply a state received from the server.
 func client_apply_entity(id: String, new_state: Dictionary) -> void:
 	state.entities[id] = new_state
+	if not entities.has(id):
+		_restore_dynamic_entities()
 	var ent: Interactable = entities.get(id)
 	if ent:
 		ent.apply_state(new_state)
@@ -395,10 +401,16 @@ func set_flag(flag: String) -> void:
 	match flag:
 		"power_on":
 			_set_phase(MatchState.Phase.ESCALATE)
-			map.set_power(true)
 		"garage_open":
 			_set_phase(MatchState.Phase.FINAL)
+	_flag_presentation(flag)
 	_evaluate_objectives()
+
+
+## Presentation consequences of flags, on every peer.
+func _flag_presentation(flag: String) -> void:
+	if flag == "power_on" and map:
+		map.set_power(true)
 
 
 func add_counter(counter: String, delta: int = 1) -> int:
@@ -421,8 +433,6 @@ func notify_player(pid: int, key: String, args: Array = []) -> void:
 
 func notify_all(key: String, args: Array = []) -> void:
 	notify_player(0, key, args)
-	if net and is_authority:
-		net.call("send_notify", 0, key, args)
 
 
 ## Gameplay noise heard by enemies. Radius in meters before difficulty scaling.
@@ -559,6 +569,7 @@ func _tick_ambience(delta: float) -> void:
 
 
 func _tick_downed() -> void:
+	_tick_revives()
 	for pid in state.players:
 		var p: Dictionary = state.players[pid]
 		if p["status"] == MatchState.STATUS_DOWNED and state.elapsed - float(p["downed_at"]) > difficulty.bleedout_time:
@@ -634,15 +645,21 @@ func _check_end() -> void:
 	if _finished:
 		return
 	var escaped := 0
-	var unresolved := 0
+	var alive := 0
+	var downed := 0
 	for pid in state.players:
 		match str(state.players[pid]["status"]):
 			MatchState.STATUS_ESCAPED:
 				escaped += 1
-			MatchState.STATUS_ALIVE, MatchState.STATUS_DOWNED:
-				unresolved += 1
-	if unresolved > 0:
+			MatchState.STATUS_ALIVE:
+				alive += 1
+			MatchState.STATUS_DOWNED:
+				downed += 1
+	if alive > 0:
 		return
+	if downed > 0 and escaped == 0 and is_solo:
+		return
+	# No one left standing who could act or revive: downed players count as lost.
 	if is_solo and escaped == 0:
 		return  # solo death is handled by the death overlay (retry / give up)
 	_finish("victory" if escaped > 0 else "defeat")
@@ -662,7 +679,8 @@ func _finish(outcome: String) -> void:
 	match_finished.emit(result)
 
 
-func build_result(outcome: String) -> Dictionary:
+func build_result(outcome: String, for_pid: int = -1) -> Dictionary:
+	var pid_for := local_player_id if for_pid < 0 else for_pid
 	var completed: PackedStringArray = []
 	var optional_completed := 0
 	for def in rules.graph.defs():
@@ -670,7 +688,7 @@ func build_result(outcome: String) -> Dictionary:
 			completed.append(def.id)
 			if def.optional:
 				optional_completed += 1
-	var local := state.player(local_player_id)
+	var local := state.player(pid_for)
 	return {
 		"match_id": state.match_id,
 		"map_id": state.map_id,
@@ -758,3 +776,174 @@ func _reject(pid: int, reason: String, data: Dictionary = {}) -> bool:
 	data["pid"] = pid
 	Log.debug("match", "Rejected interaction: " + reason, data)
 	return false
+
+
+# --- Multiplayer: revives, presence, client application -----------------------------
+
+
+## Authority: a living player starts (or stops) reviving a downed teammate.
+## Distance, the reviver's state and continuity are re-checked every tick.
+func server_revive(reviver: int, target: int, start: bool) -> bool:
+	if not is_authority or not running or is_solo:
+		return false
+	if not start:
+		var r: Dictionary = _revives.get(target, {})
+		if int(r.get("reviver", -1)) == reviver:
+			_revives.erase(target)
+			if net:
+				net.call("broadcast_revive", target, -1.0)
+		return true
+	var rp := state.player(reviver)
+	var tp := state.player(target)
+	if rp.is_empty() or tp.is_empty() or reviver == target:
+		return false
+	if rp["status"] != MatchState.STATUS_ALIVE or tp["status"] != MatchState.STATUS_DOWNED:
+		return false
+	if not str(rp["hiding"]).is_empty():
+		return false
+	if MatchState.array_to_vec(rp["pos"]).distance_to(MatchState.array_to_vec(tp["pos"])) > REVIVE_RADIUS:
+		return false
+	_revives[target] = {"reviver": reviver, "started": state.elapsed}
+	if net:
+		net.call("broadcast_revive", target, 0.0)
+	return true
+
+
+func _tick_revives() -> void:
+	for target in _revives.keys():
+		var r: Dictionary = _revives[target]
+		var reviver := int(r["reviver"])
+		var rp := state.player(reviver)
+		var tp := state.player(int(target))
+		var ok := not rp.is_empty() and not tp.is_empty()
+		ok = ok and rp["status"] == MatchState.STATUS_ALIVE and tp["status"] == MatchState.STATUS_DOWNED
+		ok = ok and str(rp["hiding"]).is_empty() and not bool(rp.get("away", false))
+		if ok:
+			var d := MatchState.array_to_vec(rp["pos"]).distance_to(MatchState.array_to_vec(tp["pos"]))
+			ok = d <= REVIVE_RADIUS + 0.3
+		if not ok:
+			_revives.erase(target)
+			if net:
+				net.call("broadcast_revive", int(target), -1.0)
+			continue
+		var progress := (state.elapsed - float(r["started"])) / maxf(difficulty.revive_time, 0.1)
+		if progress >= 1.0:
+			_revives.erase(target)
+			tp["hits"] = maxi(0, difficulty.player_hits - 1)
+			tp["downed_at"] = -1.0
+			_set_status(int(target), MatchState.STATUS_ALIVE)
+			world_sound("revive", MatchState.array_to_vec(tp["pos"]), -2.0, 14.0)
+			notify_all("NOTE_REVIVED", [str(tp["name"])])
+			if net:
+				net.call("broadcast_revive", int(target), -1.0)
+				net.call("broadcast_damage", int(target), int(tp["hits"]))
+
+
+func revive_progress(target: int) -> float:
+	var r: Dictionary = _revives.get(target, {})
+	if r.is_empty():
+		return -1.0
+	return clampf((state.elapsed - float(r["started"])) / maxf(difficulty.revive_time, 0.1), 0.0, 1.0)
+
+
+## Authority: a player disconnected (true) or came back (false).
+func set_player_away(pid: int, away: bool) -> void:
+	var p := state.player(pid)
+	if p.is_empty():
+		return
+	p["away"] = away
+	if away:
+		if not str(p["hiding"]).is_empty():
+			var spot: HidingSpot = entities.get(str(p["hiding"])) as HidingSpot
+			if spot:
+				spot.release(pid)
+		for target in _revives.keys():
+			if int(_revives[target]["reviver"]) == pid:
+				_revives.erase(target)
+	if net and is_authority:
+		net.call("broadcast_away", pid, away)
+
+
+## Authority: the reconnect window expired.
+func player_left(pid: int) -> void:
+	var p := state.player(pid)
+	if p.is_empty() or p["status"] in [MatchState.STATUS_ESCAPED, MatchState.STATUS_LEFT]:
+		return
+	_set_status(pid, MatchState.STATUS_LEFT)
+	_check_end()
+
+
+## Client: full state from the server (join or reconnect).
+func client_apply_snapshot(snap: Dictionary) -> bool:
+	var s := MatchState.from_snapshot(snap)
+	if s == null:
+		return false
+	state = s
+	_rebuild_inventories()
+	_restore_dynamic_entities()
+	apply_all_states()
+	if map:
+		map.set_power(state.has_flag("power_on"))
+	objectives_changed.emit()
+	for pid in state.players:
+		inventory_changed.emit(int(pid))
+	return true
+
+
+func client_apply_flag(flag: String) -> void:
+	if state.set_flag(flag, true):
+		flag_changed.emit(flag)
+		_flag_presentation(flag)
+
+
+func client_apply_counters(counters: Dictionary) -> void:
+	state.counters = counters.duplicate()
+	objectives_changed.emit()
+
+
+func client_apply_objectives(objectives: Dictionary) -> void:
+	state.objectives = objectives.duplicate(true)
+	objectives_changed.emit()
+
+
+func client_apply_status(pid: int, status: String) -> void:
+	if not state.players.has(pid):
+		return
+	state.players[pid]["status"] = status
+	player_status_changed.emit(pid, status)
+
+
+func client_apply_damage(pid: int, hits: int) -> void:
+	if not state.players.has(pid):
+		return
+	var before := int(state.players[pid]["hits"])
+	state.players[pid]["hits"] = hits
+	if hits > before:
+		player_damaged.emit(pid, hits)
+
+
+func client_apply_phase(phase: int) -> void:
+	state.phase = clampi(phase, 0, MatchState.Phase.ENDED) as MatchState.Phase
+	phase_changed.emit(phase)
+
+
+func client_apply_hiding(pid: int, spot_id: String) -> void:
+	if not state.players.has(pid):
+		return
+	state.players[pid]["hiding"] = spot_id
+	var node: Node = players.get(pid)
+	if node and node.has_method("set_hidden_in"):
+		node.call("set_hidden_in", entities.get(spot_id) if not spot_id.is_empty() else null)
+
+
+func client_apply_finished(result: Dictionary) -> void:
+	_finished = true
+	running = false
+	match_finished.emit(result)
+
+
+func client_notify(key: String, args: Array) -> void:
+	var text := tr(key)
+	if not args.is_empty():
+		text = text % args
+	notified.emit(text)
