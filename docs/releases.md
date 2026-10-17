@@ -48,7 +48,7 @@ cleanly headless.
 ./tools/godot.sh --headless --path game --export-debug "Android" ../builds/android/method_horror_debug.apk
 ```
 
-Verified locally: 37.6 MB APK, signed with the debug certificate,
+Verified locally (2026-10-17, three playable maps): 41.5 MB APK, signed with the debug certificate,
 `com.method.horror`, versionCode 2 / versionName 0.2.0, minSdk 24, targetSdk 36,
 landscape (`userLandscape`), permissions INTERNET, ACCESS_NETWORK_STATE, VIBRATE,
 arm64-v8a.

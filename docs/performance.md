@@ -26,7 +26,7 @@ in this file once picked.
 | Script time | ≤ 4 ms |
 | Memory | ≤ 900 MB total process |
 | Load to briefing | ≤ 6 s (measured on desktop: level build ≈ 1–2 s; smoke run incl. 300 frames 5.2 s) |
-| APK size | ≤ 60 MB (current debug: 37.6 MB) |
+| APK size | ≤ 60 MB (current debug, three maps: 41.5 MB) |
 
 ## What is already done to stay inside budget
 
