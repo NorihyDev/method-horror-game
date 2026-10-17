@@ -8,18 +8,28 @@ extends Control
 signal pressed(button: String)
 signal released(button: String)
 
-## name -> [default normalized position (right-handed), radius px, label key]
+## name -> [default offset (px, right-handed) in from the bottom-right corner
+## of the safe area (top-right for pause), radius px, label key].
+## The defaults form an arc the right thumb sweeps without stretching: USE
+## where the thumb rests, RUN and DUCK one short reach away, LIGHT and BAG
+## above, so the middle of the right half stays free for looking around.
 const BUTTONS := {
-	"interact": [Vector2(0.86, 0.66), 64.0, "TOUCH_USE"],
-	"sprint": [Vector2(0.73, 0.82), 44.0, "TOUCH_RUN"],
-	"crouch": [Vector2(0.94, 0.42), 40.0, "TOUCH_CROUCH"],
-	"flashlight": [Vector2(0.94, 0.24), 36.0, "TOUCH_LIGHT"],
-	"inventory": [Vector2(0.73, 0.52), 38.0, "TOUCH_BAG"],
-	"pause": [Vector2(0.96, 0.07), 28.0, "TOUCH_PAUSE"],
-	"ping": [Vector2(0.84, 0.24), 32.0, "TOUCH_PING"],
+	"interact": [Vector2(128, 140), 66.0, "TOUCH_USE"],
+	"sprint": [Vector2(225, 258), 44.0, "TOUCH_RUN"],
+	"crouch": [Vector2(302, 92), 46.0, "TOUCH_CROUCH"],
+	"flashlight": [Vector2(70, 332), 40.0, "TOUCH_LIGHT"],
+	"inventory": [Vector2(70, 472), 38.0, "TOUCH_BAG"],
+	"pause": [Vector2(52, 46), 30.0, "TOUCH_PAUSE"],
+	"ping": [Vector2(192, 472), 34.0, "TOUCH_PING"],
 }
+const TOP_ANCHORED: Array[String] = ["pause"]
 const JOY_RADIUS := 86.0
-const JOY_DEFAULT := Vector2(0.15, 0.7)
+## Joystick home, in from the bottom-left corner of the safe area.
+const JOY_OFFSET := Vector2(200, 210)
+## Pushing the stick this far past its ring runs (no button needed).
+const AUTO_RUN_AT := 1.18
+## Finger slop around buttons: thumbs land off-centre.
+const HIT_SLOP := 1.3
 
 var enabled_buttons: PackedStringArray = ["interact", "sprint", "crouch", "flashlight", "inventory", "pause"]
 var highlight_interact := false:
@@ -37,6 +47,7 @@ var _joy_pos := Vector2.ZERO
 var _joy_finger := -1
 var _look_accum := Vector2.ZERO
 var _layout: Dictionary = {}
+var _auto_run := false
 
 
 func _init() -> void:
@@ -75,6 +86,11 @@ func move_vector() -> Vector2:
 	return v.normalized() * clampf((l - dz) / (1.0 - dz), 0.0, 1.0)
 
 
+## The stick is pushed past its ring: run while it stays there.
+func auto_sprint() -> bool:
+	return _auto_run
+
+
 func consume_look() -> Vector2:
 	var d := _look_accum
 	_look_accum = Vector2.ZERO
@@ -92,6 +108,7 @@ func release_all() -> void:
 	_held.clear()
 	_fingers.clear()
 	_joy_finger = -1
+	_auto_run = false
 	_look_accum = Vector2.ZERO
 	queue_redraw()
 
@@ -100,18 +117,29 @@ func _scale() -> float:
 	return Settings.f("touch_button_scale")
 
 
-func button_center(button: String) -> Vector2:
+func _safe_area() -> Rect2:
 	var vp := get_viewport_rect().size
-	var n: Vector2 = BUTTONS[button][0]
+	var m := Session.app.safe_margins() if Session.app else Vector4.ZERO
+	return Rect2(Vector2(m.x, m.y), vp - Vector2(m.x + m.z, m.y + m.w))
+
+
+func button_center(button: String) -> Vector2:
+	var area := _safe_area()
 	if _layout.has(button):
 		var saved: Variant = _layout[button]
 		if saved is Array and saved.size() == 2:
-			n = Vector2(float(saved[0]), float(saved[1]))
+			var n := Vector2(float(saved[0]), float(saved[1]))
+			if Settings.b("left_handed"):
+				n.x = 1.0 - n.x
+			return area.position + n * area.size
+	# Defaults keep their distance from the corner (in px, scaled with the
+	# buttons) so wide phones don't stretch the arc out of the thumb's reach.
+	var off: Vector2 = BUTTONS[button][0] * lerpf(1.0, _scale(), 0.8)
+	var x := area.end.x - off.x
 	if Settings.b("left_handed"):
-		n.x = 1.0 - n.x
-	var m := Session.app.safe_margins() if Session.app else Vector4.ZERO
-	var area := Rect2(Vector2(m.x, m.y), vp - Vector2(m.x + m.z, m.y + m.w))
-	return area.position + n * area.size
+		x = area.position.x + off.x
+	var y := area.position.y + off.y if button in TOP_ANCHORED else area.end.y - off.y
+	return Vector2(x, y)
 
 
 func button_radius(button: String) -> float:
@@ -119,11 +147,10 @@ func button_radius(button: String) -> float:
 
 
 func joystick_home() -> Vector2:
-	var vp := get_viewport_rect().size
-	var n := JOY_DEFAULT
-	if Settings.b("left_handed"):
-		n.x = 1.0 - n.x
-	return n * vp
+	var area := _safe_area()
+	var off := JOY_OFFSET * lerpf(1.0, _scale(), 0.8)
+	var x := area.end.x - off.x if Settings.b("left_handed") else area.position.x + off.x
+	return Vector2(x, area.end.y - off.y)
 
 
 func _in_move_zone(p: Vector2) -> bool:
@@ -131,11 +158,16 @@ func _in_move_zone(p: Vector2) -> bool:
 	return p.x > get_viewport_rect().size.x - half if Settings.b("left_handed") else p.x < half
 
 
+## The nearest enabled button whose (generous) circle contains `p`.
 func _button_at(p: Vector2) -> String:
+	var best := ""
+	var best_d := INF
 	for b in enabled_buttons:
-		if p.distance_to(button_center(b)) <= button_radius(b) * 1.15:
-			return b
-	return ""
+		var d := p.distance_to(button_center(b)) / button_radius(b)
+		if d <= HIT_SLOP and d < best_d:
+			best = b
+			best_d = d
+	return best
 
 
 func _input(event: InputEvent) -> void:
@@ -165,6 +197,7 @@ func _input(event: InputEvent) -> void:
 			_fingers.erase(t.index)
 			if role == "joy":
 				_joy_finger = -1
+				_auto_run = false
 			elif not role.is_empty() and role != "look":
 				_held[role] = false
 				released.emit(role)
@@ -176,6 +209,11 @@ func _input(event: InputEvent) -> void:
 		var role: String = _fingers.get(d.index, "")
 		if role == "joy":
 			_joy_pos = d.position
+			var run := (_joy_pos - _joy_origin).length() > JOY_RADIUS * _scale() * AUTO_RUN_AT
+			if run != _auto_run:
+				_auto_run = run
+				if run:
+					_vibrate_light()
 			queue_redraw()
 			get_viewport().set_input_as_handled()
 		elif role == "look":
@@ -201,6 +239,24 @@ func _draw() -> void:
 	if _joy_finger >= 0:
 		knob = base + (_joy_pos - base).limit_length(r)
 	draw_circle(knob, r * 0.42, Color(ThemeFactory.TEXT, 0.35 * alpha))
+	# Auto-run: an outer ring shows where pushing past starts running.
+	var run_r := r * AUTO_RUN_AT
+	var run_col := (
+		Color(ThemeFactory.CRIMSON, 0.75 * alpha + 0.2) if _auto_run else Color(ThemeFactory.TEXT, 0.12 * alpha)
+	)
+	draw_arc(base, run_r, -PI * 0.85, -PI * 0.15, 24, run_col, 4.0 if _auto_run else 2.0, true)
+	if _auto_run:
+		var run_label := tr("TOUCH_RUN")
+		var rw := font.get_string_size(run_label, HORIZONTAL_ALIGNMENT_CENTER, -1, 16).x
+		draw_string(
+			font,
+			base + Vector2(-rw * 0.5, -run_r - 10),
+			run_label,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			-1,
+			16,
+			Color(ThemeFactory.TEXT, 0.9)
+		)
 	# Buttons
 	for b in enabled_buttons:
 		var c := button_center(b)

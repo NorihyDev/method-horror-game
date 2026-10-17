@@ -35,6 +35,9 @@ const MOUSE_K := 0.0022
 const TOUCH_K := 0.0042
 const PAD_K := 2.8
 const PITCH_LIMIT := deg_to_rad(84)
+## Touch aim assist: things this close to the view centre count as aimed at.
+const ASSIST_ANGLE := deg_to_rad(13)
+const ASSIST_INTERVAL := 0.1
 
 var player_id := 1
 var match_ctrl: MatchController
@@ -80,6 +83,10 @@ var _pad_look_ramp := 0.0
 var _flicker_timer := 0.0
 var _rng := RandomNumberGenerator.new()
 var _report_timer := 0.0
+var _assist_timer := 0.0
+var _assist: Interactable
+## Scare: seconds the flashlight stays dead regardless of battery.
+var _scare_dark := 0.0
 
 
 class HiddenInfo:
@@ -243,6 +250,9 @@ func _gather_look(delta: float) -> void:
 
 func _wants_sprint() -> bool:
 	var held := Input.is_action_pressed("sprint") or (touch != null and bool(touch.call("is_held", "sprint")))
+	# Touch: pushing the stick past its ring runs, whatever the sprint mode.
+	if touch != null and touch.has_method("auto_sprint") and bool(touch.call("auto_sprint")):
+		return true
 	if Settings.s("sprint_mode") == "toggle":
 		return _sprint_toggle
 	return held
@@ -403,6 +413,9 @@ func _tick_battery(delta: float) -> void:
 				energy = 3.0 * (_rng.randf_range(0.2, 0.7) if _rng.randf() < 0.4 else 1.0)
 			else:
 				energy = flashlight.light_energy
+	if _scare_dark > 0.0:
+		_scare_dark -= delta
+		energy = 0.0 if _scare_dark > 0.25 or _rng.randf() < 0.5 else energy
 	var near_enemy := _enemy_proximity()
 	if flashlight_on and near_enemy > 0.0 and not Settings.b("reduced_flashing") and _rng.randf() < near_enemy * 0.15:
 		energy *= _rng.randf_range(0.1, 0.6)
@@ -420,6 +433,24 @@ func _enemy_proximity() -> float:
 			var d := (e as Node3D).global_position.distance_to(global_position)
 			best = maxf(best, clampf(1.0 - d / 8.0, 0.0, 1.0))
 	return best
+
+
+## Scare: the beam sputters and dies for `seconds`, then comes back.
+func scare_flashlight(seconds: float) -> void:
+	_scare_dark = seconds
+	_shake = maxf(_shake, 0.15)
+
+
+## Snap the view toward `point` (being caught: you see what got you).
+func face_point(point: Vector3) -> void:
+	var to := point - head.global_position
+	var target_yaw := atan2(-to.x, -to.z)
+	var target_pitch := clampf(atan2(to.y, Vector2(to.x, to.z).length()), -PITCH_LIMIT, PITCH_LIMIT)
+	var t := create_tween().set_parallel()
+	t.tween_property(self, "_yaw", _yaw + wrapf(target_yaw - _yaw, -PI, PI), 0.12)
+	t.tween_property(self, "_pitch", target_pitch, 0.12)
+	_shake = 1.6
+	_vibrate(1.0)
 
 
 func recharge_flashlight() -> void:
@@ -473,6 +504,8 @@ func _tick_interaction(delta: float) -> void:
 				if candidate is Interactable and is_instance_valid(candidate):
 					ent = candidate
 					sub = int(col.get_meta("sub", 0))
+		if ent == null and touch != null:
+			ent = _assisted_target(delta)
 	var prompt := ent.get_prompt(player_id, sub) if ent else ""
 	if ent != _focus or sub != _focus_sub or prompt != _focus_prompt:
 		_focus = ent
@@ -499,6 +532,45 @@ func _tick_interaction(delta: float) -> void:
 		_hold = 0.0
 		_hold_consumed = false
 		_set_hold(0.0)
+
+
+## On touch screens a thumb can't aim as finely as a mouse: anything usable
+## within reach, near the view centre and in plain sight counts as aimed at.
+func _assisted_target(delta: float) -> Interactable:
+	_assist_timer -= delta
+	if _assist_timer > 0.0:
+		return _assist if is_instance_valid(_assist) else null
+	_assist_timer = ASSIST_INTERVAL
+	_assist = null
+	if match_ctrl == null:
+		return null
+	var eye := camera.global_position
+	var fwd := -camera.global_basis.z
+	var best_dot := cos(ASSIST_ANGLE)
+	var space := get_world_3d().direct_space_state
+	for e in match_ctrl.entities.values():
+		var it := e as Interactable
+		if it == null or not it.is_inside_tree() or not it.is_visible_in_tree():
+			continue
+		var to := it.interact_origin() - eye
+		var dist := to.length()
+		if dist > INTERACT_REACH or dist < 0.05:
+			continue
+		var dot := fwd.dot(to / dist)
+		if dot <= best_dot or it.get_prompt(player_id, 0).is_empty():
+			continue
+		var q := PhysicsRayQueryParameters3D.create(
+			eye, it.interact_origin(), GeoBuilder.LAYER_WORLD | DoorEntity.LAYER_DOOR
+		)
+		var skip: Array[RID] = [get_rid()]
+		skip.append_array(it.collision_rids())
+		q.exclude = skip
+		var hit := space.intersect_ray(q)
+		if not hit.is_empty() and (hit["position"] as Vector3).distance_to(it.interact_origin()) > 0.3:
+			continue
+		_assist = it
+		best_dot = dot
+	return _assist
 
 
 func _set_hold(v: float) -> void:

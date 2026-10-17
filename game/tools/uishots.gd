@@ -20,6 +20,10 @@ func _ready() -> void:
 		await _lobby_shots()
 		get_tree().quit(0)
 		return
+	if AppInfo.has_arg("--uishots-touch"):
+		await _touch_shots()
+		get_tree().quit(0)
+		return
 	if AppInfo.has_arg("--uishots-mp"):
 		await _multiplayer_shots()
 		get_tree().quit(0)
@@ -101,6 +105,25 @@ func _ready() -> void:
 	await _wait(30)
 	await _shot("21_results")
 	get_tree().quit(0)
+
+
+## In-match touch layout, as a phone shows it.
+## Usage: godot --path game --resolution 1600x720 -- --uishots=<dir> --uishots-touch
+func _touch_shots() -> void:
+	Settings.set_value("touch_controls", "on", false)
+	Session.start_solo("house", "normal")
+	await _wait(150)
+	app.current().call("_on_begin")
+	await _wait(120)
+	var gameplay := app.current()
+	var player: PlayerController = gameplay.get("player")
+	(gameplay.get("mc") as MatchController).enemy_enabled = false
+	player.global_position = Vector3(9.0, 0.05, 15.6)
+	player.set("_yaw", -0.6)
+	player.set("_pitch", -0.2)
+	await _wait(40)
+	await _shot("touch_01_hud")
+	Settings.set_value("touch_controls", "auto", false)
 
 
 ## Multiplayer screens, using a real LAN-hosted session on this machine and
