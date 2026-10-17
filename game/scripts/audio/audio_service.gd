@@ -62,6 +62,12 @@ const CAPTIONS := {
 	"subject_screech": "CAP_SCREECH",
 	"lift_call": "CAP_LIFT_MOTOR",
 	"lift_arrive": "CAP_LIFT_ARRIVING",
+	"scare_scream_far": "CAP_DISTANT_SCREAM",
+	"scare_whisper": "CAP_WHISPER",
+	"scare_knock": "CAP_KNOCKING",
+	"scare_run": "CAP_RUNNING",
+	"scare_breath_close": "CAP_BREATH_BEHIND",
+	"bulb_pop": "CAP_BULB",
 }
 
 ## Looping emitters are re-captioned at most this often while audible.

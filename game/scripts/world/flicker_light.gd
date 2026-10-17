@@ -21,6 +21,8 @@ var switched_on := true
 var enemy_proximity := 0.0
 var _flicker := 1.0
 var _timer := 0.0
+## Scare: seconds left of a forced blackout (presentation only).
+var _blackout := 0.0
 var _rng := RandomNumberGenerator.new()
 
 
@@ -85,8 +87,19 @@ func _refresh() -> void:
 	bulb_mat.albedo_color = color if on else Color(0.15, 0.14, 0.12)
 
 
+## The bulb dies for a while, with a violent stutter first.
+func scare_blackout(seconds: float) -> void:
+	_blackout = seconds
+
+
 func _process(delta: float) -> void:
 	if not is_on():
+		return
+	if _blackout > 0.0:
+		_blackout -= delta
+		var dying := _blackout > 0.0 and _rng.randf() < 0.1 and not Settings.b("reduced_flashing")
+		light.light_energy = energy * (0.8 if dying else 0.0)
+		bulb_mat.emission_energy_multiplier = 2.0 if dying else 0.0
 		return
 	_timer -= delta
 	var reduced := Settings.b("reduced_flashing")

@@ -3,7 +3,7 @@ extends SceneTree
 ## Usage: godot --headless --path game --script res://tools/generate_audio.gd [-- --only=name]
 
 const Synth = preload("res://scripts/audio/sound_synth.gd")
-const MapSynth = preload("res://scripts/audio/sound_synth_finale.gd")
+const MapSynth = preload("res://scripts/audio/sound_synth_terror.gd")
 const OUT_DIR := "res://assets/audio/generated"
 
 

@@ -7,6 +7,7 @@ var player: PlayerController
 var hud: Hud
 var touch: TouchControls
 var intensity: IntensityController
+var scares: ScareDirector
 var inspector: DebugInspector
 var team_hud: TeamHud
 var spectator: SpectatorCamera
@@ -58,6 +59,9 @@ func on_enter(p: Dictionary) -> void:
 	intensity = IntensityController.new()
 	add_child(intensity)
 	intensity.setup(mc, player)
+	scares = ScareDirector.new()
+	add_child(scares)
+	scares.setup(mc, player, map, app.post_fx)
 	_connect_match()
 	app.post_fx.set_active(true)
 	app._dynres.active_in_gameplay = true
@@ -85,6 +89,8 @@ func _connect_match() -> void:
 		func(pid: int, hits: int) -> void:
 			if pid == player.player_id:
 				player.on_damaged(hits)
+				if hits < mc.difficulty.player_hits:
+					scares.hurt()
 				app.post_fx.damage = 0.9
 				create_tween().tween_property(
 					app.post_fx, "damage", clampf(float(hits) / mc.difficulty.player_hits, 0.0, 0.6) * 0.6, 1.6
@@ -132,6 +138,8 @@ func _apply_local_status(status: String) -> void:
 			AudioService.play_2d("escape_sting", AudioService.BUS_MUSIC, -2.0)
 			_spectate_later()
 		MatchState.STATUS_DOWNED:
+			if not player.downed:
+				scares.caught()
 			player.set_downed(true)
 			hud.set_status("HUD_DOWNED")
 			if touch:
@@ -145,6 +153,8 @@ func _apply_local_status(status: String) -> void:
 					touch.enabled_buttons = _default_touch_buttons()
 		MatchState.STATUS_DEAD:
 			if _online and not player.dead:
+				if not player.downed:
+					scares.caught()
 				player.set_downed(false)
 				player.on_died()
 				hud.set_status("HUD_DEAD_MP")
@@ -410,6 +420,7 @@ func _open_keypad(keypad: KeypadEntity) -> void:
 
 
 func _on_died() -> void:
+	scares.caught()
 	player.on_died()
 	AudioService.play_2d("defeat_sting", AudioService.BUS_MUSIC, -2.0)
 	AudioService.stop_music(1.0)

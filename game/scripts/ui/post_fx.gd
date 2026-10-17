@@ -14,6 +14,7 @@ uniform float damage = 0.0;
 uniform float slats = 0.0;
 uniform float flash = 0.0;
 uniform float fade_black = 0.0;
+uniform float tear = 0.0;
 uniform float aspect = 1.777;
 
 float hash(vec2 p) {
@@ -38,6 +39,13 @@ void fragment() {
 	float a = clamp(vig + dmg + slat * 0.94 + fade_black, 0.0, 1.0);
 	col = mix(col, vec3(0.92, 0.88, 0.8), flash);
 	a = max(a, flash * 0.7);
+	// Tear: jittering dark bands with a red fringe, for scares and hits.
+	float row = floor(uv.y * 46.0);
+	float jitter = floor(TIME * 22.0);
+	float band_on = step(1.0 - 0.18 * tear, hash(vec2(row, jitter)));
+	float edge = step(0.5, hash(vec2(row + 7.0, jitter))) * band_on;
+	col = mix(col, vec3(0.35 * edge, 0.0, 0.0), band_on * tear);
+	a = max(a, band_on * tear * 0.85);
 	// Grain: brighten or darken slightly regardless of other layers.
 	col += vec3(g);
 	a = max(a, abs(g) * 0.9);
@@ -48,6 +56,7 @@ void fragment() {
 var damage := 0.0
 var slats := 0.0
 var flash := 0.0
+var tear := 0.0
 var _mat: ShaderMaterial
 var _active := false
 
@@ -70,7 +79,15 @@ func set_active(on: bool) -> void:
 	damage = 0.0
 	slats = 0.0
 	flash = 0.0
+	tear = 0.0
 	visible = on
+
+
+## Screen tear for scares; off entirely with Reduce flashing.
+func pulse_tear(strength: float = 1.0) -> void:
+	if Settings.b("reduced_flashing") or Settings.motion_reduced():
+		return
+	tear = maxf(tear, strength)
 
 
 func pulse_flash(strength: float = 1.0) -> void:
@@ -89,4 +106,6 @@ func _process(delta: float) -> void:
 	_mat.set_shader_parameter("damage", damage)
 	_mat.set_shader_parameter("slats", slats)
 	_mat.set_shader_parameter("flash", flash)
+	_mat.set_shader_parameter("tear", tear)
 	flash = move_toward(flash, 0.0, delta * 2.5)
+	tear = move_toward(tear, 0.0, delta * 1.6)

@@ -1087,5 +1087,12 @@
 	"MP_ONLINE_NOT_CONFIGURED": "This build has no online relay address configured.",
 	"NET_HOST_LEFT": "The room creator left, so the room has ended.",
 	"NET_LOCKED_OUT": "Too many wrong passwords. Wait a minute and try again.",
-	"RESULT_RELAY_NOTE": "Online matches award no coins: the room creator's device decides the result, and it cannot be verified."
+	"RESULT_RELAY_NOTE": "Online matches award no coins: the room creator's device decides the result, and it cannot be verified.",
+
+	"CAP_DISTANT_SCREAM": "A distant scream",
+	"CAP_WHISPER": "Whispering, very close",
+	"CAP_KNOCKING": "Knocking inside the wall",
+	"CAP_RUNNING": "Something running",
+	"CAP_BREATH_BEHIND": "Breathing right behind you",
+	"CAP_BULB": "A bulb bursts"
 }

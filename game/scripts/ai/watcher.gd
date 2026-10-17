@@ -330,6 +330,7 @@ func _start_chase(pos: Vector3) -> void:
 		var app := Session.app
 		if app and app.post_fx and Settings.s("jump_scares") == "full":
 			app.post_fx.pulse_flash(0.35)
+			app.post_fx.pulse_tear(0.7)
 
 
 # --- Tick ------------------------------------------------------------------------------

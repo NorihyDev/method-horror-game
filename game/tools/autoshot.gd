@@ -2,6 +2,8 @@ extends Node
 ## Development tool: renders reference screenshots of a map from fixed camera
 ## positions. Requires a real display/GPU (not --headless).
 ## Usage: godot --path game -- --autoshot=<absolute dir> [--map=house] [--power]
+##   [--teammate[=<clip>]] puts a co-op teammate (Punky) in front of the camera.
+##   [--phantom] shows the scare director's figure down the view (when there is room).
 
 const SHOTS := {
 	"house":
@@ -125,6 +127,12 @@ func _ready() -> void:
 			w.call("setup", match_ctrl, map)
 			enemy = w
 		match_ctrl.enemies.append(enemy)
+	var mate: RemoteAvatar
+	if AppInfo.has_arg("--teammate"):
+		mate = RemoteAvatar.new()
+		mate.player_id = 2
+		mate.display_name = "Punky"
+		map.add_child(mate)
 	for shot in SHOTS.get(map_id, []):
 		map.set_power(bool(shot[4]))
 		if shot.size() > 5:
@@ -138,8 +146,23 @@ func _ready() -> void:
 			e.global_position = map.closest_nav_point((shot[1] as Vector3) + fwd * 3.5)
 			var target: Vector3 = shot[1]
 			e.look_at(Vector3(target.x, e.global_position.y, target.z), Vector3.UP)
+		if mate:
+			var ahead := Vector3(-sin(float(shot[2])), 0, -cos(float(shot[2])))
+			var spot := map.closest_nav_point((shot[1] as Vector3) + ahead * 2.6)
+			mate.server_place(spot, float(shot[2]) + PI)
+			mate.target(spot, float(shot[2]) + PI, true, 4)
+		if AppInfo.has_arg("--phantom"):
+			var scares := ScareDirector.new()
+			add_child(scares)
+			scares.setup(match_ctrl, player, map, Session.app.post_fx)
+			for i in 3:
+				await get_tree().physics_frame
+			scares.trigger("phantom")
+			scares.set_process(false)
 		for i in 24:
 			await get_tree().physics_frame
+		if mate and mate._model:
+			mate._model.play(AppInfo.arg_value("--teammate", "idle"))
 		await RenderingServer.frame_post_draw
 		var img := get_viewport().get_texture().get_image()
 		var path := _out.path_join(str(shot[0]) + ".png")

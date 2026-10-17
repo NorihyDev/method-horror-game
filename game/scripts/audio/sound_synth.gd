@@ -115,6 +115,15 @@ const SOUNDS := {
 	"subject_screech": false,
 	"lift_call": false,
 	"lift_arrive": false,
+	"scare_scream": false,
+	"scare_scream_far": false,
+	"scare_whisper": false,
+	"scare_knock": false,
+	"scare_run": false,
+	"scare_breath_close": false,
+	"bulb_pop": false,
+	"scare_hit": false,
+	"phantom_drone": false,
 }
 
 const VARIANTS := {
@@ -303,10 +312,15 @@ static func loopify(b: PackedFloat32Array, xfade: float) -> PackedFloat32Array:
 ## Small Schroeder reverb; returns a new buffer with `tail` seconds appended.
 static func reverb(b: PackedFloat32Array, mix: float, room: float, tail: float) -> PackedFloat32Array:
 	var n := b.size() + int(tail * RATE)
-	var dry := make(float(n) / RATE)
+	# Sized in samples: seconds -> samples can round one short.
+	var dry := PackedFloat32Array()
+	dry.resize(n)
+	dry.fill(0.0)
 	for i in b.size():
 		dry[i] = b[i]
-	var wet := make(float(n) / RATE)
+	var wet := PackedFloat32Array()
+	wet.resize(n)
+	wet.fill(0.0)
 	var comb_delays := [1116, 1188, 1277, 1356]
 	for d in comb_delays:
 		var delay := int(d * 0.5)

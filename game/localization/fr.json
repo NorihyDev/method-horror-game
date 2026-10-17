@@ -1087,5 +1087,12 @@
 	"MP_ONLINE_NOT_CONFIGURED": "Cette version n’a pas d’adresse de relais en ligne configurée.",
 	"NET_HOST_LEFT": "Le créateur de la salle est parti : la salle est fermée.",
 	"NET_LOCKED_OUT": "Trop de mauvais mots de passe. Attendez une minute et réessayez.",
-	"RESULT_RELAY_NOTE": "Les parties en ligne ne rapportent pas de pièces : l’appareil du créateur décide du résultat, qui ne peut pas être vérifié."
+	"RESULT_RELAY_NOTE": "Les parties en ligne ne rapportent pas de pièces : l’appareil du créateur décide du résultat, qui ne peut pas être vérifié.",
+
+	"CAP_DISTANT_SCREAM": "Un cri lointain",
+	"CAP_WHISPER": "Des chuchotements, tout près",
+	"CAP_KNOCKING": "On frappe dans le mur",
+	"CAP_RUNNING": "Quelque chose court",
+	"CAP_BREATH_BEHIND": "Une respiration juste derrière toi",
+	"CAP_BULB": "Une ampoule éclate"
 }
