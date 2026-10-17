@@ -1,0 +1,24 @@
+{
+  "name": "method-horror-relay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "METHOD HORROR online relay: Cloudflare Worker + one Durable Object per private room.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "deploy": "wrangler deploy",
+    "test": "node --test --test-reporter=spec \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "e2e": "node scripts/e2e-relay.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261001.1",
+    "@types/node": "24.3.0",
+    "typescript": "5.9.2",
+    "wrangler": "4.147.0"
+  }
+}

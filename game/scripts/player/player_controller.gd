@@ -444,7 +444,7 @@ func _report(delta: float) -> void:
 			flashlight_on and battery > 0.0
 		)
 	elif _report_timer <= 0.0 and match_ctrl.net:
-		_report_timer = 0.05
+		_report_timer = float(match_ctrl.net.get("motion_interval"))
 		match_ctrl.net.call(
 			"send_motion",
 			global_position,

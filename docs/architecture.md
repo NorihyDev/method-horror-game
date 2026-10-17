@@ -140,7 +140,10 @@ game/scripts/network/
                        signed status + result reports to the lobby
   remote_avatar.gd     other players (interpolated; server-side physics proxy)
   revive_target.gd     focus target on a downed teammate
-services/lobby/        Node 24 lobby service (src/, test/, scripts/e2e-online.ts)
+  relay_peer.gd        MultiplayerPeer over the METHOD relay's secure WebSocket (online rooms)
+  relay_client.gd      creates relay rooms (HTTPS), builds their socket URLs, maps refusals
+services/relay/        Cloudflare Worker + one Durable Object per room (online relay)
+services/lobby/        Node 24 lobby service (self-hosted alternative; not used by the client)
 ```
 
 - The server runs the **same** `MatchController` as solo. `MatchController.net`

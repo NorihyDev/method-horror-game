@@ -8,71 +8,57 @@ model is in [security.md](security.md).
 
 | Piece | State |
 |---|---|
-| Authoritative server path (`MatchController` + `NetBridge`) | Implemented; in-process 2-client integration tests |
-| Lobby service (guest identity, rooms, codes, tickets, verified wallet) | Implemented; 16 service tests |
-| Dedicated server entry point (`--server`) | Implemented; exercised by the end-to-end test |
-| Client flow + screens (create/join, lobby, loading barrier, in-match MP HUD, results) | Implemented; driven end to end by headless bots |
-| Reconnect within the window, full snapshot before control | Implemented; end-to-end tested |
-| Impaired links (latency, jitter, loss) | End-to-end tested on loopback through a lossy UDP relay (see *Verification*) |
+| **Online rooms over the internet** (create with a 6-digit code, join from any network, 2–4 players) | Implemented through the **METHOD relay** (Cloudflare Worker + one Durable Object per room, `services/relay`). **Deployed** at `https://method-horror-relay.norihyapp.workers.dev`. Verified with two Godot clients through the deployed relay (see *Verification*) |
+| Phones on **different networks** | **Not yet tried**: the deployed test ran both clients on one PC (same network). Instructions: [deployment.md](deployment.md#testing-with-two-phones-on-different-networks) |
+| Authority | The **room creator's device** runs the match (rules, enemy AI, physics) and is authoritative for the room; guests send intentions only. The relay checks membership, roles, sizes and rates, never game rules |
+| Reconnect | A dropped guest rejoins its slot with a full snapshot, while the host is still there |
+| Host departure | Ends the room for everyone, with an explicit message ("The room creator left") |
+| Rewards | **None online**: results come from a player's device and cannot be verified. Solo coins are unchanged |
 | LAN development mode | Implemented; in-process test |
-| **Internet play across separate networks** | **Not verified.** Needs a public host; see [deployment.md](deployment.md) |
-| 5–6 players | Online rooms allow 6: six-client sync tested in-process (join, start barrier, movement, shared state; server broadcast ≈0.03 ms/tick on the dev PC). Performance with 5–6 players on phones not measured. LAN rooms stay at 4 |
-| DTLS on gameplay traffic | Supported by the server (`METHOD_DTLS_KEY/CERT`), not enabled by default |
+| Self-hosted dedicated server + lobby service (`--server`, `services/lobby`) | Still in the repo and covered by in-process tests (`test_multiplayer.gd`), but **not used by the shipped client**: Cloudflare's free plan cannot host a Godot server or UDP |
 
-## Components
+## Components (shipped online mode)
 
 ```
- game client ──HTTPS──> lobby service ──spawns──> dedicated Godot server (one per room)
-      │                    ▲                              │
-      └────ENet/UDP────────┼──────────────────────────────┘
-                           └──HMAC-signed status + match results
+ room creator's game (host, peer 1) ──wss──┐
+                                           ├── Cloudflare Worker ── Durable Object "room <code>"
+ guest's game (peer 2..4) ─────────────wss─┘      (relays packets, validates membership/limits)
 ```
 
-- **Lobby service** (`services/lobby`, Node 24 + TypeScript, no runtime
-  dependencies, SQLite via `node:sqlite`): guest sessions, private rooms and
-  6-digit codes, optional scrypt-hashed room passwords, rate limits,
-  short-lived room-bound connection tickets, server allocation, and the
-  verified wallet/ledger. It never runs gameplay.
-- **Dedicated server** (`godot --headless --path game -- --server …`): one
-  process per room, the only authority for that match. Started by the lobby's
-  `LocalSpawner` (single host) or any allocator implementing the same
-  interface.
-- **Client**: `LobbyClient` (HTTP) and `OnlineFlow` (session state machine),
-  `NetBridge` (the single RPC endpoint), `RemoteAvatar` (other players),
-  puppet `Watcher`s (enemy presentation).
+- **Relay** (`services/relay`, TypeScript): `POST /v1/rooms` creates a room
+  and returns its code and a secret host token. Each player then opens a
+  WebSocket to `/v1/rooms/<code>/ws`. The room's Durable Object admits the
+  host (token) and guests (code + optional password), then forwards packets
+  host↔guest. Protocol and limits are in
+  [services/relay/README.md](../services/relay/README.md).
+- **Client transport** (`relay_peer.gd`, `RelayMultiplayerPeer`): a Godot
+  `MultiplayerPeer` over that WebSocket. The game's `SceneMultiplayer`,
+  `NetBridge` RPCs, validation, rate limits, start barrier and reconnect run
+  on it unchanged, exactly as for a LAN host.
+- **Session** (`online_flow.gd`): *Create* → `RelayClient.create_room` →
+  connect as host → `NetBridge.host_relay` (this device plays as pid 1) →
+  lobby. *Join* → connect as guest → `NetBridge.join_relay` → authenticate
+  with the host (name + device id) → lobby.
 
-"Host" in the online UI means the **room owner** (chooses map/difficulty,
-kicks, starts). The owner's phone never runs the server.
+**Update rates** (`NetProtocol`, configurable): relay rooms send world
+updates (all players, each enemy) 10×/s and local motion every 80 ms, which
+is lower than LAN/dedicated (15×/s, 50 ms). That keeps a four-player match
+inside the free plan's daily request allowance. Remote players and enemies
+are interpolated on every client.
 
-## Session flow
-
-1. **Guest identity.** `POST /v1/guest` with the display name → opaque bearer
-   token (only its SHA-256 is stored server-side). Kept in the app's user
-   directory; reinstalling loses it (the UI says so).
-2. **Create** `POST /v1/rooms` (map, difficulty, 2–6 players, optional
-   password) or **join** `POST /v1/rooms/join` (code + password). The lobby
-   allocates a server and returns `{room_id, code, server{host, port}, ticket}`.
-3. **Connect.** The client opens ENet to the server and, inside Godot's
-   `SceneMultiplayer` auth handshake, sends `{ticket, protocol, build}`. No
-   RPC is delivered before the server verifies the ticket (HMAC-SHA256,
-   room-bound, expiring) and calls `complete_auth`. A freshly spawned server
-   may still be booting, so the client retries `NET_UNREACHABLE` up to 8 times.
-4. **Lobby.** Server-owned member list (ready, owner, away). The ticket marks
-   the lobby's room owner; if the owner leaves before the match, ownership
-   passes to the next connected member. Owner can change map/difficulty and
-   remove players (removed players are banned from that room).
-5. **Start barrier.** Owner starts when every connected member is ready. The
-   server builds the level, sends each client the config (never the puzzle
-   answers), waits for every client's `loaded` (60 s timeout; stragglers are
-   marked away), then sends a full snapshot and `begin` to everyone at once.
-6. **Play.** Clients send intentions; the server validates and broadcasts
-   results (below).
-7. **End.** When nobody is left alive (escaped/dead/left), the server
-   finishes the match, sends each player their own result, reports the room
-   `ended`, and posts results to the lobby, which computes and credits coins.
-   The server lingers 30 s and exits.
+**Trust and host limitations.** The host's device decides everything in the
+match. A modified host can cheat for the whole room, but it can't touch
+another player's device data, the relay's rules or any reward (online rooms
+award none). Guests' intentions are validated by the host (`NetBridge`:
+sender slot, phase, types, sizes, finite values, movement speed,
+interaction range and rate). If the host's app is closed, backgrounded too
+long or loses its connection, the room ends. There is no host migration,
+because the enemy AI and physics state live only on the host.
 
 ## Authority and messages
+
+The same message set runs on the relay (host = room creator), on LAN and on a
+self-hosted dedicated server.
 
 The server runs exactly the same rules path as solo
 (`MatchController.server_interact` etc.). Clients never mutate shared state.
@@ -127,12 +113,13 @@ gets it — tested).
 ## Reconnect
 
 Disconnected players keep their slot for `reconnect_window` seconds (60 by
-default; the lobby passes `SERVER_RECONNECT_WINDOW`). With *Auto reconnect*
-on, the client asks the lobby for a fresh ticket (`POST
-/v1/rooms/:id/ticket`, members only) up to 5 times, reconnects to the same
-slot, rebuilds the level, receives a full snapshot (inventory included) and
-only then regains control. After the window the player counts as *left*. New
-players cannot join a running match.
+default). Online, with *Auto reconnect* on, a guest whose connection drops
+reopens a WebSocket to the same room code with the same device id. The host
+recognizes the id, puts the guest back into its slot, rebuilds the level on
+the guest and sends a full snapshot (inventory included) before control
+returns. After the window the player counts as *left*. New players cannot
+join a running match. The host itself cannot reconnect: losing the host ends
+the room.
 
 ## LAN development mode
 
@@ -145,27 +132,47 @@ online rooms.
 ## Errors the player can see
 
 Every failure maps to a translated message (EN/FR) and returns the player to
-the multiplayer screen: unreachable service or server, version mismatch, bad
-or expired ticket, wrong/missing password, unknown or expired code, full room,
-match already started, removed by owner, duplicate connection, rate limited,
-lost connection. Unknown reasons fall back to a generic message.
+the multiplayer screen:
+
+- unreachable relay;
+- version mismatch;
+- wrong password, or too many wrong passwords;
+- unknown or expired code;
+- full room, or match already started;
+- removed by the owner;
+- duplicate connection;
+- rate limited;
+- the room creator left;
+- lost connection.
+
+Unknown reasons fall back to a generic message.
 
 ## Verification
 
 | Command | What it shows |
 |---|---|
-| `tools/godot.sh --headless --path game -- --test --filter=multiplayer` | In-process server + 2 clients over real localhost ENet: lobby, rejected tickets, ready/start barrier, late join refused, replicated interaction, pickup race, cheating attempts ignored, disconnect + reconnect with state; LAN host |
-| `cd services/lobby && npm test` | Guest/session/room/code/password/rate-limit/ticket/server-signature/wallet/idempotency rules |
-| `cd services/lobby && GODOT_BIN=… npm run e2e` | **Separate processes**: lobby + spawned dedicated server + two headless clients that create and join by code (wrong password and unknown code refused), ready, start, replicate an interaction, drop and reconnect with a full snapshot, leave; the server records the result in the verified wallet. All game traffic passes through a UDP relay adding 120 ms RTT, ±30 ms jitter and 3% loss per direction (configurable) |
+| `cd services/relay && npm test` | Relay protocol: codes, create validation (2–4 players), frame encoding, routing (guests reach only the host), control messages, rate buckets |
+| `RELAY_URL=<url> node scripts/check-relay.ts` | 20 checks against a running relay, over real WebSockets: no host yet, wrong host token, second host, wrong password, protocol mismatch, a full room, sender stamping, guest→guest blocked, broadcast/exclude/direct, oversize frame closes the socket, only the host kicks, flood rate-limited, host departure closes the room and deletes it |
+| `GODOT_BIN=… RELAY_URL=<url> npm run e2e` | **Two separate Godot processes** through the relay, driving the real screens. The guest is refused for a wrong password and an unknown code, then joins by code and readies; the owner starts. Then: host interaction replicated; monster simulated by the host and moving on the guest; guest movement reaches the host; guest drops and rejoins its slot with the match state; host finishes the match and the guest gets the results; in a second room, the host leaves and the guest is told |
+| `tools/godot.sh --headless --path game -- --test --filter=multiplayer` | In-process server + clients over real localhost ENet (the same NetBridge logic): lobby, ready/start barrier, late join refused, replicated interaction, pickup race, cheating attempts ignored, reconnect with state, six-player sync, Maps 2–5 replication |
 
-Recorded locally (Windows 11, Godot 4.7.2, Node 24.18) on 2026-10-17: the e2e
-test passed at the default impairment and at 300 ms RTT / ±80 ms jitter / 10%
-loss. This proves protocol correctness under impairment on one machine; it
-does not measure how play *feels* on such links, and it is not a cross-network
-internet test.
+Recorded on 2026-10-17 (Windows 11, Godot 4.7.2, Node 24.18, wrangler 4.147):
+
+- **Local relay** (`wrangler dev`): 20/20 checks, e2e passed.
+- **Deployed relay** (`wss://method-horror-relay.norihyapp.workers.dev`): 20/20 checks, e2e passed (repeatedly).
+- **Measured traffic:** host 18 frames/s, guest 12 frames/s.
+
+Both e2e clients ran on one PC. **Two phones on different networks have not been tried yet.**
 
 ## Known limits
 
+- Online rooms depend on the host's device: if it leaves, the room ends (no
+  host migration). The host can cheat for its own room; no rewards are at
+  stake.
+- WebSockets are TCP: a lost packet delays the following ones (no
+  unreliable channel online). Interpolation hides small stalls.
+- Free-plan quota: about 10 hours of four-player play per day across all
+  rooms (see the relay README). Past it, connections fail until 00:00 UTC.
 - No rollback reconciliation for the local player; on very lossy links,
   rejected moves snap back.
 - Lobby rate limits and sessions live in one process (single-instance

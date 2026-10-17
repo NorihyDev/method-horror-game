@@ -7,8 +7,11 @@
 ./tools/lint.sh                                      # gdformat --check + gdlint (pip install -r tools/requirements-dev.txt)
 ./tools/godot.sh --headless --path game -- --test    # unit + integration tests
 ./tools/godot.sh --headless --path game -- --smoke   # startup smoke: build map, nav, spawn enemy, 300 frames
-(cd services/lobby && npm ci && npm test && npm run typecheck)   # lobby service (16 tests)
-(cd services/lobby && GODOT_BIN=/path/to/godot npm run e2e)     # online end to end, separate processes
+(cd services/relay && npm ci && npm test && npm run typecheck)   # online relay protocol (7 tests)
+(cd services/relay && npx wrangler dev --port 8787)              # local relay; then:
+(cd services/relay && RELAY_URL=http://127.0.0.1:8787 node scripts/check-relay.ts)  # 20 relay checks
+(cd services/relay && GODOT_BIN=/path/to/godot npm run e2e)      # relay + two Godot clients (RELAY_URL selects the relay)
+(cd services/lobby && npm ci && npm test && npm run typecheck)   # self-hosted lobby service
 ```
 
 The test runner (`game/tests/test_runner.gd`) runs inside the real project so
@@ -16,7 +19,7 @@ autoloads exist, uses isolated `test_*` save/settings files, prints one line per
 test and exits `0` (pass), `1` (failures) or `2` (240 s watchdog — a hang is a
 failure). `--filter=<substring>` selects files.
 
-### Coverage (114 Godot tests + 18 lobby tests + 1 end-to-end run)
+### Coverage (114 Godot tests + 7 relay + 18 lobby tests + relay checks + 1 end-to-end run)
 
 | File | What it proves |
 |---|---|
@@ -30,7 +33,8 @@ failure). `--filter=<substring>` selects files.
 | `unit/test_net_protocol.gd` | Ticket signing/verification (bad signature, wrong room, expired, malformed, oversize), a ticket minted by the Node service verifies in Godot, constant-time compare, rate-limit buckets, finite-value checks |
 | `integration/test_multiplayer.gd` | Server + 2 clients over real localhost ENet in one process: lobby/ownership, wrong-room and expired tickets refused, ready/start barrier, late join refused, clients never get puzzle answers, replicated interaction, two players racing for one pickup (exactly one wins), teleport/NaN/server-only RPC/malformed/kick cheats ignored, disconnect + reconnect into the same slot with progress and inventory; both new maps replicate (enemy profile, powered monitors, ghost trains); Maps 4–5 replicate (Headmistress and Subject Zero profiles, music box state, school power, Subject Zero gaining sight on the client, lift progress); six clients join, start together, see each other move and share state, with the server broadcast cost measured; downed players replicate and cannot act, out-of-range revive refused, revive completes for revive_time, walking away cancels, bleed-out kills, last player down ends the match in defeat; LAN host plays and hosts |
 | `services/lobby/test/*.test.ts` | Online map progression verified from completions (and passed to the game server), reward table and prerequisites match the game's map resources, guest sessions (validation, auth, profile, logout, protocol check), name rules mirrored from the client, rooms (create, join by code, passwords, full, started, member reconnect tickets, owner-only close, expiry), owner flag in tickets, code-guess and guest-creation rate limits, ticket and server-signature binding/expiry, scrypt passwords, idempotent match credits and purchases |
-| `services/lobby/scripts/e2e-online.ts` | Real processes: lobby + spawned dedicated server + 2 headless clients driving the real screens: create, wrong password and unknown code refused, join by code, ready, start barrier, replicated interaction, drop + reconnect with full snapshot, leave, result credited in the verified wallet, the real shop screen loads the verified balance and the service refuses an unaffordable purchase; all game traffic through a relay adding latency, jitter and loss |
+| `services/relay/scripts/check-relay.ts` | 20 checks against a running relay over real WebSockets: admission (no host yet, wrong host token, second host, wrong password, protocol mismatch, full room), sender stamping, guests reach only the host, broadcast/exclude/direct sends, oversize frames, kick permissions, flood rate limiting, host departure and room deletion |
+| `services/relay/scripts/e2e-relay.ts` + `tests/e2e/online_bot.gd` | Two separate Godot processes through the relay, driving the real screens. Wrong password and unknown code refused, join by code, ready, start; host interaction replicated; host-simulated monster replicated and moving; guest movement reaches the host; drop and rejoin the same slot with state; host finishes and the guest sees results; host departure reported in a second room. Also measures frames/s per client |
 | `unit/test_progression.gd` | All five maps unlock in order on this device; a locked map cannot be started; every map lists all its recovered files on the progress screen, readable in EN and FR |
 | `integration/test_ward_playthrough.gd` | Full Black Ward escape through the authority API: shutter with no power, card reader without/with card, generator without relay, wrong breaker pattern trips the board, right pattern powers the wing, monitors + roster give the code, wrong then right code, console, shutter, escape; console refuses without power; monitors dark until power |
 | `integration/test_sister.gd` | The ward uses the sister profile; she ignores a lit player in plain sight; close footsteps start a hunt, crouched ones do not; distant or machine noise is only investigated; silence loses her; bumping into her is not safe |
