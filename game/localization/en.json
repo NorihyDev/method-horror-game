@@ -608,14 +608,14 @@
 
 	"MP_INSECURE_SERVICE": "Online rooms are disabled: the configured lobby service does not use HTTPS.",
 	"MP_MAX_PLAYERS": "Players",
-	"MP_MAX_PLAYERS_TIP": "Up to 6 players. Six-player synchronization is tested; performance with 5–6 players on phones has not been measured yet. LAN test rooms hold 4.",
+	"MP_MAX_PLAYERS_TIP": "Up to 4 players. The room creator's device runs the match for everyone, so keep it charged and on a steady connection.",
 	"MP_PASSWORD": "Room password",
 	"MP_PASSWORD_OPTIONAL": "Optional (4–64 characters)",
 	"MP_PASSWORD_IF_SET": "Only if the room has one",
 	"MP_PASSWORD_TIP": "A separate password keeps strangers out even if they guess the code.",
 	"MP_CODE": "Room code",
 	"MP_CODE_PLACEHOLDER": "6 digits",
-	"MP_GUEST_NOTE": "Online play uses a guest identity stored on this device. Reinstalling the game or clearing its data loses it, along with its online coins.",
+	"MP_GUEST_NOTE": "Online rooms connect phones over the internet through the METHOD relay. The room creator's device hosts the match: if they leave, the room ends for everyone. Online matches award no coins, because their results come from a player's device and cannot be verified.",
 	"MP_LAN_NOTE": "For testing on one local network only. The host's device runs the match with lower trust, so LAN games never award coins. This is not internet multiplayer.",
 	"MP_LAN_JOIN": "Join LAN test",
 	"MP_LAN_ADDRESS": "Host address",
@@ -634,7 +634,7 @@
 	"LOBBY_LEAVE": "Leave",
 	"LOBBY_LEAVE_TITLE": "Leave the room?",
 	"LOBBY_LEAVE_BODY": "You will return to the main menu.",
-	"LOBBY_TRUST_ONLINE": "Online · dedicated server",
+	"LOBBY_TRUST_ONLINE": "Online · hosted by the room creator",
 	"LOBBY_TRUST_LAN": "LAN test · no coins",
 	"LOBBY_CODE": "Room code",
 	"LOBBY_COPY": "Copy code",
@@ -1082,5 +1082,10 @@
 	"FILE_FACILITY_DIRECTOR_B": "METHOD set out to prove that fear can be taught. Conclusion: it can. So can courage. Trial concluded.",
 
 	"MONITOR_UNIT_BED": "BED",
-	"MONITOR_UNIT_CELL": "CELL"
+	"MONITOR_UNIT_CELL": "CELL",
+
+	"MP_ONLINE_NOT_CONFIGURED": "This build has no online relay address configured.",
+	"NET_HOST_LEFT": "The room creator left, so the room has ended.",
+	"NET_LOCKED_OUT": "Too many wrong passwords. Wait a minute and try again.",
+	"RESULT_RELAY_NOTE": "Online matches award no coins: the room creator's device decides the result, and it cannot be verified."
 }

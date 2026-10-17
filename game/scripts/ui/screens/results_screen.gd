@@ -89,11 +89,13 @@ func _solo_rewards(rewards: VBoxContainer, p: Dictionary) -> void:
 		rewards.add_child(UI.para("RESULT_ALREADY_CLAIMED", ThemeFactory.FONT_SMALL, ThemeFactory.WARN))
 
 
-## Online coins are computed and credited by the server to the verified
-## wallet (never by this client); LAN development sessions award nothing.
+## Coins from a dedicated-server match are computed and credited by the
+## server to the verified wallet (never by this client). Relay rooms (decided
+## on the room creator's device) and LAN sessions award nothing.
 func _multiplayer_rewards(rewards: VBoxContainer, mode: String) -> void:
 	if mode != "online":
-		rewards.add_child(UI.para("RESULT_LAN_NOTE", ThemeFactory.FONT_BODY, ThemeFactory.TEXT_DIM))
+		var note := "RESULT_RELAY_NOTE" if mode == "relay" else "RESULT_LAN_NOTE"
+		rewards.add_child(UI.para(note, ThemeFactory.FONT_BODY, ThemeFactory.TEXT_DIM))
 		return
 	rewards.add_child(UI.para("RESULT_ONLINE_NOTE", ThemeFactory.FONT_BODY, ThemeFactory.TEXT_DIM))
 	var balance := UI.label("RESULT_ONLINE_CHECKING", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_FAINT)

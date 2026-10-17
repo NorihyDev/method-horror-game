@@ -1,11 +1,79 @@
 # Deployment Runbook
 
-How to run the online services, locally and on a public host. **Nothing is
-deployed today**: there is no public lobby URL, no server, no domain and no
-production credentials. Doing so needs a host you pay for and control; this
-document lists exactly what that involves.
+## Online relay (what the game uses)
 
-## What you need (external, not provided)
+Online rooms run through the METHOD relay: a Cloudflare Worker plus one
+Durable Object per room, on the **Workers Free plan**, with no card and no
+paid add-ons. Design, protocol and free-plan math:
+[services/relay/README.md](../services/relay/README.md).
+
+**Deployed:** `https://method-horror-relay.norihyapp.workers.dev`
+(2026-10-17), on the owner's Cloudflare account. It holds one Worker,
+`method-horror-relay`, with a SQLite-backed Durable Object class, `RoomDO`.
+No other resources were created or changed. The game points at it through
+`method/online/relay_url` in `game/project.godot`, which is a public URL,
+not a secret.
+
+### Redeploy or deploy to another account
+
+```bash
+cd services/relay
+npm ci
+npx wrangler login        # official browser sign-in (OAuth); nothing is pasted anywhere
+npx wrangler deploy       # prints https://method-horror-relay.<subdomain>.workers.dev
+RELAY_URL=https://method-horror-relay.<subdomain>.workers.dev node scripts/check-relay.ts
+```
+
+Then set `method/online/relay_url` to the printed URL and re-export the game.
+Wrangler keeps its OAuth credentials in your user profile, outside the repo.
+Never commit them, and never put them in the game.
+
+### Verify a deployment
+
+```bash
+cd services/relay
+RELAY_URL=https://<your relay> node scripts/check-relay.ts                       # 20 protocol checks
+GODOT_BIN=/path/to/godot RELAY_URL=https://<your relay> npm run e2e             # two Godot clients
+```
+
+Both passed against the deployed relay on 2026-10-17, with both clients on
+one PC.
+
+### Testing with two phones on different networks
+
+**Not done yet.** This is the step that proves the internet path.
+
+1. Build the debug APK with the relay URL already set:
+   `./tools/godot.sh --headless --path game --export-debug "Android" ../builds/android/method_horror_debug.apk`
+   (see [releases.md](releases.md)).
+2. Install it on both phones: `adb install -r builds/android/method_horror_debug.apk`, or copy the APK over and open it with *Install unknown apps* allowed.
+3. Put the phones on **different networks**: phone A on home Wi‑Fi, phone B with Wi‑Fi **off** on mobile data.
+4. Unlock the map on phone A if needed (online rooms offer the creator's unlocked maps; *The Abandoned House* is always available).
+5. **Phone A:** *Multiplayer → Online → Create room*. Choose the map, difficulty and 2–4 players, and optionally a password. The lobby shows a 6-digit code.
+6. **Phone B:** *Multiplayer → Online → Join room*. Enter the code (and password) and tap *Ready*. Phone A's lobby lists both players with B ready.
+7. **Phone A:** *Start*. Both phones load the same map and begin together.
+8. Check:
+   - each player sees the other walk, turn and crouch, and the flashlight beam;
+   - doors, pickups, notes and objectives update on both phones;
+   - the monster appears on both and chases the same player;
+   - a downed player can be revived.
+9. Reconnect: on phone B, toggle airplane mode for about 5 s. B reconnects into the same match with its inventory.
+10. Finish or lose the match: both phones show results, with no coins for online.
+11. Host departure: create a new room on A, join from B, then close the app on A. B shows "The room creator left".
+
+Report anything that differs. Cloudflare's free plan returns errors once its
+daily allowance is used, so a failure late in a long test day can be the
+quota. It resets at 00:00 UTC.
+
+## Self-hosted alternative: lobby service + dedicated server (not used by the shipped client)
+
+The repository still contains a lobby service (`services/lobby`) and a
+headless dedicated server (`--server`). They run the match on a server you
+control, with verified wallet rewards, but need a paid host with UDP. The
+game client no longer connects to them: online rooms use the relay. Nothing
+of this kind is deployed.
+
+### What you need (external, not provided)
 
 | Item | Why | Cost |
 |---|---|---|
@@ -18,7 +86,7 @@ document lists exactly what that involves.
 Per-room load is one headless Godot process. Its memory and CPU use on a VPS
 have **not been measured yet**; do that before sizing a host.
 
-## Local development (one machine)
+### Local development (one machine)
 
 ```bash
 cd services/lobby
@@ -38,11 +106,11 @@ for localhost):
 
 Create a room in one, join with the code in the other. Without secrets in
 `.env`, development mode generates throwaway secrets per run (tickets die
-with the process). The automated version of this is `npm run e2e`.
+with the process).
 
-## Production: single host
+### Production: single host
 
-### 1. Build artifacts
+#### 1. Build artifacts
 
 - **Dedicated server:** the *Linux Dedicated Server* export
   (`builds/server/method_horror_server.x86_64`, produced by
@@ -52,7 +120,7 @@ with the process). The automated version of this is `npm run e2e`.
 - **Lobby:** this repository's `services/lobby` at the same commit (no build
   step; Node 24 runs the TypeScript directly).
 
-### 2. Host setup
+#### 2. Host setup
 
 ```bash
 sudo useradd --system --create-home --home-dir /opt/method method
@@ -63,7 +131,7 @@ cd /opt/method/lobby && sudo -u method npm ci --omit=dev
 
 Install Node.js 24 LTS from your distribution or nodejs.org.
 
-### 3. Secrets and configuration
+#### 3. Secrets and configuration
 
 Generate two independent secrets (≥32 random characters each):
 
@@ -96,7 +164,7 @@ In production the service refuses to start without both secrets. The game
 servers receive them through their environment only (never the command line,
 which is visible in process lists).
 
-### 4. Service
+#### 4. Service
 
 `/etc/systemd/system/method-lobby.service`:
 
@@ -124,7 +192,7 @@ sudo systemctl daemon-reload && sudo systemctl enable --now method-lobby
 journalctl -u method-lobby -f        # JSON log lines; tokens are never logged
 ```
 
-### 5. HTTPS reverse proxy
+#### 5. HTTPS reverse proxy
 
 `/etc/caddy/Caddyfile` (Caddy obtains and renews the certificate):
 
@@ -137,12 +205,12 @@ lobby.example.com {
 `TRUST_PROXY=1` makes the lobby rate-limit by the client address Caddy
 forwards. Only enable it behind a proxy you control.
 
-### 6. Firewall
+#### 6. Firewall
 
 Allow TCP 80, 443 and UDP 24600–24699; nothing else from outside (the lobby
 port 8787 stays on localhost).
 
-### 7. Point the game at the service
+#### 7. Point the game at the service
 
 Set the project setting `method/online/lobby_url` for the builds you ship,
 for example with a feature-tag override in `game/project.godot`:
@@ -157,7 +225,7 @@ Debug builds keep the empty value (multiplayer shows "unavailable") unless
 started with `--lobby=<url>`. Only `https://` URLs are accepted outside
 localhost.
 
-### 8. Verify
+#### 8. Verify
 
 1. `curl https://lobby.example.com/healthz` → `{"ok":true,…}`.
 2. **Internet verification** (required before calling online play

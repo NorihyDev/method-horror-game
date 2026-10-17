@@ -6,6 +6,16 @@ dates are ISO 8601.
 ## [Unreleased]
 
 ### Added
+- **Online co-op over the internet** through a relay on Cloudflare (Worker +
+  one Durable Object per room, free plan, secure WebSockets), deployed.
+  - The room creator's device hosts the match, and others join with a
+    6-digit code from any network: 2–4 players, optional password.
+  - The relay validates membership, roles, sizes and rates. Guests rejoin
+    their slot after a drop, and the room ends explicitly if its creator
+    leaves.
+  - Online matches award no coins.
+  - Verified with 20 protocol checks and two Godot clients through the
+    deployed relay.
 - Godot 4.7.2-stable project (Mobile renderer), METHOD theme, four focused
   autoload services, atomic checksummed saves with backups and migrations.
 - Procedural audio (74 sounds/loops) and texture (11 surfaces) generators with

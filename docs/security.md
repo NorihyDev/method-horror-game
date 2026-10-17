@@ -1,9 +1,10 @@
 # Security & Threat Model
 
-Scope: the game client, the solo/authority rules, local saves, and the online
-services (lobby + dedicated server). Nothing here claims perfect anti-cheat,
-unhackable saves or certification. The online services are **not deployed**;
-see [deployment.md](deployment.md).
+Scope: the game client, the solo/authority rules, local saves, the online
+relay (Cloudflare Worker + Durable Objects, **deployed**) and the self-hosted
+services in the repo (lobby + dedicated server, not deployed and not used by
+the shipped client). Nothing here claims perfect anti-cheat, unhackable saves
+or certification.
 
 ## Trust boundaries
 
@@ -14,6 +15,8 @@ see [deployment.md](deployment.md).
 | Dedicated server | Match state, enemy AI, validation, results | Identity (comes from lobby tickets) |
 | Lobby service | Guest identity, rooms, tickets, verified wallet | Client-supplied prices, outcomes, timestamps; results not signed by a spawned server |
 | LAN listen host (dev) | Nothing beyond that LAN test session | Never mints online currency |
+| **Online room host** (the room creator's device, through the relay) | Match state, enemy AI, validation and results **for that room only** | Any reward: online relay matches award no coins; nothing it says is persisted anywhere |
+| **Relay** (Worker + one Durable Object per room) | Membership (code, optional password, host token), roles (only the token holder hosts; guests reach only the host; only the host kicks), frame sizes, message rates, room lifetime | Game rules: it never inspects game packets beyond their header |
 
 ## Threats and mitigations
 
@@ -38,6 +41,13 @@ see [deployment.md](deployment.md).
 | **Puzzle answer leakage** | `MatchState.client_snapshot()` strips seeded answers; entities publish only what the world shows. The dev objective inspector (F3) exists only in debug builds. |
 
 ## Transport
+
+- **Online rooms:** TLS WebSockets (`wss://`) to Cloudflare. The host token
+  (24 random bytes, returned once at creation over HTTPS, stored hashed) and
+  room passwords (salted SHA-256; 8 failures lock joins for 60 s) travel in
+  the connection URL over TLS. The relay URL is public; no Cloudflare
+  credentials are in the game or the repo (wrangler's OAuth login stays in
+  the deployer's user profile).
 
 - Backend APIs: the client refuses any lobby URL that is not `https://`
   (plain `http://` only for localhost development); TLS is terminated by a
@@ -68,10 +78,19 @@ chosen display name. *Profile → Delete local data* removes everything.
   checksum. Godot has no OS keychain API, so it is **not** hardware-backed
   secure storage; a rooted device can read it. It grants only that guest's
   rooms and online coins.
-- Gameplay traffic is unencrypted until DTLS is wired into the client.
+- Self-hosted dedicated-server gameplay traffic is unencrypted until DTLS is
+  wired into the client (relay traffic is TLS).
 - The lobby trusts every game server holding the server secret; spawned
   servers run on the same host.
-- Internet play has not been verified across separate networks.
+- **Online room hosts are trusted for their own room:** a modified host can
+  cheat for everyone in it (no rewards are at stake). If the host leaves, the
+  room ends; there is no host migration.
+- Room codes are 6 digits. Brute-forcing them costs one relay request per
+  attempt and finds only open rooms; a password closes that. Cloudflare's
+  rate-limit binding is not used, because the docs don't confirm it on the
+  free plan.
+- Phones on separate networks have not been tried yet (the deployed relay
+  was verified with two clients on one PC).
 
 ## Reporting
 
