@@ -3,6 +3,7 @@ extends SceneTree
 ## Usage: godot --headless --path game --script res://tools/generate_audio.gd [-- --only=name]
 
 const Synth = preload("res://scripts/audio/sound_synth.gd")
+const MapSynth = preload("res://scripts/audio/sound_synth_maps.gd")
 const OUT_DIR := "res://assets/audio/generated"
 
 
@@ -12,7 +13,7 @@ func _initialize() -> void:
 		if arg.begins_with("--only="):
 			only = arg.substr(7)
 	DirAccess.make_dir_recursive_absolute(OUT_DIR)
-	var synth := Synth.new()
+	var synth := MapSynth.new()
 	var started := Time.get_ticks_msec()
 	var count := 0
 	for sound in Synth.SOUNDS:

@@ -29,6 +29,21 @@ const CAPTIONS := {
 	"crank_clank": "CAP_CLANK",
 	"drop": "CAP_DROP",
 	"ping": "CAP_PING",
+	"sister_hum_loop": "CAP_HUMMING",
+	"sister_hiss": "CAP_HISS",
+	"sister_shriek": "CAP_SHRIEK",
+	"sister_step": "CAP_SHUFFLE",
+	"breaker_trip": "CAP_BREAKER_TRIP",
+	"generator_start": "CAP_GENERATOR",
+	"card_deny": "CAP_CARD_DENIED",
+	"lineman_whistle": "CAP_WHISTLE",
+	"lineman_step": "CAP_HEAVY_STEPS",
+	"lineman_growl": "CAP_GROWL",
+	"lineman_screech": "CAP_SCREECH",
+	"train_pass": "CAP_TRAIN",
+	"train_arrive": "CAP_TRAIN_ARRIVING",
+	"signal_bell": "CAP_ALARM_BELL",
+	"pa_chime": "CAP_PA",
 }
 
 ## Variant counts must match SoundSynth.VARIANTS.

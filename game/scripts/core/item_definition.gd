@@ -11,5 +11,8 @@ extends Resource
 @export var is_consumable: bool = false
 @export var stack_max: int = 1
 @export var icon_color: Color = Color(0.85, 0.82, 0.74)
-## Procedural preview shape used by the inspect view: box, cylinder, gear, key, belt, battery, fuse, card.
+## Procedural preview shape used by the inspect view: box, cylinder, gear, key, belt, battery, fuse, card,
+## relay, cell.
 @export var shape: StringName = &"box"
+## Cards: number of white bars, so cards never differ by color alone.
+@export_range(0, 3) var marking: int = 0

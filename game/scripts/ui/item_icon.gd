@@ -59,6 +59,19 @@ func _draw() -> void:
 		"card":
 			draw_rect(Rect2(c - Vector2(s, s * 0.62), Vector2(s * 2.0, s * 1.24)), col)
 			draw_rect(Rect2(c - Vector2(s * 0.75, s * 0.35), Vector2(s * 0.6, s * 0.3)), ThemeFactory.CRIMSON)
+			var bars := def.marking if def else 0
+			for i in bars:
+				var bar := Rect2(c + Vector2(-s * 0.8, s * (0.18 + i * 0.16)), Vector2(s * 1.6, s * 0.09))
+				draw_rect(bar, Color(0.95, 0.95, 0.92))
+		"relay":
+			draw_rect(Rect2(c - Vector2(s * 0.7, s * 0.6), Vector2(s * 1.4, s * 1.0)), col)
+			for i in 4:
+				var px := c.x - s * 0.5 + i * s * 0.33
+				draw_line(Vector2(px, c.y + s * 0.4), Vector2(px, c.y + s * 0.85), Color(0.75, 0.62, 0.3), s * 0.1)
+		"cell":
+			draw_rect(Rect2(c - Vector2(s * 0.8, s * 0.6), Vector2(s * 1.6, s * 1.3)), col)
+			draw_rect(Rect2(c - Vector2(s * 0.8, s * 0.6), Vector2(s * 1.6, s * 0.3)), Color(0.85, 0.7, 0.15))
+			draw_arc(c - Vector2(0, s * 0.62), s * 0.38, PI, TAU, 12, Color(0.6, 0.6, 0.62), s * 0.12, true)
 		_:
 			draw_rect(Rect2(c - Vector2(s, s) * 0.7, Vector2(s, s) * 1.4), col)
 	if count > 1:

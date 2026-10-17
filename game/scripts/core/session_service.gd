@@ -26,6 +26,11 @@ const ITEM_PATHS: PackedStringArray = [
 	"res://resources/items/drive_assembly.tres",
 	"res://resources/items/battery.tres",
 	"res://resources/items/orientation_key.tres",
+	"res://resources/items/staff_card.tres",
+	"res://resources/items/security_card.tres",
+	"res://resources/items/starter_relay.tres",
+	"res://resources/items/maint_key.tres",
+	"res://resources/items/power_cell.tres",
 ]
 
 var app: App
