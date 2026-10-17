@@ -19,6 +19,7 @@ const CAPTIONS := {
 	"watcher_screech": "CAP_SCREECH",
 	"watcher_keys": "CAP_KEYS",
 	"watcher_breath_loop": "CAP_BREATHING",
+	"lineman_breath_loop": "CAP_BREATHING",
 	"door_creak": "CAP_DOOR",
 	"door_close": "CAP_DOOR_SHUT",
 	"short_circuit": "CAP_SHORT",
@@ -29,7 +30,44 @@ const CAPTIONS := {
 	"crank_clank": "CAP_CLANK",
 	"drop": "CAP_DROP",
 	"ping": "CAP_PING",
+	"sister_hum_loop": "CAP_HUMMING",
+	"sister_hiss": "CAP_HISS",
+	"sister_shriek": "CAP_SHRIEK",
+	"sister_step": "CAP_SHUFFLE",
+	"breaker_trip": "CAP_BREAKER_TRIP",
+	"generator_start": "CAP_GENERATOR",
+	"card_deny": "CAP_CARD_DENIED",
+	"lineman_whistle": "CAP_WHISTLE",
+	"lineman_step": "CAP_HEAVY_STEPS",
+	"lineman_growl": "CAP_GROWL",
+	"lineman_screech": "CAP_SCREECH",
+	"train_pass": "CAP_TRAIN",
+	"train_arrive": "CAP_TRAIN_ARRIVING",
+	"signal_bell": "CAP_ALARM_BELL",
+	"pa_chime": "CAP_PA",
+	"music_box_loop": "CAP_MUSIC_BOX",
+	"chime_1": "CAP_CHIME_1",
+	"chime_2": "CAP_CHIME_2",
+	"chime_3": "CAP_CHIME_3",
+	"chime_4": "CAP_CHIME_4",
+	"chime_wrong": "CAP_CHIME_WRONG",
+	"headmistress_breath_loop": "CAP_SLOW_BREATHING",
+	"headmistress_step": "CAP_HEELS",
+	"headmistress_chalk": "CAP_CHALK",
+	"headmistress_hush": "CAP_HUSH",
+	"headmistress_scream": "CAP_SCREAM",
+	"subject_breath_loop": "CAP_RASPING",
+	"subject_step": "CAP_CHAIN_STEPS",
+	"subject_growl": "CAP_GROWL",
+	"subject_screech": "CAP_SCREECH",
+	"lift_call": "CAP_LIFT_MOTOR",
+	"lift_arrive": "CAP_LIFT_ARRIVING",
 }
+
+## Looping emitters are re-captioned at most this often while audible.
+const LOOP_CAPTION_INTERVAL := 6.0
+## An emitter counts as audible within this share of its max distance.
+const AUDIBLE_SHARE := 0.75
 
 ## Variant counts must match SoundSynth.VARIANTS.
 const VARIANTS := {
@@ -51,6 +89,9 @@ var _ambience_current := ""
 var _ui_pool: Array[AudioStreamPlayer] = []
 var _ui_index := 0
 var _caption_cooldowns: Dictionary = {}
+## Captioned emitters from make_emitter(), checked while they play.
+var _emitters: Array[AudioStreamPlayer3D] = []
+var _emitter_check := 0.0
 var _muffle_target := 20500.0
 var _muffle_effect_sfx: AudioEffectLowPassFilter
 var _muffle_effect_amb: AudioEffectLowPassFilter
@@ -78,6 +119,31 @@ func _process(delta: float) -> void:
 		var next := lerpf(cutoff, _muffle_target, clampf(delta * 6.0, 0.0, 1.0))
 		_muffle_effect_sfx.cutoff_hz = next
 		_muffle_effect_amb.cutoff_hz = next
+	_emitter_check -= delta
+	if _emitter_check <= 0.0:
+		_emitter_check = 0.5
+		_caption_emitters()
+
+
+## Long sounds from emitters (humming, passing trains, motors) caption while
+## they play within earshot, not just when they start.
+func _caption_emitters() -> void:
+	# Freed emitters drop out here (a typed filter lambda cannot take a freed object).
+	for i in range(_emitters.size() - 1, -1, -1):
+		if not is_instance_valid(_emitters[i]):
+			_emitters.remove_at(i)
+	if _emitters.is_empty() or not Settings.b("sound_captions"):
+		return
+	var vp := get_viewport()
+	var cam := vp.get_camera_3d() if vp else null
+	if cam == null:
+		return
+	for e in _emitters:
+		if not e.is_inside_tree() or not e.playing:
+			continue
+		if e.global_position.distance_to(cam.global_position) > e.max_distance * AUDIBLE_SHARE:
+			continue
+		_maybe_caption(str(e.get_meta("sound", "")), e.global_position, e, LOOP_CAPTION_INTERVAL)
 
 
 func _setup_buses() -> void:
@@ -235,6 +301,9 @@ func make_emitter(sound: String, volume_db: float = 0.0, max_distance: float = 2
 	p.unit_size = 3.0
 	p.attenuation_filter_cutoff_hz = 3000.0
 	p.attenuation_filter_db = -20.0
+	if CAPTIONS.has(sound):
+		p.set_meta("sound", sound)
+		_emitters.append(p)
 	return p
 
 
@@ -297,20 +366,27 @@ func play_dialogue(sound: String, speaker_key: String, text_key: String, duratio
 		subtitle_requested.emit(speaker_key, text_key, duration)
 
 
-func _maybe_caption(sound: String, position: Vector3, _player: Node) -> void:
-	if not Settings.b("sound_captions") or not CAPTIONS.has(sound):
+func _maybe_caption(sound: String, position: Vector3, _player: Node, cooldown: float = 2.5) -> void:
+	if CAPTIONS.has(sound):
+		caption_at(CAPTIONS[sound], position, cooldown)
+
+
+## Shows a sound caption (when enabled) for a cue that is not a single sound
+## id, e.g. a state of a repeating sound. Rate-limited per caption.
+func caption_at(text_key: String, position: Vector3, cooldown: float = 2.5) -> void:
+	if not Settings.b("sound_captions"):
 		return
 	var now := Time.get_ticks_msec() / 1000.0
-	if now < float(_caption_cooldowns.get(sound, 0.0)):
+	if now < float(_caption_cooldowns.get(text_key, 0.0)):
 		return
-	_caption_cooldowns[sound] = now + 2.5
+	_caption_cooldowns[text_key] = now + cooldown
 	var direction := 0.0
 	var vp := get_viewport()
 	var cam := vp.get_camera_3d() if vp else null
 	if cam:
 		var local := cam.global_transform.affine_inverse() * position
 		direction = rad_to_deg(atan2(local.x, -local.z))
-	caption_requested.emit(CAPTIONS[sound], direction, 2.5)
+	caption_requested.emit(text_key, direction, 2.5)
 
 
 func _make_player(bus: StringName) -> AudioStreamPlayer:

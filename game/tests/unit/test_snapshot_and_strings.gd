@@ -96,6 +96,25 @@ func test_string_tables_cover_code_keys() -> void:
 		"METHOD_LOBBY_URL",
 		"METHOD_SERVER_SECRET",
 		"METHOD_TICKET_SECRET",
+		"METHOD_RELAY_URL",
+		# Relay protocol codes (services/relay), mapped to NET_ keys by RelayClient.
+		"HOST_LEFT",
+		"ROOM_NOT_FOUND",
+		"ROOM_EXPIRED",
+		"ROOM_FULL",
+		"WRONG_PASSWORD",
+		"LOCKED_OUT",
+		"KICKED",
+		"VERSION",
+		"RATE_LIMITED",
+		"MALFORMED",
+		"UNREACHABLE",
+		"TIMEOUT",
+		"LOST",
+		"LEFT",
+		# Stenciled labels on world props (not UI text).
+		"RELAY",
+		"START",
 	]
 	for key in referenced:
 		if ignore.has(key):

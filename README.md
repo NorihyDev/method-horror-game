@@ -5,13 +5,15 @@ Players investigate abandoned locations tied to METHOD — a vanished research
 organization whose experiments altered perception — and escape the
 supernatural threats those experiments left behind.
 
-> **Status: Milestone 3 (multiplayer) — implemented, not yet internet-verified.**
-> *The Abandoned House* is fully playable solo, offline. Online co-op (lobby
-> service, private 6-digit rooms, dedicated server, reconnect) and a LAN
-> development mode work end to end **on one machine** — verified by automated
-> multi-process tests, including a lossy, high-latency link. **No public
-> server is deployed**, so internet play across networks is unverified, and
-> **no phone has run the game yet**. Every claim below is labeled.
+> **Status: all five maps playable; release work in progress.** *The
+> Abandoned House*, *The Black Ward*, *Last Train*, *The Silent School* and
+> *METHOD Facility* are fully playable solo (offline, unlocked in order) and
+> in co-op. **Online co-op over the internet** runs through a deployed relay
+> (Cloudflare Worker + one Durable Object per room, free plan). The room
+> creator's device hosts the match; others join with a 6-digit code from any
+> network. It is verified with two Godot clients through the deployed relay
+> on one PC. **Two phones on different networks have not been tried yet**,
+> and **no phone has run the game yet**. Every claim below is labeled.
 
 ![Main menu](docs/screenshots/main_menu.jpg)
 
@@ -19,6 +21,10 @@ supernatural threats those experiments left behind.
 |---|---|
 | ![Hallway](docs/screenshots/hallway.jpg) | ![The Watcher](docs/screenshots/watcher.jpg) |
 | ![Fuse panel](docs/screenshots/fuse_panel.jpg) | ![HUD with touch controls](docs/screenshots/touch_hud.jpg) |
+| ![The Sister in the Black Ward](docs/screenshots/ward_sister.jpg) | ![Observation room](docs/screenshots/ward_observation.jpg) |
+| ![The Lineman on the platform](docs/screenshots/station_lineman.jpg) | ![A ghost train passing](docs/screenshots/station_ghost_train.jpg) |
+| ![The Headmistress in the school corridor](docs/screenshots/school_headmistress.jpg) | ![Music-room chimes](docs/screenshots/school_chimes.jpg) |
+| ![Subject Zero in the facility](docs/screenshots/facility_subject.jpg) | ![The freight lift arrives](docs/screenshots/facility_lift.jpg) |
 
 *Screenshots are real renders of the current build (desktop, Mobile renderer).*
 
@@ -42,20 +48,24 @@ supernatural threats those experiments left behind.
 | Boot flow: splash → content notice → name → main menu | Implemented, screenshot-verified |
 | Solo: map/difficulty select, briefing, gameplay, pause, death/retry, results, rewards | Implemented, covered by automated tests |
 | Map 1 *The Abandoned House* (9 rooms, stairwell, basement, garage exit) | Implemented, solvable chain verified for 300 seeds |
+| Map 2 *The Black Ward* (card doors, emergency circuits, observation monitors, bay shutter) | Implemented; 300 seeds solvable, full playthrough test, screenshot-checked |
+| Map 3 *Last Train* (signal routing, power cells, ghost trains, evacuation hold-out) | Implemented; 300 seeds solvable, full playthrough test, screenshot-checked |
+| Map unlocks (offline on this device; online verified by the lobby service) | Implemented, tested |
 | Tutorial (*Orientation Wing*, no enemy) | Implemented, tested |
 | Puzzles: fuse circuit + clue, painted-digit keypad code, belt+gear repair, crank timing | Implemented, tested end-to-end |
 | The Watcher: sight/hearing/light/crouch, search, chase, telegraphed attack, hiding checks, doors, stuck recovery | Implemented, behavior tests on real geometry |
+| The Sister (blind, hunts by sound) and The Lineman (headlamp-only sight; trains mask noise) | Implemented, behavior tests on real geometry |
 | First-person controller (walk/sprint/crouch/stamina, flashlight battery, hiding, inventory) | Implemented; desktop-verified, touch hardware-testing pending |
 | Touch controls (multitouch joystick + look + buttons, layout editor, left-handed) | Implemented; **not yet tested on a phone** |
 | Settings (graphics/audio/controls/gameplay/accessibility), EN/FR | Implemented, persistence tested |
 | Saves: versioned, atomic, checksummed, backup recovery, checkpoints | Implemented, tested |
 | Local coin economy + cosmetic shop (no real money) | Implemented, tested |
-| Lobby service: guest identity, private rooms, 6-digit codes, passwords, rate limits, tickets, verified wallet | Implemented, 16 service tests |
-| Online co-op: create/join by code, lobby, start barrier, shared state, reconnect, results credited by the server | Implemented; end-to-end test with real processes (lobby + dedicated server + 2 clients) incl. 300 ms RTT / 10% loss |
+| **Online co-op over the internet**: private rooms with 6-digit codes and optional passwords, 2–4 players, lobby with ready status, the creator picks the map and starts; synced players, doors, items, objectives, monster and results; reconnect; explicit host-departure handling | Implemented through the **deployed relay** (`services/relay`, Cloudflare Worker + Durable Objects). Verified: 20 protocol checks and a two-client Godot end-to-end run through the deployed relay (one PC). No coins online (host-decided results can't be verified) |
+| Self-hosted alternative: lobby service (guest identity, verified wallet, shop) + dedicated server | In the repo with tests; **not deployed, not used by the shipped client** |
 | In-match co-op: teammates, pings, downed/revive, spectating | Implemented; screenshot-verified, covered by integration tests |
 | LAN development mode (lower trust, no coins) | Implemented, tested in-process |
-| **Internet play across separate networks** | **Unverified** — needs a deployed host ([deployment.md](docs/deployment.md)) |
-| Maps 2–5 | **Planned**, shown as "Coming later" |
+| **Two phones on different networks** | **Not tried yet**: steps in [deployment.md](docs/deployment.md#testing-with-two-phones-on-different-networks) |
+| *The Silent School* (music box by ear, PA bell tune → chimes, The Headmistress: frozen while watched in light) and *METHOD Facility* (finale reusing every system; Subject Zero: blind in the dark, sighted once powered; freight-lift hold-out) | Implemented; full playthrough, enemy-rule, 300-seed solvability and co-op replication tests; screenshot-checked |
 | iOS | Architecture only; **no signed or device-tested build** |
 
 ## Setup
@@ -100,6 +110,12 @@ No backend, account or internet connection is needed for solo play.
    when it is near. Hide in lockers and wardrobes — but not right where it lost
    sight of you.
 
+Escaping the house unlocks **The Black Ward** — a clinical wing where a blind
+nurse hunts by sound (freeze, crouch, never run near her) — and escaping the
+ward unlocks **Last Train**, a sealed station where you route and call an
+evacuation train, then hold out until it arrives while a lineman sweeps the
+platform with his headlamp. Details: [docs/game-design.md](docs/game-design.md).
+
 Difficulty rules are explicit in-game and in [docs/game-design.md](docs/game-design.md#difficulty).
 
 ## Controls
@@ -124,10 +140,12 @@ mirrored for left-handed play.
 
 ```bash
 ./tools/check.sh                                    # compile every script (fails on any error)
-./tools/godot.sh --headless --path game -- --test   # 71 unit + integration tests, exit code = result
+./tools/godot.sh --headless --path game -- --test   # unit + integration tests, exit code = result
 ./tools/godot.sh --headless --path game -- --test --filter=watcher
-cd services/lobby && npm ci && npm test && npm run typecheck   # lobby service
-GODOT_BIN=/path/to/godot npm run e2e     # online end to end: lobby + server + 2 clients
+(cd services/relay && npm ci && npm test && npm run typecheck)  # online relay
+(cd services/relay && npx wrangler dev --port 8787)             # local relay, then in another shell:
+(cd services/relay && GODOT_BIN=/path/to/godot npm run e2e)     # online end to end: relay + 2 Godot clients
+(cd services/lobby && npm ci && npm test && npm run typecheck)  # self-hosted lobby service
 ```
 
 Tests run in isolated `test_*` save files and never touch your profile. A
@@ -201,7 +219,8 @@ Key ideas (details in [docs/architecture.md](docs/architecture.md)):
 - Offline coins are local and tamperable by design (see [docs/economy.md](docs/economy.md)).
 - Online services are not deployed; internet play is unverified. Gameplay
   traffic is unencrypted (DTLS is supported server-side but not yet used by
-  the client). Co-op is capped at 4 players until 5–6 are validated.
+  the client). Six-player sync is tested in-process; performance with 5–6
+  players on phones is not measured yet.
 - No cloud save or account linking (not promised). The online guest identity
   lives on the device and is lost on reinstall.
 
@@ -212,10 +231,11 @@ Key ideas (details in [docs/architecture.md](docs/architecture.md)):
 3. ⏳ Authoritative multiplayer: ✅ local 2-client validation, guest identity +
    lobby service, private 6-digit rooms, dedicated server allocation, reconnect;
    ⏳ internet verification (needs a deployed host).
-4. Verified online economy, Maps 2 (*The Black Ward*) and 3 (*Last Train*).
-5. Animation/audio/UI refinement, accessibility testing, Android device
-   profiling, release signing.
-6. Maps 4 (*The Silent School*) and 5 (*METHOD Facility*).
+4. ✅ Verified online economy and shop, map progression, Maps 2 (*The Black
+   Ward*) and 3 (*Last Train*).
+5. ⏳ ✅ benchmark tool, accessibility audit and fixes, debug APK with all
+   maps; ⏳ phone profiling, signed release (needs the owner's keystore).
+6. ✅ Maps 4 (*The Silent School*) and 5 (*METHOD Facility*).
 
 Exact current state and next steps: [docs/continuation.md](docs/continuation.md).
 

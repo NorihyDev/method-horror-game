@@ -1,9 +1,11 @@
 class_name Watcher
 extends CharacterBody3D
-## The Watcher — the caretaker of the Abandoned House, altered by METHOD's
-## perception experiments. Decisions run on the authority only.
+## The shared enemy brain. Decisions run on the authority only. Each map picks
+## an `EnemyProfile` (senses, speeds, sounds, body), so The Watcher (house),
+## The Sister (ward) and The Lineman (station) follow different, readable
+## perception rules with one tested state machine (docs/game-design.md#enemies).
 ##
-## Readable rules (docs/game-design.md#the-watcher):
+## The Watcher's rules:
 ## * Sees in a 120° cone; light makes you visible from farther away, darkness
 ##   and crouching shorten that distance. No vision through walls.
 ## * Hears noise (footsteps, doors, misses at the crank, short circuits);
@@ -14,21 +16,15 @@ extends CharacterBody3D
 enum S { PATROL, INVESTIGATE, SEARCH, CHASE, ATTACK, RECOVER, LOST, CHECK_HIDING }
 
 const LAYER_ENEMY := 1 << 2
-const BASE_SIGHT := 13.0
-const FOV_HALF := deg_to_rad(60.0)
-const TOUCH_RADIUS := 1.6
-const WALK := 1.35
-const INVESTIGATE := 2.1
-const RUN := 4.05
 const ATTACK_RANGE := 1.75
 const STRIKE_RANGE := 2.2
-const TRACK_AFTER_LOS := 1.4
 const SEARCH_TIME := 11.0
 const GRAVITY := 18.0
 const SCARE_COOLDOWN := 75.0
 
 var match_ctrl: MatchController
 var map: MapBase
+var profile: EnemyProfile
 var state: S = S.PATROL
 var rig: WatcherRig
 var agent: NavigationAgent3D
@@ -61,6 +57,8 @@ var _seen_hiding: Dictionary = {}
 var _check_spot: HidingSpot
 var _pause := 0.0
 var _breath: AudioStreamPlayer3D
+## Headmistress: someone is looking at it in light right now (authority).
+var _watched := false
 ## Client puppets: last state received from the server.
 var _net_pos := Vector3.ZERO
 var _net_yaw := 0.0
@@ -68,10 +66,17 @@ var _net_has := false
 var _shown_speed := 0.0
 
 
+## May run before or after entering the tree; the body is built once both
+## the tree and the profile are available.
 func setup(p_match: MatchController, p_map: MapBase) -> void:
 	match_ctrl = p_match
 	map = p_map
 	_diff = match_ctrl.difficulty
+	if profile == null:
+		var profile_id := String(map.definition.enemy_profile) if map and map.definition else "watcher"
+		profile = EnemyProfile.for_id(profile_id)
+	if is_inside_tree() and rig == null:
+		_build()
 
 
 func _ready() -> void:
@@ -88,7 +93,24 @@ func _ready() -> void:
 	cs.shape = cap
 	cs.position.y = 1.0
 	add_child(cs)
+	if profile != null:
+		_build()
+
+
+## Swaps senses and sounds at runtime (Subject Zero when the power returns).
+## The body keeps its rig; only behaviour and voice change.
+func set_profile(p: EnemyProfile) -> void:
+	profile = p
+	if _breath:
+		_breath.stream = AudioService.stream(p.breath_sound)
+		_breath.volume_db = p.breath_db
+		if is_inside_tree():
+			_breath.play()
+
+
+func _build() -> void:
 	rig = WatcherRig.new()
+	rig.style = profile.rig_style
 	rig.rotation.y = PI
 	add_child(rig)
 	rig.foot_planted.connect(_on_foot)
@@ -100,7 +122,7 @@ func _ready() -> void:
 	agent.path_max_distance = 3.0
 	agent.avoidance_enabled = false
 	add_child(agent)
-	_breath = AudioService.make_emitter("watcher_breath_loop", -3.0, 16.0)
+	_breath = AudioService.make_emitter(profile.breath_sound, profile.breath_db, 16.0)
 	_breath.position.y = 1.9
 	add_child(_breath)
 	_breath.play()
@@ -111,10 +133,12 @@ func _ready() -> void:
 # --- Senses (authority) ---------------------------------------------------------------
 
 
-## Noise event: `radius` already includes difficulty scaling.
-func hear(pos: Vector3, radius: float, kind: String) -> void:
-	if not _authority():
+## Noise event: `radius` already includes difficulty scaling. `source_pid`
+## is the player who made it (0 = the world: machines, the enemy itself).
+func hear(pos: Vector3, radius: float, kind: String, source_pid: int = 0) -> void:
+	if not _authority() or profile == null:
 		return
+	radius *= profile.hearing
 	var d := global_position.distance_to(pos)
 	if d > radius:
 		return
@@ -126,6 +150,9 @@ func hear(pos: Vector3, radius: float, kind: String) -> void:
 	_noise_memory.append({"pos": pos, "time": match_ctrl.state.elapsed})
 	if _noise_memory.size() > 12:
 		_noise_memory.pop_front()
+	if profile.hunts_by_sound and source_pid > 0 and d <= effective * profile.hunt_fraction:
+		_hunt_sound(source_pid, pos)
+		return
 	match state:
 		S.CHASE, S.ATTACK, S.RECOVER:
 			return
@@ -137,13 +164,41 @@ func hear(pos: Vector3, radius: float, kind: String) -> void:
 	_target = map.closest_nav_point(pos)
 	_has_target = true
 	if state != S.INVESTIGATE:
-		_vocal("watcher_growl", 6.0)
+		_vocal(profile.growl_sound, 6.0)
 	_enter(S.INVESTIGATE)
+
+
+## Blind hunters treat a close player-made noise like a sighting: they run at
+## where it came from and keep tracking while the noise continues.
+func _hunt_sound(pid: int, pos: Vector3) -> void:
+	var p := match_ctrl.state.player(pid)
+	if p.is_empty() or p["status"] != MatchState.STATUS_ALIVE:
+		return
+	if state in [S.ATTACK, S.RECOVER, S.CHECK_HIDING]:
+		return
+	if state == S.CHASE and pid != _chase_pid:
+		# Switch prey only to a noise closer than the one it is chasing.
+		var cur := match_ctrl.state.player(_chase_pid)
+		if not cur.is_empty() and _last_seen_pos.distance_to(global_position) <= pos.distance_to(global_position):
+			return
+		_chase_pid = pid
+	_last_seen_pos = pos
+	_last_seen_time = match_ctrl.state.elapsed
+	if state == S.CHASE:
+		return
+	_chase_pid = pid
+	_start_chase(pos)
 
 
 ## Called when a player gets into a hiding spot.
 func on_player_hid(pid: int, spot: HidingSpot) -> void:
-	if not _authority():
+	if not _authority() or profile == null:
+		return
+	if not profile.sees:
+		# A blind hunter knows only if it heard the door close behind you.
+		var heard := spot.global_position.distance_to(global_position) <= 3.5 * profile.hearing * 1.6
+		if heard and state in [S.CHASE, S.LOST, S.INVESTIGATE]:
+			_seen_hiding[pid] = {"spot": spot, "time": match_ctrl.state.elapsed}
 		return
 	# It only "knows" if it was actively chasing and could see the player.
 	if (
@@ -165,6 +220,11 @@ func _sense() -> void:
 	)
 	var best_pid := 0
 	var best_pos := Vector3.ZERO
+	if profile.freezes_when_watched:
+		_watched = is_watched()
+	if not profile.sees:
+		_sense_touch(eye)
+		return
 	for target in match_ctrl.perceivable_players():
 		var pid: int = target["pid"]
 		if not str(target["hiding"]).is_empty():
@@ -174,21 +234,20 @@ func _sense() -> void:
 		var chest := pos + Vector3(0, 1.0 if target["crouch"] else 1.35, 0)
 		var to := chest - eye
 		var d := to.length()
-		var light := 1.0
+		var light := profile.light_dark
 		if target["flashlight"]:
-			light = 1.35
+			light = profile.light_flashlight
 		elif target["lit"]:
-			light = 1.25
-		else:
-			light = 0.55
-		var sight_range := BASE_SIGHT * _diff.enemy_sight * phase_mult * light * (0.75 if target["crouch"] else 1.0)
+			light = profile.light_lit
+		var crouch := profile.crouch_sight if target["crouch"] else 1.0
+		var sight_range := profile.base_sight * _diff.enemy_sight * phase_mult * light * crouch
 		var can_see := false
-		if d <= TOUCH_RADIUS:
+		if d <= profile.touch_radius:
 			can_see = _clear_line(eye, chest)
 		elif d <= sight_range:
 			var flat_to := Vector3(to.x, 0, to.z).normalized()
 			var flat_fwd := Vector3(forward.x, 0, forward.z).normalized()
-			if flat_fwd.dot(flat_to) >= cos(FOV_HALF):
+			if flat_fwd.dot(flat_to) >= cos(profile.fov_half):
 				can_see = _clear_line(eye, chest)
 		var s := float(_suspicion.get(pid, 0.0))
 		if can_see:
@@ -216,11 +275,53 @@ func _sense() -> void:
 			_chase_pid = best_pid
 
 
+## True while a living player looks at it in light: their flashlight on it,
+## or it standing in a lit room, within their gaze and with nothing between.
+func is_watched() -> bool:
+	var chest := global_position + Vector3(0, 1.4, 0)
+	var lit_here := map.is_lit_at(global_position)
+	for target in match_ctrl.perceivable_players():
+		if not str(target["hiding"]).is_empty():
+			continue
+		var eye: Vector3 = target["pos"] + Vector3(0, 1.0 if target["crouch"] else 1.55, 0)
+		var to := chest - eye
+		var d := to.length()
+		if d > profile.watched_range or d < 0.01:
+			continue
+		var yaw := float(target.get("yaw", 0.0))
+		var look := Vector3(-sin(yaw), 0, -cos(yaw))
+		if look.dot(Vector3(to.x, 0, to.z).normalized()) < cos(profile.watched_fov_half):
+			continue
+		if not (lit_here or (bool(target["flashlight"]) and d <= 16.0)):
+			continue
+		if _clear_line(eye, chest):
+			return true
+	return false
+
+
+## Blind: only bodily contact reveals a player (no cone, no light, no walls).
+func _sense_touch(eye: Vector3) -> void:
+	for target in match_ctrl.perceivable_players():
+		if not str(target["hiding"]).is_empty():
+			continue
+		var pos: Vector3 = target["pos"]
+		if pos.distance_to(global_position) > profile.touch_radius:
+			continue
+		if not _clear_line(eye, pos + Vector3(0, 1.0, 0)):
+			continue
+		_last_seen_pos = pos
+		_last_seen_time = match_ctrl.state.elapsed
+		if state not in [S.CHASE, S.ATTACK, S.RECOVER]:
+			_chase_pid = int(target["pid"])
+			_start_chase(pos)
+		return
+
+
 func _start_chase(pos: Vector3) -> void:
 	_enter(S.CHASE)
 	rig.play("alert", 0.1)
 	_pause = 0.35
-	_vocal("watcher_screech", 4.0, true)
+	_vocal(profile.screech_sound, 4.0, true)
 	var d := global_position.distance_to(pos)
 	var now := match_ctrl.state.elapsed
 	if d < 7.0 and now - _last_scare > SCARE_COOLDOWN:
@@ -235,7 +336,7 @@ func _start_chase(pos: Vector3) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not _authority():
+	if not _authority() or rig == null:
 		return
 	if match_ctrl.is_finished() or not match_ctrl.running:
 		velocity = Vector3.ZERO
@@ -248,6 +349,13 @@ func _physics_process(delta: float) -> void:
 		_sense_timer = 0.15
 		_sense()
 	_tick_cues(delta)
+	if profile.freezes_when_watched and _watched and state != S.RECOVER:
+		# Held by a gaze: not a twitch, not even to finish a swing.
+		if state == S.ATTACK:
+			_enter(S.CHASE)
+		velocity = Vector3(0, velocity.y, 0)
+		rig.play("freeze")
+		return
 	if _pause > 0.0:
 		_pause -= delta
 		_move(Vector3.ZERO, 0.0, delta)
@@ -284,12 +392,12 @@ func _tick_patrol(delta: float) -> void:
 		_target = _pick_patrol_point()
 		_has_target = true
 		agent.target_position = _target
-	_follow(WALK, delta)
+	_follow(profile.walk, delta)
 
 
 func _tick_investigate(delta: float) -> void:
 	agent.target_position = _target
-	_follow(INVESTIGATE, delta)
+	_follow(profile.investigate, delta)
 	if _arrived() or _state_time > 25.0:
 		_enter(S.SEARCH)
 
@@ -309,7 +417,7 @@ func _tick_search(delta: float) -> void:
 		agent.target_position = _target
 		_maybe_check_spot_near(center)
 		return
-	_follow(WALK * 1.15, delta)
+	_follow(profile.walk * 1.15, delta)
 
 
 func _tick_chase(delta: float) -> void:
@@ -329,23 +437,24 @@ func _tick_chase(delta: float) -> void:
 		return
 	var pos := MatchState.array_to_vec(p["pos"])
 	# Keeps tracking briefly after losing sight (it knows where you went a moment ago).
-	if now - _last_seen_time > TRACK_AFTER_LOS:
+	if now - _last_seen_time > profile.track_after_lost:
 		_enter(S.LOST)
 		return
 	_repath_timer -= delta
 	if _repath_timer <= 0.0:
 		_repath_timer = 0.25
-		agent.target_position = map.closest_nav_point(pos)
+		# A blind hunter runs at the last place it heard you, not where you are.
+		agent.target_position = map.closest_nav_point(pos if profile.sees else _last_seen_pos)
 	var d := global_position.distance_to(pos)
 	if d <= ATTACK_RANGE and _cooldown <= 0.0 and now - _last_seen_time < 0.3:
 		_enter(S.ATTACK)
 		return
-	_follow(RUN, delta)
+	_follow(profile.run, delta)
 
 
 func _tick_lost(delta: float) -> void:
 	agent.target_position = _last_seen_pos
-	_follow(INVESTIGATE * 1.2, delta)
+	_follow(profile.investigate * 1.2, delta)
 	if _arrived() or _state_time > 12.0:
 		_enter(S.SEARCH)
 
@@ -359,7 +468,7 @@ func _tick_attack(delta: float) -> void:
 	if _attack_stage == 0:
 		_attack_stage = 1
 		rig.play("windup", 0.1, 1.0 / maxf(windup, 0.2))
-		_vocal("watcher_attack", 0.0, true)
+		_vocal(profile.attack_sound, 0.0, true)
 	elif _attack_stage == 1 and _state_time >= windup:
 		_attack_stage = 2
 		rig.play("strike", 0.05)
@@ -392,7 +501,7 @@ func _tick_check_hiding(delta: float) -> void:
 	var front := _check_spot.exit_position()
 	agent.target_position = map.closest_nav_point(front)
 	if global_position.distance_to(front) > 1.2 and _state_time < 10.0:
-		_follow(INVESTIGATE * 1.3, delta)
+		_follow(profile.investigate * 1.3, delta)
 		return
 	_face(_check_spot.global_position, delta * 8.0)
 	_move(Vector3.ZERO, 0.0, delta)
@@ -479,7 +588,7 @@ func _update_anim() -> void:
 	if speed > 2.6:
 		rig.play("run", 0.2, speed / 4.0)
 	elif speed > 0.3:
-		rig.play("walk", 0.25, speed / 1.35)
+		rig.play("walk", 0.25, speed / profile.walk)
 	elif state == S.SEARCH:
 		rig.play("search", 0.3)
 	else:
@@ -575,7 +684,7 @@ func _enter(s: S) -> void:
 		S.SEARCH:
 			_has_target = false
 		S.LOST:
-			_vocal("watcher_growl", 8.0)
+			_vocal(profile.growl_sound, 8.0)
 
 
 # --- Presentation cues ----------------------------------------------------------------
@@ -585,9 +694,19 @@ func _tick_cues(delta: float) -> void:
 	rig.set_lens_intensity(net_lens())
 	_keys_timer -= delta
 	if _keys_timer <= 0.0:
-		_keys_timer = _rng.randf_range(9.0, 18.0)
-		if state in [S.PATROL, S.SEARCH, S.INVESTIGATE]:
-			match_ctrl.world_sound("watcher_keys", global_position + Vector3(0, 1.0, 0), -4.0, 18.0)
+		_keys_timer = _rng.randf_range(profile.cue_interval.x, profile.cue_interval.y)
+		if not profile.cue_sound.is_empty() and state in [S.PATROL, S.SEARCH, S.INVESTIGATE]:
+			match_ctrl.world_sound(profile.cue_sound, global_position + Vector3(0, 1.0, 0), -4.0, 18.0)
+
+
+## Presentation on every peer: a blind hunter stops humming while it hunts,
+## so sudden silence is the warning.
+func _tick_voice(delta: float) -> void:
+	if _breath == null or profile == null or profile.sees:
+		return
+	var hunting := state in [S.CHASE, S.ATTACK, S.LOST] if _authority() else _shown_speed > 2.6
+	var target_db := -40.0 if hunting else profile.breath_db
+	_breath.volume_db = move_toward(_breath.volume_db, target_db, delta * 30.0)
 
 
 func _vocal(sound: String, cooldown: float, force: bool = false) -> void:
@@ -600,7 +719,8 @@ func _vocal(sound: String, cooldown: float, force: bool = false) -> void:
 func _on_foot() -> void:
 	# Local presentation on every peer (driven by animation, not replicated).
 	var speed := Vector2(velocity.x, velocity.z).length() if _authority() else _shown_speed
-	AudioService.play_3d("watcher_step", get_parent(), global_position, -4.0 if speed > 2.6 else -8.0, 24.0)
+	var step := profile.step_sound if profile else "watcher_step"
+	AudioService.play_3d(step, get_parent(), global_position, -4.0 if speed > 2.6 else -8.0, 24.0)
 
 
 ## Sight/hearing line: walls, doors and large furniture block it.
@@ -619,8 +739,14 @@ func _authority() -> bool:
 ## Debug summary for the dev objective inspector.
 func debug_text() -> String:
 	return (
-		"Watcher: %s  target=%s  chase=%d  susp=%s"
-		% [S.keys()[state], str(_target.snapped(Vector3.ONE * 0.1)), _chase_pid, str(_suspicion)]
+		"%s: %s  target=%s  chase=%d  susp=%s"
+		% [
+			profile.id if profile else "enemy",
+			S.keys()[state],
+			str(_target.snapped(Vector3.ONE * 0.1)),
+			_chase_pid,
+			str(_suspicion)
+		]
 	)
 
 
@@ -630,6 +756,7 @@ func debug_text() -> String:
 func _process(delta: float) -> void:
 	if map == null:
 		return
+	_tick_voice(delta)
 	if not _authority() and _net_has:
 		var before := global_position
 		global_position = global_position.lerp(_net_pos, clampf(delta * 10.0, 0.0, 1.0))

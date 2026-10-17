@@ -112,11 +112,151 @@ No teleporting (stuck recovery snaps at most 1.5 m back onto the navmesh), no
 spawning within 12 m of or in sight of any living player, locked doors block
 its navigation, and every attack has a visible wind-up.
 
+## Map 2 — The Black Ward (Clinical Annex 02)
+
+A closed clinical wing where METHOD ran sensory-isolation trials. One floor,
+about 30 × 24 m: ambulance bay (exit), reception (start), triage,
+maintenance, a curtained patient ward, the staff wing behind a card reader
+(generator room, pharmacy, security office, staff room) and an observation
+wing whose one-way glass looks into the patient cells.
+
+### Objective chain (`scripts/maps/ward/ward_rules.gd`)
+
+1. **Find a way out** — the ambulance-bay shutter has no power.
+2. **Get into the staff wing** — a blue staff card (seeded among reception,
+   triage, ward, maintenance, bay).
+3. **Restore emergency power** — fit the starter relay in the generator
+   room's panel, then switch on exactly the circuits the electrician's
+   schematic (maintenance) lists as live and pull the start lever. A wrong
+   set trips every breaker open with a 24 m bang. *Puzzle: emergency
+   circuits (seeded 2–3 of 5).*
+4. **Get into the security office** — the red security card opens the
+   observation wing; with power on, four bed monitors show a bed number and a
+   reading; the night-round sheet (staff room) gives the bed order; the
+   security keypad takes the readings in that order. *Puzzle: observation
+   rooms + code.*
+5. **Open the ambulance bay** — the security console raises the shutter
+   (30–50 s, loud: final phase).
+6. **Escape** through the bay. Optional: 3 of 6 files, the interview tape,
+   escape without being caught.
+
+## Map 3 — Last Train (Transit Annex 03, Kessel Street)
+
+A sealed underground station: a ticket hall at street level (collapsed street
+exit, ticket office, kiosk, gates), a stair shaft down to a side platform
+beside two tracks, and maintenance rooms behind a locked door (signal box,
+store, corridor).
+
+### Objective chain (`scripts/maps/station/station_rules.gd`)
+
+1. **Find a way out** — the street stairs have collapsed.
+2. **Get into the maintenance tunnels** — the maintenance key (seeded in the
+   ticket hall or on the platform).
+3. **Power the signal box** — two power cells into the battery rack.
+4. **Set the evacuation route** — set the four levers Normal/Reverse as the
+   route card (ticket office) says, then press the plunger. A wrong route
+   rings a 26 m conflict bell. *Puzzle: signal routing (seeded 1–2 reversed).*
+5. **Call the evacuation train** from the platform help point.
+6. **Hold out until it arrives** (40/60/75/90 s by difficulty). Station
+   announcements count down; the approaching train's rumble grows and draws
+   the enemy to the platform.
+7. **Board the train** through its open doors. The platform edge stays
+   closed until then. Optional: 3 of 6 files, the signalman's tape, escape
+   without being caught.
+
+### Moving sound sources
+
+Every 70–110 s a train that should not exist rolls through on the far track
+(9 s pass, lit windows, positional rumble that moves with it). While it is
+within 14 m, every other noise there is cut to 30 % — for players and the
+enemy alike — and its rumble draws the enemy to the platform edge. Players
+can time noisy actions (levers, doors, running) to a pass.
+
+## Map 4 — The Silent School (Field Site 04, Hollins Primary)
+
+A one-storey primary school: an entrance hall with chained front doors, a
+long corridor, three classrooms, a staff room (PA), the caretaker's room
+(main breaker) and a library; behind a locked wing door, the music room
+(chimes), the Headmistress's office (tuned lock), a fourth classroom and an
+art store.
+
+### Objective chain (`scripts/maps/school/school_rules.gd`)
+
+1. **Find a way out** — the front doors are chained.
+2. **Get into the east wing** — the wing key lies beside a wind-up music box
+   left playing in one of eight seeded spots in the west rooms. *Mechanic:
+   audio investigation — follow the tune; with sound captions on, its
+   direction is captioned.* The hall's lost-property notice says the key
+   went with the music box.
+3. **Restore the school's power** — the caretaker's main breaker.
+4. **Play the bell tune over the PA** (staff room; needs power). Four notes
+   ring out of the corridor speakers, loud enough to draw the Headmistress;
+   the PA can replay it. The tune is seeded (each bar once, never a plain
+   scale) and never sent to clients — only its sounds are. *Mechanic: audio
+   puzzle; every note has a caption ("Chime: bar 3").*
+5. **Open the Headmistress's office** — play the same four notes on the
+   music-room chimes (bars 1 low → 4 high). A wrong tune sounds a sour chord
+   (18 m noise) and resets the board.
+6. **Cut the chain** — bolt cutters, seeded in the office.
+7. **Leave the school** onto the porch. Optional: 3 of 6 files, the
+   Headmistress's tape, escape without being caught.
+
+## Map 5 — METHOD Facility (Headquarters, sub-level 2)
+
+The finale. A lobby with the dead passenger lift, a long corridor, security,
+archive, observation (cell monitors), generator room, freight-lift bay,
+containment (four cells behind bars), the director's office and a break
+room.
+
+### Objective chain (`scripts/maps/facility/facility_rules.gd`)
+
+Every system from the field sites, once more:
+
+1. **Find a way out** — the passenger lift is dead.
+2. **Get into the security office** — a security card (card reader, as in
+   the ward), seeded across the cells, break room, archive and lobby.
+3. **Release the maglocks** — the security console opens the generator room.
+4. **Start the generator** — two power cells into the rack (as in the
+   station). The lights return — and so does Subject Zero's sight.
+5. **Open the director's office** — the observation monitors show each
+   cell's last reading; the archive's trial protocol gives the check order;
+   the keypad code is the readings in that order (as in the ward).
+6. **Call the freight lift** from the director's console.
+7. **Hold out until it arrives** (40/60/75/90 s by difficulty; announcements
+   and a motor that draws the enemy, as with the station's train).
+8. **Ride the lift up.** The shaft gate stays shut until the car arrives.
+   Optional: 3 of 6 files, Dr. Varga's last tape, escape without being caught.
+
+## Enemies
+
+All five share one state machine (`scripts/ai/watcher.gd`) and differ by
+`EnemyProfile` (`scripts/ai/enemy_profile.gd`): senses, speeds, sounds and
+body. Each map names its profile in its `.tres`.
+
+| | The Watcher (house) | The Sister (ward) | The Lineman (station) | The Headmistress (school) | Subject Zero (facility) |
+|---|---|---|---|---|---|
+| Sight | 120° cone, 13 m; light ×1.35/×1.25, dark ×0.55 | **Blind**: only contact within 1.9 m | 56° headlamp beam, 17 m; **your light level is irrelevant** inside it | 120° cone, 14 m; light ×1.3/×1.2 | Dark: **blind** like the Sister. Power on: 120° cone, 14 m, like the Watcher |
+| Hearing | ×1.0 | **×1.35, hunts by sound**: player noise within 55 % of what she hears starts a direct hunt; louder or farther noise is investigated | ×0.9 | ×1.1 | Dark: ×1.25, hunts by sound. Power on: ×1.15 |
+| Special rule | — | — | — | **Cannot move while watched in light**: a living player looks at her (within 32° of where they face, 20 m, clear line) and she is in their torch beam (≤16 m) or in a lit room. Even a swing in progress stops | **Changes with the power**: the generator gives it sight |
+| Tracking after losing you | 1.4 s | 2.6 s (refreshed by every noise you make) | 1.8 s | 1.6 s | 2.6 s dark / 1.4 s lit |
+| Speeds (walk / investigate / run, m/s) | 1.35 / 2.1 / 4.05 | 1.2 / 2.4 / 4.3 | 1.45 / 2.2 / 4.0 | 1.6 / 2.6 / 4.6 | 1.3 / 2.4 / 4.3 dark, 1.4 / 2.3 / 4.2 lit |
+| Warning cues | flickering lamps, key ring, breathing | flickering lamps, humming that **stops while she hunts**, monitors beep faster | flickering lamps, a visible headlamp beam, a guard's whistle | heels clicking, chalk on a board, a hush; slow breathing | flickering lamps, a wet rasp that **stops while it hunts** in the dark, a dragging chain, cell monitors beep faster |
+| How to survive | stay dark, crouch, break line of sight, hide where it did not see you | freeze, crouch-walk near her, never run close; she checks a locker only if she heard it shut | stay out of the beam, use passing trains as cover | keep a torch or a lit room on her; back away while watching; in co-op, one player watches while another works | in the dark: silence, as with the Sister; once lit: darkness and line of sight, as with the Watcher |
+
+## Progression
+
+Offline, each location unlocks after escaping the previous one on this
+device: The Abandoned House → The Black Ward → Last Train → The Silent
+School → METHOD Facility. Online: the lobby service checks the
+room owner's **verified** online completions (`completions` table) and tells
+the game server which maps the owner may switch to; LAN hosts offer what
+their device has unlocked.
+
 ## Difficulty
 
 | | Story | Normal | Hard | Nightmare |
 |---|---|---|---|---|
-| Watcher speed | ×0.8 | ×1.0 | ×1.1 | ×1.2 |
+| Enemy speed | ×0.8 | ×1.0 | ×1.1 | ×1.2 |
 | Hearing | ×0.6 | ×1.0 | ×1.25 | ×1.5 |
 | Sight | ×0.7 | ×1.0 | ×1.2 | ×1.35 |
 | Search persistence | ×0.6 | ×1.0 | ×1.35 | ×1.7 |
@@ -129,7 +269,8 @@ its navigation, and every attack has a visible wind-up.
 | Crank timing window | 26 % | 17 % | 12 % | 9 % |
 | Hint tiers unlock every | 60 s | 120 s | 240 s | off |
 | Checkpoints | yes | yes | yes | no |
-| Garage door opening | 30 s | 40 s | 45 s | 50 s |
+| Exit opening (garage door, bay shutter) | 30 s | 40 s | 45 s | 50 s |
+| Evacuation train arrival (Last Train) | 40 s | 60 s | 75 s | 90 s |
 | Revive time (co-op) | 3 s | 4 s | 5 s | 6 s |
 | Bleed-out (co-op) | 75 s | 45 s | 30 s | 20 s |
 | Coin multiplier | ×0.75 | ×1 | ×1.5 | ×2 |
@@ -149,13 +290,11 @@ Four rooms, no hostile enemy: move/look, flashlight in a dark room, keycard
 door, notes, hiding, symbol-ordered keypad, exit. Completing it marks the
 tutorial done and grants no coins.
 
-## Planned maps
+## Story
 
-| Map | Distinct mechanic (planned) |
-|---|---|
-| 2 · The Black Ward | Access cards, emergency circuits, observation rooms; enemy perceives through camera feeds rather than light. |
-| 3 · Last Train | Signal routing, maintenance tunnels, moving sound sources (trains) that mask or reveal you; evacuation objective. |
-| 4 · The Silent School | Audio-based investigation in locked wings. |
-| 5 · METHOD Facility | Ties the story together using all systems. |
-
-These are shown as "Coming later" and are not selectable.
+Five letters from "METHOD" lead the players through the field sites: a
+caretaker taught by light (01), a nurse taught by sound (02), a lineman who
+sees only along his beam (03), a headmistress who can only be still while
+watched (04) — and Subject Zero, the first trial, which each later one
+copied a piece of. The facility's notes and Dr. Varga's last tape close it:
+Varga sent the letters so someone would see what METHOD made, and live.

@@ -85,26 +85,37 @@ func _map_card(m: MapDefinition) -> Button:
 	h.add_child(swatch)
 	var v := UI.vbox(2)
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_child(UI.label(m.title_key, ThemeFactory.FONT_BODY + 2))
 	var status := ""
+	var unlocked := Session.is_map_unlocked(String(m.id))
 	if not m.is_playable():
 		status = tr("MAP_COMING_LATER")
+	elif not unlocked:
+		var prereq := Session.map_def(String(m.unlocked_by))
+		status = tr("MAP_LOCKED_BY") % tr(prereq.title_key if prereq else "")
 	else:
 		var prog := Saves.map_progress(String(m.id))
 		status = tr(m.location_key)
 		if bool(prog.get("completed", false)):
 			status += "  ·  " + tr("SOLO_BEST") % UI.format_time(float(prog.get("best_time", 0.0)))
 	var s := UI.label(
-		status, ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM if m.is_playable() else ThemeFactory.TEXT_FAINT
+		status,
+		ThemeFactory.FONT_SMALL,
+		ThemeFactory.TEXT_DIM if m.is_playable() and unlocked else ThemeFactory.TEXT_FAINT
 	)
 	s.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	# Long statuses end in an ellipsis inside the card (the full text is the card's accessible name).
+	s.clip_text = true
+	s.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	v.add_child(s)
 	h.add_child(v)
 	b.add_child(h)
+	b.accessibility_name = "%s. %s" % [tr(m.title_key), status]
 	var id := String(m.id)
 	_map_buttons[id] = b
-	if m.is_playable():
+	if m.is_playable() and unlocked:
 		b.pressed.connect(
 			func() -> void:
 				AudioService.play_ui("ui_click")
@@ -112,7 +123,7 @@ func _map_card(m: MapDefinition) -> Button:
 		)
 	else:
 		b.disabled = true
-		b.tooltip_text = "MAP_COMING_LATER_TIP"
+		b.tooltip_text = "MAP_COMING_LATER_TIP" if not m.is_playable() else "MAP_LOCKED_TIP"
 	return b
 
 

@@ -30,6 +30,32 @@ const SURFACES := {
 	"carpet": ["carpet", Color(1, 1, 1), 0.5, 1.0, 0.0, 0.4, 0.2, 0.0],
 	"exterior": ["blocks", Color(0.35, 0.36, 0.4), 0.4, 0.95, 0.0, 0.6, 0.5, 0.0],
 	"ground": ["concrete", Color(0.25, 0.27, 0.24), 0.2, 1.0, 0.0, 0.6, 0.6, 0.0],
+	# The Black Ward
+	"linoleum": ["linoleum", Color(1, 1, 1), 0.35, 0.55, 0.0, 0.4, 0.3, 0.0],
+	"ceiling_panel": ["ceiling_panel", Color(0.9, 0.9, 0.88), 0.5, 0.95, 0.0, 0.5, 0.2, 0.0],
+	"ward_tile": ["wall_tile", Color(0.72, 0.88, 0.8), 0.6, 0.3, 0.0, 0.5, 0.3, 0.35],
+	"ward_paint": ["plaster", Color(0.78, 0.86, 0.8), 0.4, 0.9, 0.0, 0.4, 0.25, 0.35],
+	# Last Train
+	"subway_tile": ["wall_tile", Color(1.0, 0.95, 0.82), 0.9, 0.3, 0.0, 0.5, 0.3, 0.45],
+	"subway_band": ["wall_tile", Color(0.55, 0.16, 0.12), 0.9, 0.35, 0.0, 0.5, 0.3, 0.3],
+	"platform": ["concrete", Color(0.7, 0.69, 0.66), 0.3, 0.85, 0.0, 0.8, 0.5, 0.0],
+	"tunnel": ["blocks", Color(0.4, 0.38, 0.36), 0.35, 0.95, 0.0, 0.9, 0.6, 0.6],
+	"ballast": ["ballast", Color(1, 1, 1), 0.6, 1.0, 0.0, 1.0, 0.4, 0.0],
+	"rust": ["rust", Color(1, 1, 1), 0.5, 0.85, 0.35, 0.8, 0.3, 0.0],
+	"rail": ["metal", Color(0.55, 0.52, 0.5), 1.0, 0.35, 0.85, 0.3, 0.2, 0.0],
+	"safety_yellow": ["concrete", Color(0.95, 0.75, 0.15), 0.5, 0.8, 0.0, 0.5, 0.3, 0.3],
+	# The Silent School
+	"parquet": ["wood_floor", Color(0.95, 0.8, 0.6), 0.45, 0.65, 0.0, 0.8, 0.35, 0.0],
+	"school_paint": ["plaster", Color(0.9, 0.86, 0.7), 0.4, 0.9, 0.0, 0.4, 0.25, 0.35],
+	"school_dado": ["plaster", Color(0.48, 0.6, 0.52), 0.4, 0.85, 0.0, 0.4, 0.25, 0.4],
+	"school_tile": ["wall_tile", Color(0.86, 0.85, 0.76), 0.6, 0.35, 0.0, 0.5, 0.3, 0.35],
+	"chalkboard": ["plaster", Color(0.12, 0.19, 0.15), 0.4, 0.95, 0.0, 0.3, 0.15, 0.0],
+	"cork": ["fabric", Color(0.78, 0.56, 0.36), 1.2, 1.0, 0.0, 0.6, 0.3, 0.0],
+	# METHOD Facility
+	"lab_tile": ["wall_tile", Color(0.9, 0.93, 0.95), 0.6, 0.3, 0.0, 0.5, 0.25, 0.3],
+	"lab_floor": ["linoleum", Color(0.66, 0.69, 0.73), 0.35, 0.55, 0.0, 0.4, 0.3, 0.0],
+	"lab_panel": ["metal", Color(0.78, 0.8, 0.83), 0.6, 0.5, 0.5, 0.4, 0.2, 0.0],
+	"tank": ["metal", Color(0.12, 0.2, 0.17), 0.4, 0.15, 0.3, 0.2, 0.3, 0.0],
 }
 
 static var _cache: Dictionary = {}

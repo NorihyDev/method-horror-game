@@ -6,6 +6,16 @@ dates are ISO 8601.
 ## [Unreleased]
 
 ### Added
+- **Online co-op over the internet** through a relay on Cloudflare (Worker +
+  one Durable Object per room, free plan, secure WebSockets), deployed.
+  - The room creator's device hosts the match, and others join with a
+    6-digit code from any network: 2–4 players, optional password.
+  - The relay validates membership, roles, sizes and rates. Guests rejoin
+    their slot after a drop, and the room ends explicitly if its creator
+    leaves.
+  - Online matches award no coins.
+  - Verified with 20 protocol checks and two Godot clients through the
+    deployed relay.
 - Godot 4.7.2-stable project (Mobile renderer), METHOD theme, four focused
   autoload services, atomic checksummed saves with backups and migrations.
 - Procedural audio (74 sounds/loops) and texture (11 surfaces) generators with
@@ -41,7 +51,55 @@ dates are ISO 8601.
 - Online end-to-end test with separate processes and an impaired-link relay;
   networking and deployment documentation.
 
+- *The Black Ward*: a clinical wing with card doors, an emergency power board
+  (relay + breaker pattern from a schematic), observation monitors, a
+  night-round code and a bay shutter; The Sister, a blind enemy who hunts by
+  sound and hums until she does.
+- *Last Train*: a sealed station with a collapsed exit, power cells, a signal
+  lever frame and route card, a help point and an evacuation train to hold
+  out for; ghost trains as moving sound sources that mask noise; The
+  Lineman, who sees only along his headlamp beam.
+- Enemy profiles: one tested state machine, per-map senses, speeds, sounds
+  and body styles. 26 new procedural sounds, 4 new surfaces, 5 items.
+- Map unlocks in order: offline per device, online verified by the lobby
+  service, which also limits in-lobby map changes to the owner's unlocks.
+- The shop can use the verified online wallet with idempotent purchases.
+- *The Silent School*: classrooms, a staff-room PA and music-room chimes; a
+  music box to find by ear (the wing key lies beside it), a seeded bell tune
+  played over the PA and back on the chimes to open a tuned lock, bolt
+  cutters for the chained doors. The Headmistress cannot move while someone
+  looks at her in light.
+- *METHOD Facility*, the finale: card door, maglock release, power cells,
+  cell monitors + trial protocol keypad and a freight-lift hold-out. Subject
+  Zero hunts by sound in the dark and gains sight when the generator runs.
+  The story's letters are explained.
+- Enemy profile rules (frozen while watched, runtime profile swap), two rig
+  styles, 19 new procedural sounds with captions, new surfaces, school and
+  laboratory props, wing key and bolt cutters, repeatable consoles, a lift
+  style for the hold-out car.
+- Frame-time benchmark for device profiling (development builds): per-map
+  frame times, GPU/CPU/script/physics cost, draw calls and memory, saved as
+  JSON and printed to the log.
+- Automated accessibility audit: text contrast, touch-target size, screen-reader
+  names and focus on every menu screen, and caption coverage of every cue.
+
 ### Fixed
+- Faint informational text (notes, locked-map reasons, hints) and red status
+  text now meet WCAG AA contrast; disabled controls keep the dim tone.
+- Settings sliders, toggles and map cards had no screen-reader name; sliders
+  were below the touch-target minimum.
+- Long sounds played from emitters (the Sister's humming, ghost and arriving
+  trains, the garage motor, enemy breathing) never produced captions; the
+  Lineman's breathing had none. The ward monitors' fast beeping is now
+  captioned too.
+- Locked-map reasons no longer run past the map card.
+- METHOD files found in The Black Ward and Last Train were counted but could
+  not be read on the progress screen and had no text; every map's files are
+  now listed and written in EN and FR.
+- Multiplayer: a client could send Ready before its connection existed;
+  server-side leaves, kicks and flood disconnects did not mark players away.
+- The house's basement cage gate and door materials were never applied.
+- The enemy could pick a furniture top as a navigation target.
 - CI: shell scripts are executable; gitleaks no longer flags the fake test
   ticket secret.
 - A NUL sentinel string produced Unicode warnings at every startup.

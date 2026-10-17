@@ -23,6 +23,10 @@ func _initialize() -> void:
 	_emit("blocks", _blocks(), 5.0)
 	_emit("carpet", _carpet(), 2.0)
 	_emit("wall_tile", _wall_tile(), 3.0)
+	_emit("linoleum", _linoleum(), 2.0)
+	_emit("ceiling_panel", _ceiling_panel(), 3.0)
+	_emit("ballast", _ballast(), 6.0)
+	_emit("rust", _rust(), 4.0)
 	print("Textures generated in %.1fs" % ((Time.get_ticks_msec() - t0) / 1000.0))
 	quit(0)
 
@@ -318,6 +322,97 @@ func _wall_tile() -> Dictionary:
 			if grout:
 				c = Color(0.36, 0.34, 0.3).darkened(clampf(d - 0.4, 0.0, 0.3))
 				h = 0.38
+			pair[0].set_pixel(x, y, c)
+			pair[1].set_pixel(x, y, Color(h, h, h))
+	return {"albedo": pair[0], "height": pair[1]}
+
+
+## Hospital vinyl sheet: pale speckle, faint welded seams, scuffs and wheel marks.
+func _linoleum() -> Dictionary:
+	var pair := _new_pair()
+	var wear := _noise(0.01, 4, 121)
+	var speck := _noise(0.6, 1, 122)
+	var scuff := _noise(0.04, 3, 123)
+	for y in SIZE:
+		for x in SIZE:
+			var seam := (x % 256) < 2
+			var w := v(wear, x, y)
+			var c := Color(0.55, 0.58, 0.52).darkened(clampf((w - 0.5) * 0.6, -0.08, 0.25))
+			var sp := v(speck, x, y)
+			if sp > 0.78:
+				c = c.darkened(0.25)
+			elif sp < 0.18:
+				c = c.lightened(0.12)
+			var sc := v(scuff, x * 3, y / 3)
+			if sc > 0.74:
+				c = c.darkened((sc - 0.74) * 1.6)
+			var h := 0.55 + (sp - 0.5) * 0.04
+			if seam:
+				c = c.darkened(0.3)
+				h = 0.45
+			pair[0].set_pixel(x, y, c)
+			pair[1].set_pixel(x, y, Color(h, h, h))
+	return {"albedo": pair[0], "height": pair[1]}
+
+
+## Suspended ceiling: 128 px acoustic panels in a metal grid, water stains.
+func _ceiling_panel() -> Dictionary:
+	var pair := _new_pair()
+	var pores := _noise(0.5, 1, 131)
+	var stain := _noise(0.009, 4, 132)
+	for y in SIZE:
+		for x in SIZE:
+			var grid := (x % 128) < 4 or (y % 128) < 4
+			var p := v(pores, x, y)
+			var st := v(stain, x, y)
+			var c := Color(0.68, 0.67, 0.62).darkened((p - 0.5) * 0.12)
+			if st > 0.62:
+				c = c.lerp(Color(0.45, 0.36, 0.22), clampf((st - 0.62) * 2.0, 0.0, 0.6))
+			var h := 0.55 + (p - 0.5) * 0.15
+			if grid:
+				c = Color(0.52, 0.52, 0.5)
+				h = 0.75
+			pair[0].set_pixel(x, y, c)
+			pair[1].set_pixel(x, y, Color(h, h, h))
+	return {"albedo": pair[0], "height": pair[1]}
+
+
+## Track ballast: packed angular stones with dark gaps and rust dust.
+func _ballast() -> Dictionary:
+	var pair := _new_pair()
+	var cells := _cellular(0.05, 141)
+	var tint := _noise(0.03, 3, 142)
+	var dust := _noise(0.01, 3, 143)
+	for y in SIZE:
+		for x in SIZE:
+			var c_val := v(cells, x, y)
+			var t := v(tint, x, y)
+			var stone := clampf(c_val * 1.6, 0.0, 1.0)
+			var c := Color(0.36, 0.35, 0.33).lerp(Color(0.46, 0.44, 0.4), t)
+			c = c.darkened((1.0 - stone) * 0.7)
+			c = c.lerp(Color(0.3, 0.17, 0.09), clampf((v(dust, x, y) - 0.55) * 1.2, 0.0, 0.4))
+			pair[0].set_pixel(x, y, c)
+			pair[1].set_pixel(x, y, Color(stone, stone, stone))
+	return {"albedo": pair[0], "height": pair[1]}
+
+
+## Heavy rust over pitted steel with flaking edges.
+func _rust() -> Dictionary:
+	var pair := _new_pair()
+	var big := _noise(0.012, 5, 151)
+	var fine := _noise(0.25, 2, 152)
+	var flakes := _cellular(0.08, 153)
+	for y in SIZE:
+		for x in SIZE:
+			var b := v(big, x, y)
+			var f := v(fine, x, y)
+			var fl := v(flakes, x, y)
+			var c := Color(0.32, 0.17, 0.08).lerp(Color(0.48, 0.26, 0.11), b)
+			c = c.darkened((f - 0.5) * 0.3)
+			var h := 0.5 + (f - 0.5) * 0.2
+			if fl < 0.12:
+				c = Color(0.25, 0.24, 0.23).lerp(c, 0.3)
+				h -= 0.15
 			pair[0].set_pixel(x, y, c)
 			pair[1].set_pixel(x, y, Color(h, h, h))
 	return {"albedo": pair[0], "height": pair[1]}

@@ -162,7 +162,7 @@ static func slider(min_v: float, max_v: float, step: float, value: float, on_cha
 	s.max_value = max_v
 	s.step = step
 	s.value = value
-	s.custom_minimum_size = Vector2(220, 40)
+	s.custom_minimum_size = Vector2(220, T.MIN_TOUCH - 8)
 	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	s.focus_mode = Control.FOCUS_ALL
 	s.value_changed.connect(on_change)
@@ -212,6 +212,9 @@ static func row(label_key: String, control: Control, tooltip_key: String = "") -
 		l.mouse_filter = Control.MOUSE_FILTER_PASS
 		h.tooltip_text = tooltip_key
 	h.add_child(l)
+	# Screen readers announce the row's label for its control.
+	if control.accessibility_name.is_empty():
+		control.accessibility_name = TranslationServer.translate(label_key)
 	control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	control.size_flags_stretch_ratio = 0.9
 	h.add_child(control)

@@ -2,6 +2,10 @@ extends TestCase
 ## Objective dependency graph and item-placement solvability.
 
 const HOUSE_RULES = preload("res://scripts/maps/house/house_rules.gd")
+const WARD_RULES = preload("res://scripts/maps/ward/ward_rules.gd")
+const STATION_RULES = preload("res://scripts/maps/station/station_rules.gd")
+const SCHOOL_RULES = preload("res://scripts/maps/school/school_rules.gd")
+const FACILITY_RULES = preload("res://scripts/maps/facility/facility_rules.gd")
 
 
 func _graph() -> ObjectiveGraph:
@@ -143,3 +147,124 @@ func test_validator_catches_broken_candidate() -> void:
 	rules.item_slots[0]["candidates"] = PackedStringArray(["sp_kitchen_drawer", "sp_study_desk"])
 	var joined := " ".join(rules.validate())
 	assert_true(joined.contains("sp_study_desk"), "validator must flag the key-behind-its-door candidate")
+
+
+func test_every_playable_map_validates() -> void:
+	for map in Session.maps:
+		if not map.is_playable():
+			continue
+		var rules: MapRules = map.rules_script.new()
+		rules.setup(4, Session.difficulty("hard"))
+		assert_empty(rules.validate(), "%s rules validation" % map.id)
+
+
+func test_ward_every_seed_is_solvable_and_consistent() -> void:
+	var rules: MapRules = WARD_RULES.new()
+	rules.setup(2, Session.difficulty("normal"))
+	for seed_value in 300:
+		var v := rules.generate_variant(seed_value * 104729 + 7)
+		assert_false(v.is_empty(), "variant for seed %d" % seed_value)
+		if v.is_empty():
+			return
+		assert_true(rules.is_solvable(v["placements"]), "seed %d solvable" % seed_value)
+		var p: Dictionary = v["puzzle"]
+		var live := 0
+		for on in p["circuit"]:
+			live += 1 if bool(on) else 0
+		assert_true(live >= 2 and live <= 3, "two or three live circuits (seed %d)" % seed_value)
+		var expected := ""
+		for bed in p["round_order"]:
+			expected += str(p["bed_digits"][int(bed) - 1])
+		assert_eq(p["code"], expected, "code = bed readings in round order (seed %d)" % seed_value)
+		var used := {}
+		for slot in v["placements"]:
+			assert_false(used.has(v["placements"][slot]), "spawn reused for seed %d" % seed_value)
+			used[v["placements"][slot]] = true
+	assert_eq(JSON.stringify(rules.generate_variant(9)), JSON.stringify(rules.generate_variant(9)), "deterministic")
+
+
+func test_ward_validator_catches_card_behind_its_own_door() -> void:
+	var rules: MapRules = WARD_RULES.new()
+	rules.setup(1, Session.difficulty("normal"))
+	# A staff card spawning in the staff wing could never be reached.
+	rules.item_slots[0]["candidates"] = PackedStringArray(["sp_ward_cabinet", "sp_staff_table"])
+	assert_true(" ".join(rules.validate()).contains("sp_staff_table"), "validator flags the staff card behind its door")
+
+
+func test_station_every_seed_is_solvable_and_consistent() -> void:
+	var rules: MapRules = STATION_RULES.new()
+	rules.setup(3, Session.difficulty("hard"))
+	for seed_value in 300:
+		var v := rules.generate_variant(seed_value * 15485863 + 3)
+		assert_false(v.is_empty(), "variant for seed %d" % seed_value)
+		if v.is_empty():
+			return
+		assert_true(rules.is_solvable(v["placements"]), "seed %d solvable" % seed_value)
+		var reversed := 0
+		for r in v["puzzle"]["route"]:
+			reversed += 1 if bool(r) else 0
+		assert_true(reversed >= 1 and reversed <= 2, "one or two reversed levers (seed %d)" % seed_value)
+	assert_eq(JSON.stringify(rules.generate_variant(5)), JSON.stringify(rules.generate_variant(5)), "deterministic")
+
+
+func test_station_validator_catches_key_behind_its_own_door() -> void:
+	var rules: MapRules = STATION_RULES.new()
+	rules.setup(1, Session.difficulty("normal"))
+	rules.item_slots[0]["candidates"] = PackedStringArray(["sp_office_desk", "sp_store_shelf_a"])
+	assert_true(" ".join(rules.validate()).contains("sp_store_shelf_a"), "maintenance key inside maintenance flagged")
+
+
+func test_school_every_seed_is_solvable_and_consistent() -> void:
+	var rules: MapRules = SCHOOL_RULES.new()
+	rules.setup(2, Session.difficulty("normal"))
+	for seed_value in 300:
+		var v := rules.generate_variant(seed_value * 7919 + 11)
+		assert_false(v.is_empty(), "variant for seed %d" % seed_value)
+		if v.is_empty():
+			return
+		assert_true(rules.is_solvable(v["placements"]), "seed %d solvable" % seed_value)
+		var tune: Array = v["puzzle"]["tune"]
+		var sorted_tune := tune.duplicate()
+		sorted_tune.sort()
+		assert_eq(sorted_tune, [1, 2, 3, 4], "each bar once (seed %d)" % seed_value)
+		assert_true(tune != [1, 2, 3, 4] and tune != [4, 3, 2, 1], "never a plain scale (seed %d)" % seed_value)
+		assert_ne(
+			v["placements"]["wing_key"], v["placements"]["bolt_cutters"], "separate spawns (seed %d)" % seed_value
+		)
+	assert_eq(JSON.stringify(rules.generate_variant(4)), JSON.stringify(rules.generate_variant(4)), "deterministic")
+
+
+func test_school_validator_catches_cutters_outside_the_office() -> void:
+	var rules: MapRules = SCHOOL_RULES.new()
+	rules.setup(1, Session.difficulty("normal"))
+	# A wing key placed inside the office (behind the tune lock) could never be reached.
+	rules.item_slots[0]["candidates"] = PackedStringArray(["sp_class_b_desk", "sp_office_desk"])
+	assert_true(" ".join(rules.validate()).contains("sp_office_desk"), "wing key behind the tuned lock flagged")
+
+
+func test_facility_every_seed_is_solvable_and_consistent() -> void:
+	var rules: MapRules = FACILITY_RULES.new()
+	rules.setup(4, Session.difficulty("hard"))
+	for seed_value in 300:
+		var v := rules.generate_variant(seed_value * 2750159 + 5)
+		assert_false(v.is_empty(), "variant for seed %d" % seed_value)
+		if v.is_empty():
+			return
+		assert_true(rules.is_solvable(v["placements"]), "seed %d solvable" % seed_value)
+		var p: Dictionary = v["puzzle"]
+		var expected := ""
+		for cell in p["check_order"]:
+			expected += str(p["cell_digits"][int(cell) - 1])
+		assert_eq(p["code"], expected, "code = cell readings in protocol order (seed %d)" % seed_value)
+		var used := {}
+		for slot in v["placements"]:
+			assert_false(used.has(v["placements"][slot]), "spawn reused for seed %d" % seed_value)
+			used[v["placements"][slot]] = true
+	assert_eq(JSON.stringify(rules.generate_variant(6)), JSON.stringify(rules.generate_variant(6)), "deterministic")
+
+
+func test_facility_validator_catches_card_behind_its_own_door() -> void:
+	var rules: MapRules = FACILITY_RULES.new()
+	rules.setup(1, Session.difficulty("normal"))
+	rules.item_slots[0]["candidates"] = PackedStringArray(["sp_cells_desk", "sp_security_desk"])
+	assert_true(" ".join(rules.validate()).contains("sp_security_desk"), "security card inside security flagged")

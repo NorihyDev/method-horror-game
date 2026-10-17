@@ -49,8 +49,12 @@ func text_args() -> Array:
 	return state.get("args", [])
 
 
+## Seeded args may be plain values or translation keys marked with "@"
+## (e.g. "@CIRCUIT_LIVE"), so seeded words are localized too.
 func body_text() -> String:
-	var args := text_args()
+	var args: Array = []
+	for a in text_args():
+		args.append(tr(str(a).substr(1)) if a is String and str(a).begins_with("@") else a)
 	var text := tr(body_key)
 	if not args.is_empty():
 		text = text % args

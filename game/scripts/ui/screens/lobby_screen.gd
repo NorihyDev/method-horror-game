@@ -216,8 +216,9 @@ func _build_settings(room: Dictionary, owner: bool) -> void:
 	if owner:
 		var maps: Array = []
 		var labels: Array = []
+		var allowed: Array = room.get("allowed_maps", [])
 		for m in Session.maps:
-			if m.is_playable() and not m.is_tutorial:
+			if m.is_playable() and not m.is_tutorial and (allowed.is_empty() or allowed.has(String(m.id))):
 				maps.append(String(m.id))
 				labels.append(tr(m.title_key))
 		_settings_box.add_child(

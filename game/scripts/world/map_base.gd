@@ -85,9 +85,15 @@ func authority_tick(_match: MatchController, _delta: float) -> void:
 	pass
 
 
-## Briefing text keys shown on the loading screen.
-func briefing_keys() -> PackedStringArray:
-	return []
+## Multiplier for noise heard at `pos` (1 = normal). Maps with loud moving
+## sources (trains) lower it nearby; `kind` lets a map exempt its own sources.
+func noise_mask(_pos: Vector3, _kind: String) -> float:
+	return 1.0
+
+
+## Presentation of a match flag on every peer (lights, monitors, arrivals).
+func on_flag(_match: MatchController, _flag: String) -> void:
+	pass
 
 
 # --- Construction helpers -------------------------------------------------------------
@@ -279,6 +285,15 @@ func closest_nav_point(pos: Vector3) -> Vector3:
 	# Map iterations are asynchronous; an unsynced map answers (0,0,0).
 	if p == Vector3.ZERO and pos.length() > 1.0:
 		return pos
+	if p.y - pos.y > 0.45:
+		# Snapped onto a furniture top (a small unreachable island): prefer the
+		# floor around the point instead.
+		for r: float in [0.7, 1.2, 1.8]:
+			for k in 8:
+				var a := TAU * k / 8.0
+				var q := NavigationServer3D.map_get_closest_point(map_rid, pos + Vector3(cos(a) * r, 0, sin(a) * r))
+				if absf(q.y - pos.y) < 0.45:
+					return q
 	return p
 
 

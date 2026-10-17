@@ -12,6 +12,8 @@ const ATTEMPT_COOLDOWN := 1.0
 ## Door entity opened on success.
 @export var target_door := ""
 @export var success_flag := "cage_open"
+## False when the order comes from elsewhere (a duty roster, not glyphs).
+@export var show_order := true
 
 var _screen_mat: StandardMaterial3D
 var _glyph_root: Node3D
@@ -45,6 +47,7 @@ func _ready() -> void:
 	plate.modulate = Color(0.8, 0.77, 0.7)
 	plate.shaded = true
 	plate.position = Vector3(0, 0.38, 0.005)
+	plate.visible = show_order
 	add_child(plate)
 	add_target(Vector3(0.3, 0.5, 0.12), Vector3(0, 0.1, 0.04))
 
@@ -100,7 +103,7 @@ func authority_interact(ctx: Dictionary) -> void:
 	var answer := str(match_ctrl.puzzle().get("code", ""))
 	if code != answer or answer.is_empty():
 		world_sound("keypad_error", -2.0, 14.0)
-		match_ctrl.emit_noise(interact_origin(), 6.0, "keypad")
+		match_ctrl.emit_noise(interact_origin(), 6.0, "keypad", pid)
 		match_ctrl.notify_player(pid, "KEYPAD_WRONG")
 		var s := state.duplicate()
 		s["attempts"] = int(s.get("attempts", 0)) + 1

@@ -26,6 +26,13 @@ const ITEM_PATHS: PackedStringArray = [
 	"res://resources/items/drive_assembly.tres",
 	"res://resources/items/battery.tres",
 	"res://resources/items/orientation_key.tres",
+	"res://resources/items/staff_card.tres",
+	"res://resources/items/security_card.tres",
+	"res://resources/items/starter_relay.tres",
+	"res://resources/items/maint_key.tres",
+	"res://resources/items/power_cell.tres",
+	"res://resources/items/wing_key.tres",
+	"res://resources/items/bolt_cutters.tres",
 ]
 
 var app: App
@@ -87,6 +94,24 @@ func difficulty(id: String) -> DifficultyDefinition:
 	return difficulties[1] if difficulties.size() > 1 else null
 
 
+## Offline progression: a map opens once its prerequisite was escaped on this
+## device. Online rooms use the lobby's verified completions instead.
+func is_map_unlocked(map_id: String) -> bool:
+	var def := map_def(map_id)
+	if def == null or not def.is_playable():
+		return false
+	return String(def.unlocked_by).is_empty() or Saves.is_map_completed(String(def.unlocked_by))
+
+
+## Playable, non-tutorial maps this device has unlocked (LAN rooms use this).
+func unlocked_map_ids() -> PackedStringArray:
+	var out: PackedStringArray = []
+	for m in maps:
+		if m.is_playable() and not m.is_tutorial and is_map_unlocked(String(m.id)):
+			out.append(String(m.id))
+	return out
+
+
 func item(id: String) -> ItemDefinition:
 	return items.get(id)
 
@@ -106,6 +131,9 @@ func new_match_id() -> String:
 
 
 func start_solo(map_id: String, difficulty_id: String, resume_snapshot: Dictionary = {}) -> void:
+	if not is_map_unlocked(map_id) and resume_snapshot.is_empty():
+		Log.warn("session", "Refused to start a locked map", {"map": map_id})
+		return
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	match_config = {

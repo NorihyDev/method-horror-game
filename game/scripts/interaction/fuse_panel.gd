@@ -115,7 +115,7 @@ func authority_interact(ctx: Dictionary) -> void:
 		# Short circuit: loud, visible, and the fuse lands on the floor.
 		match_ctrl.take_item(pid, "fuse")
 		world_sound("short_circuit", 4.0, 40.0)
-		match_ctrl.emit_noise(interact_origin(), 24.0, "short")
+		match_ctrl.emit_noise(interact_origin(), 24.0, "short", pid)
 		match_ctrl.notify_player(pid, "FUSE_SHORTED")
 		# The panel faces local +Z; the fuse lands on the floor in front of it.
 		var front := global_position + global_basis.z * 0.55

@@ -327,3 +327,167 @@ func test_downed_revive_cancel_and_bleed_out() -> void:
 		snet.mc.damage_player(a_pid)
 	assert_true(await _wait_for(func() -> bool: return anet.mc.is_finished()), "A's client sees the end")
 	assert_eq(snet.mc.state.result, "defeat")
+
+
+## New maps over the network: the client builds the same level, its enemy
+## puppet uses the map's profile, and map-specific state (monitors powered by
+## the ward's power flag, the station's ghost train) reaches clients.
+func test_new_maps_replicate() -> void:
+	for map_id in ["black_ward", "last_train"]:
+		_start_server()
+		var snet: NetBridge = server["net"]
+		snet.server_set_options(map_id, "normal")
+		assert_eq(str(snet.room["map_id"]), map_id, "owner can pick %s" % map_id)
+		var a := _join("user-aaaaaaaa", "Ann")
+		clients.append(a)
+		assert_true(await _wait_for(func() -> bool: return _has_event(a, "joined")), "joined %s room" % map_id)
+		var anet: NetBridge = a["net"]
+		anet.request_start()
+		assert_true(await _wait_for(func() -> bool: return _has_event(a, "begun"), 900), "%s match began" % map_id)
+		assert_eq(String(anet.mc.map_def.id), map_id, "client built the same map")
+		# Force the enemy in now and check the client's puppet.
+		snet.mc.set("_enemy_arrival_at", 0.0)
+		assert_true(
+			await _wait_for(func() -> bool: return not anet.mc.enemies.is_empty(), 600), "%s enemy replicated" % map_id
+		)
+		if not anet.mc.enemies.is_empty():
+			var puppet: Watcher = anet.mc.enemies[0]
+			var expected := "sister" if map_id == "black_ward" else "lineman"
+			assert_eq(puppet.profile.id, expected, "client puppet uses the %s profile" % expected)
+		if map_id == "black_ward":
+			snet.mc.set_flag("ward_power")
+			assert_true(
+				await _wait_for(func() -> bool: return (anet.mc.entities["monitor_1"] as MonitorClue).powered),
+				"monitors light up on the client"
+			)
+			assert_true(
+				int(anet.mc.state.entities["monitor_1"].get("digit", -1)) >= 0, "monitor readings are public state"
+			)
+		else:
+			snet.mc.set_entity_state("ghost_train", {"start": snet.mc.state.elapsed, "dir": 1})
+			assert_true(
+				await _wait_for(
+					func() -> bool: return float(anet.mc.state.entities["ghost_train"].get("start", -1.0)) >= 0.0
+				),
+				"ghost train pass reaches the client"
+			)
+		await after_each()
+
+
+func test_final_maps_replicate() -> void:
+	for map_id in ["silent_school", "method_facility"]:
+		_start_server()
+		var snet: NetBridge = server["net"]
+		snet.server_set_options(map_id, "normal")
+		assert_eq(str(snet.room["map_id"]), map_id, "owner can pick %s" % map_id)
+		var a := _join("user-aaaaaaaa", "Ann")
+		clients.append(a)
+		assert_true(await _wait_for(func() -> bool: return _has_event(a, "joined")), "joined %s room" % map_id)
+		var anet: NetBridge = a["net"]
+		anet.request_start()
+		assert_true(await _wait_for(func() -> bool: return _has_event(a, "begun"), 900), "%s match began" % map_id)
+		assert_eq(String(anet.mc.map_def.id), map_id, "client built the same map")
+		snet.mc.set("_enemy_arrival_at", 0.0)
+		assert_true(
+			await _wait_for(func() -> bool: return not anet.mc.enemies.is_empty(), 600), "%s enemy replicated" % map_id
+		)
+		var puppet: Watcher = null if anet.mc.enemies.is_empty() else anet.mc.enemies[0]
+		if map_id == "silent_school":
+			if puppet:
+				assert_eq(puppet.profile.id, "headmistress", "client puppet uses the headmistress profile")
+			var box: Dictionary = anet.mc.state.entities["music_box"]
+			assert_eq((box.get("pos", []) as Array).size(), 3, "the music box position reaches the client")
+			assert_true(bool(box.get("playing", false)), "and it is playing")
+			snet.mc.set_flag("school_power")
+			assert_true(await _wait_for(func() -> bool: return anet.mc.map.power_on), "school power reaches the client")
+		else:
+			if puppet:
+				assert_eq(puppet.profile.id, "subject", "client puppet is Subject Zero")
+				assert_false(puppet.profile.sees, "blind in the dark")
+			snet.mc.set_flag("facility_power")
+			assert_true(
+				await _wait_for(func() -> bool: return (anet.mc.entities["monitor_1"] as MonitorClue).powered),
+				"cell monitors light up on the client"
+			)
+			if puppet:
+				assert_true(
+					await _wait_for(func() -> bool: return puppet.profile.sees), "the client's Subject Zero sees too"
+				)
+			snet.mc.set_flag("lift_called")
+			assert_true(
+				await _wait_for(
+					func() -> bool: return float(anet.mc.state.entities["freight_lift"].get("progress", 0.0)) > 0.0, 600
+				),
+				"lift progress reaches the client"
+			)
+		await after_each()
+
+
+## Six players (the protocol maximum) on one dedicated-style server: every
+## client joins, passes the start barrier, sees everyone move and receives a
+## shared state change; the server's per-tick cost is measured.
+func test_six_players_sync() -> void:
+	_port = 25150 + randi() % 200
+	server = _side("Server6")
+	var snet: NetBridge = server["net"]
+	snet.ticket_secret = SECRET
+	var room := {"room_id": ROOM, "code": "654321", "map_id": "house", "difficulty_id": "normal", "max_players": 6}
+	assert_eq(snet.host(_port, room, NetBridge.Trust.DEDICATED), OK)
+	for i in 6:
+		var c := _join("user-six-%02d00000" % i, "P%d" % (i + 1))
+		clients.append(c)
+	assert_true(
+		await _wait_for(
+			func() -> bool: return clients.all(func(c: Dictionary) -> bool: return _has_event(c, "joined")), 900
+		),
+		"six clients joined"
+	)
+	assert_true(await _wait_for(func() -> bool: return (snet.room["members"] as Array).size() == 6), "six members")
+	for i in range(1, 6):
+		(clients[i]["net"] as NetBridge).set_ready(true)
+	assert_true(await _wait_for(func() -> bool: return snet.can_start(), 600), "all ready")
+	(clients[0]["net"] as NetBridge).request_start()
+	assert_true(
+		await _wait_for(
+			func() -> bool: return clients.all(func(c: Dictionary) -> bool: return _has_event(c, "begun")), 1500
+		),
+		"all six began together"
+	)
+	snet.mc.enemy_enabled = false
+	# Everyone sees five avatars, and a shared change reaches all six.
+	for c in clients:
+		assert_eq((c["net"] as NetBridge).avatars().size(), 5, "five remote avatars per client")
+	# The first player spawns within reach of the front door (others are refused: out of range).
+	(clients[0]["net"] as NetBridge).mc.request_interact("door_front", 0)
+	assert_true(
+		await _wait_for(
+			func() -> bool:
+				return clients.all(
+					func(c: Dictionary) -> bool: return (c["net"] as NetBridge).mc.state.has_flag("exit_found")
+				),
+			600
+		),
+		"a shared change reaches all six"
+	)
+	# Movement: each client's position reaches the others through the server.
+	var mover: NetBridge = clients[5]["net"]
+	var start := mover.local_player.global_position
+	var watcher_net: NetBridge = clients[0]["net"]
+	for i in 40:
+		mover.local_player.global_position = start + Vector3(0, 0, -0.04 * i)
+		await get_tree().physics_frame
+	assert_true(
+		await _wait_for(
+			func() -> bool:
+				return (watcher_net.avatars()[mover.my_pid] as Node3D).global_position.distance_to(start) > 0.8,
+			300
+		),
+		"another client sees the move"
+	)
+	# Server cost per physics tick with six players connected (this machine).
+	var t0 := Time.get_ticks_usec()
+	for i in 60:
+		snet.call("_server_tick", 1.0 / 60.0)
+	var per_tick_ms := (Time.get_ticks_usec() - t0) / 60000.0
+	print("six-player server broadcast tick: %.3f ms" % per_tick_ms)
+	assert_true(per_tick_ms < 4.0, "server tick stays cheap with six players (%.3f ms)" % per_tick_ms)

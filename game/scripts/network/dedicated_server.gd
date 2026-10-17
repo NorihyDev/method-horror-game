@@ -36,6 +36,9 @@ func _ready() -> void:
 	root.add_child(net)
 	net.world_parent = Session.app.world_root
 	net.ticket_secret = secret
+	var allowed := AppInfo.arg_value("--allowed-maps", "")
+	if not allowed.is_empty():
+		net.allowed_maps = PackedStringArray(allowed.split(",", false))
 	net.reconnect_window = clampf(
 		float(AppInfo.arg_value("--reconnect-window", str(NetProtocol.RECONNECT_WINDOW))), 5.0, 300.0
 	)

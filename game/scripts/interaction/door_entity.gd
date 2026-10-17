@@ -24,8 +24,12 @@ const LAYER_DOOR := 1 << 4
 ## Flag set when the door is unlocked (keeps objective logic data-driven).
 @export var unlock_flag := ""
 @export var style := "panel"
+## Access-card door: a wall reader beside the frame shows red/green and
+## beeps instead of rattling.
+@export var card_reader := false
 
 var panel: AnimatableBody3D
+var _reader_mat: StandardMaterial3D
 var _tween: Tween
 var _angle := 0.0
 
@@ -44,12 +48,35 @@ func _ready() -> void:
 	shape.position = Vector3(width * 0.5, height * 0.5, 0)
 	panel.add_child(shape)
 	_build_visual()
+	if card_reader:
+		_build_reader()
 	add_target(Vector3(width, height, thickness + 0.1), Vector3(width * 0.5, height * 0.5, 0), 0, panel)
 	_update_layers(not lock.is_empty())
 
 
+func _build_reader() -> void:
+	# Mounted on the wall beside the latch side, on both faces.
+	for face in [-1, 1]:
+		add_mesh(
+			box_mesh(Vector3(0.09, 0.14, 0.03)),
+			MaterialLib.flat(Color(0.15, 0.15, 0.16), 0.5),
+			Transform3D(Basis.IDENTITY, Vector3(width + 0.2, 1.2, face * 0.1))
+		)
+	_reader_mat = MaterialLib.glow(Color(0.8, 0.1, 0.08), 1.6)
+	for face in [-1, 1]:
+		var lamp := add_mesh(
+			box_mesh(Vector3(0.05, 0.02, 0.01)),
+			_reader_mat,
+			Transform3D(Basis.IDENTITY, Vector3(width + 0.2, 1.25, face * 0.118))
+		)
+		lamp.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
 func _build_visual() -> void:
 	var mat := MaterialLib.surface(material)
+	if style == "ward":
+		_build_ward_visual(mat)
+		return
 	if style == "cage":
 		var steel := MaterialLib.surface("metal_dark")
 		for i in 7:
@@ -109,6 +136,37 @@ func _build_visual() -> void:
 		)
 
 
+## Hospital door: painted panel, wired-glass window, push plate.
+func _build_ward_visual(mat: Material) -> void:
+	add_mesh(
+		box_mesh(Vector3(width, height, thickness)),
+		mat,
+		Transform3D(Basis.IDENTITY, Vector3(width * 0.5, height * 0.5, 0)),
+		panel
+	)
+	var glass := MaterialLib.flat(Color(0.08, 0.1, 0.1), 0.15, 0.2)
+	add_mesh(
+		box_mesh(Vector3(width * 0.32, height * 0.28, thickness + 0.012)),
+		glass,
+		Transform3D(Basis.IDENTITY, Vector3(width * 0.5, height * 0.68, 0)),
+		panel
+	)
+	var steel := MaterialLib.surface("metal")
+	add_mesh(
+		box_mesh(Vector3(width * 0.8, 0.22, thickness + 0.01)),
+		steel,
+		Transform3D(Basis.IDENTITY, Vector3(width * 0.5, 0.14, 0)),
+		panel
+	)
+	for side in [-1, 1]:
+		add_mesh(
+			box_mesh(Vector3(0.1, 0.3, 0.01)),
+			steel,
+			Transform3D(Basis.IDENTITY, Vector3(width - 0.14, 1.1, side * (thickness * 0.5 + 0.006))),
+			panel
+		)
+
+
 func initial_state() -> Dictionary:
 	return {"open": false, "locked": not lock.is_empty()}
 
@@ -118,6 +176,10 @@ func apply_state(new_state: Dictionary) -> void:
 	super.apply_state(new_state)
 	var target := (open_angle * swing) if bool(new_state.get("open", false)) else 0.0
 	_update_layers(bool(new_state.get("locked", false)))
+	if _reader_mat:
+		var granted := not bool(new_state.get("locked", false))
+		_reader_mat.albedo_color = Color(0.3, 0.9, 0.35) if granted else Color(0.8, 0.1, 0.08)
+		_reader_mat.emission = _reader_mat.albedo_color
 	if (
 		was_locked
 		and not bool(new_state.get("locked", false))
@@ -169,7 +231,7 @@ func is_locked() -> bool:
 func get_prompt(pid: int, _sub: int) -> String:
 	if is_locked():
 		if lock.begins_with("item:") and match_ctrl and match_ctrl.has_item(pid, lock.substr(5)):
-			return tr("PROMPT_UNLOCK")
+			return tr("PROMPT_SWIPE_CARD" if card_reader else "PROMPT_UNLOCK")
 		return tr("PROMPT_TRY_DOOR")
 	return tr("PROMPT_CLOSE") if is_open() else tr("PROMPT_OPEN")
 
@@ -184,16 +246,16 @@ func authority_interact(ctx: Dictionary) -> void:
 		match_ctrl.set_flag(try_flag)
 	if is_locked():
 		if _requirement_met(pid):
-			_unlock_and_open()
+			_unlock_and_open(pid)
 			return
-		world_sound("door_locked", -4.0, 14.0)
-		match_ctrl.emit_noise(interact_origin(), 4.0, "door")
+		world_sound("card_deny" if card_reader else "door_locked", -4.0, 14.0)
+		match_ctrl.emit_noise(interact_origin(), 4.0, "door", pid)
 		match_ctrl.notify_player(pid, locked_message)
 		return
 	var opening := not is_open()
 	match_ctrl.set_entity_state(entity_id, {"open": opening, "locked": false})
 	world_sound("door_creak" if opening else "door_close", -2.0, 22.0)
-	match_ctrl.emit_noise(interact_origin(), 5.5 if opening else 6.5, "door")
+	match_ctrl.emit_noise(interact_origin(), 5.5 if opening else 6.5, "door", pid)
 
 
 func _requirement_met(pid: int) -> bool:
@@ -204,10 +266,10 @@ func _requirement_met(pid: int) -> bool:
 	return false
 
 
-func _unlock_and_open() -> void:
+func _unlock_and_open(pid: int) -> void:
 	match_ctrl.set_entity_state(entity_id, {"open": true, "locked": false})
-	world_sound("unlock", 0.0, 16.0)
-	match_ctrl.emit_noise(interact_origin(), 5.0, "door")
+	world_sound("card_accept" if card_reader else "unlock", 0.0, 16.0)
+	match_ctrl.emit_noise(interact_origin(), 5.0, "door", pid)
 	if not unlock_flag.is_empty():
 		match_ctrl.set_flag(unlock_flag)
 

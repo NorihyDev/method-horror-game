@@ -14,6 +14,10 @@ var item_slots: Array[Dictionary] = []
 var spawn_zones: Dictionary = {}
 var player_count := 1
 var difficulty: DifficultyDefinition
+## Flag that powers lamps marked `needs_power` (presentation on every peer).
+var power_flag := "power_on"
+## flag -> MatchState.Phase the match escalates to when that flag is set.
+var phase_flags: Dictionary = {}
 
 
 ## Override: declare objectives, zones, actions, spawn points and slots.

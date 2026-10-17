@@ -22,3 +22,5 @@ base_escape_reward = 100
 first_completion_bonus = 150
 optional_objective_reward = 25
 collectible_reward = 10
+briefing_keys = PackedStringArray("BRIEF_HOUSE_1", "BRIEF_HOUSE_2", "BRIEF_HOUSE_3")
+enemy_profile = &"watcher"

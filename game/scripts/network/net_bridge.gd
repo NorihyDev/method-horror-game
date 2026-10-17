@@ -21,7 +21,9 @@ signal ping_received(pid: int, pos: Vector3, kind: int)
 signal revive_changed(target: int, active: bool)
 
 enum Mode { OFFLINE, SERVER, CLIENT }
-enum Trust { DEDICATED, LAN_HOST }
+## DEDICATED: a headless server we run. LAN_HOST / RELAY_HOST: a player's
+## device hosts and plays (LAN directly, or online through the METHOD relay).
+enum Trust { DEDICATED, LAN_HOST, RELAY_HOST }
 
 const PHASE_LOBBY := "lobby"
 const PHASE_LOADING := "loading"
@@ -41,11 +43,19 @@ var local_player: PlayerController
 var ticket_secret := ""
 ## Seconds a disconnected player's slot is kept during a match.
 var reconnect_window := NetProtocol.RECONNECT_WINDOW
+## Maps the room may switch to (the owner's unlocks; set by the lobby for
+## online rooms, by local progress for LAN). Empty = every playable map.
+var allowed_maps: PackedStringArray = []
 var expected_room_id := ""
 ## Display name / color of a LAN host's own player.
 var host_name := ""
 var host_color := 0
 var limiter := NetProtocol.RateLimiter.new()
+## World broadcasts per second (players, enemies). Relay rooms send less: every
+## incoming relay message counts against the free plan's daily quota.
+var broadcast_hz := NetProtocol.BROADCAST_HZ
+## Seconds between the local player's motion reports.
+var motion_interval := NetProtocol.MOTION_INTERVAL
 
 var _mp: SceneMultiplayer
 var _enet: ENetMultiplayerPeer
@@ -95,8 +105,6 @@ func _install_multiplayer() -> void:
 func host(
 	port: int, p_room: Dictionary, p_trust: Trust, dtls_key: CryptoKey = null, dtls_cert: X509Certificate = null
 ) -> Error:
-	_install_multiplayer()
-	trust = p_trust
 	_enet = ENetMultiplayerPeer.new()
 	var max_clients := clampi(int(p_room.get("max_players", NetProtocol.MAX_PLAYERS)), 1, NetProtocol.MAX_PLAYERS)
 	var err := _enet.create_server(port, max_clients)
@@ -106,8 +114,29 @@ func host(
 		err = _enet.host.dtls_server_setup(TLSOptions.server(dtls_key, dtls_cert))
 		if err != OK:
 			return err
+	_host_on(_enet, p_room, p_trust, max_clients)
+	Log.info("net", "Server listening", {"port": port, "trust": room["trust"], "dtls": dtls_key != null})
+	return OK
+
+
+## Hosts an online room through the relay: this device plays as pid 1 and
+## runs the match; `peer` is already connected to the room as its host.
+## `p_room.max_players` counts everyone, the host included.
+func host_relay(peer: MultiplayerPeer, p_room: Dictionary) -> Error:
+	var total := clampi(int(p_room.get("max_players", 4)), 2, NetProtocol.RELAY_MAX_PLAYERS)
+	_host_on(peer, p_room, Trust.RELAY_HOST, total - 1)
+	Log.info("net", "Hosting relay room", {"code": room["code"], "max": room["max_players"]})
+	return OK
+
+
+func _host_on(peer: MultiplayerPeer, p_room: Dictionary, p_trust: Trust, max_clients: int) -> void:
+	_install_multiplayer()
+	trust = p_trust
+	if trust == Trust.RELAY_HOST:
+		broadcast_hz = NetProtocol.RELAY_BROADCAST_HZ
+		motion_interval = NetProtocol.RELAY_MOTION_INTERVAL
 	_mp.auth_callback = _server_auth
-	_mp.multiplayer_peer = _enet
+	_mp.multiplayer_peer = peer
 	_mp.peer_connected.connect(_on_peer_connected)
 	_mp.peer_disconnected.connect(_on_peer_disconnected)
 	mode = Mode.SERVER
@@ -118,9 +147,9 @@ func host(
 		"map_id": str(p_room.get("map_id", "house")),
 		"difficulty_id": str(p_room.get("difficulty_id", "normal")),
 		"max_players": max_clients if trust == Trust.DEDICATED else mini(max_clients + 1, NetProtocol.MAX_PLAYERS),
-		"trust": "dedicated" if trust == Trust.DEDICATED else "lan",
+		"trust": ["dedicated", "lan", "relay"][trust],
 	}
-	if trust == Trust.LAN_HOST:
+	if host_plays():
 		my_pid = 1
 		_names[1] = NameValidator.normalize(host_name)
 		_colors[1] = host_color
@@ -128,13 +157,15 @@ func host(
 		_owner_pid = 1
 		_pid_by_uid["lan-host"] = 1
 	_publish_room()
-	Log.info("net", "Server listening", {"port": port, "trust": room["trust"], "dtls": dtls_key != null})
-	return OK
+
+
+## True when a player's own device hosts (and plays in) the match.
+func host_plays() -> bool:
+	return trust != Trust.DEDICATED
 
 
 ## Connects to a server. `hello` keys: ticket (online) or lan_id (LAN), name, color.
 func join(address: String, port: int, hello: Dictionary, dtls_trusted: X509Certificate = null) -> Error:
-	_install_multiplayer()
 	_enet = ENetMultiplayerPeer.new()
 	var err := _enet.create_client(address, port)
 	if err != OK:
@@ -143,6 +174,21 @@ func join(address: String, port: int, hello: Dictionary, dtls_trusted: X509Certi
 		err = _enet.host.dtls_client_setup(address, TLSOptions.client(dtls_trusted, "localhost"))
 		if err != OK:
 			return err
+	_join_on(_enet, hello)
+	return OK
+
+
+## Joins an online room through the relay (`peer` is opening its socket).
+func join_relay(peer: MultiplayerPeer, hello: Dictionary) -> Error:
+	trust = Trust.RELAY_HOST
+	broadcast_hz = NetProtocol.RELAY_BROADCAST_HZ
+	motion_interval = NetProtocol.RELAY_MOTION_INTERVAL
+	_join_on(peer, hello)
+	return OK
+
+
+func _join_on(peer: MultiplayerPeer, hello: Dictionary) -> void:
+	_install_multiplayer()
 	_hello = hello.duplicate()
 	_hello["protocol"] = AppInfo.PROTOCOL_VERSION
 	_hello["build"] = AppInfo.version()
@@ -151,9 +197,10 @@ func join(address: String, port: int, hello: Dictionary, dtls_trusted: X509Certi
 	_mp.peer_authentication_failed.connect(func(_id: int) -> void: _fail("NET_REJECT_TIMEOUT"))
 	_mp.connection_failed.connect(func() -> void: _fail("NET_UNREACHABLE"))
 	_mp.server_disconnected.connect(_on_server_disconnected)
-	_mp.multiplayer_peer = _enet
+	# Only once both sides finished authenticating can RPCs reach the server.
+	_mp.connected_to_server.connect(func() -> void: joined.emit(my_pid))
+	_mp.multiplayer_peer = peer
 	mode = Mode.CLIENT
-	return OK
 
 
 func close() -> void:
@@ -189,7 +236,7 @@ func _server_auth(peer: int, data: PackedByteArray) -> void:
 	if int(hello.get("protocol", -1)) != AppInfo.PROTOCOL_VERSION:
 		_reject(peer, NetProtocol.REJECT_VERSION)
 		return
-	var identity := _identify(hello)
+	var identity := NetProtocol.identify(hello, trust == Trust.DEDICATED, ticket_secret, expected_room_id)
 	if not identity["ok"]:
 		_reject(peer, identity["reason"])
 		return
@@ -221,39 +268,6 @@ func _server_auth(peer: int, data: PackedByteArray) -> void:
 	var reply := {"ok": true, "pid": pid, "reconnect": reconnect}
 	_mp.send_auth(peer, JSON.stringify(reply).to_utf8_buffer())
 	_mp.complete_auth(peer)
-
-
-func _identify(hello: Dictionary) -> Dictionary:
-	if trust == Trust.DEDICATED:
-		var v := NetProtocol.verify_ticket(
-			str(hello.get("ticket", "")), ticket_secret, expected_room_id, int(Time.get_unix_time_from_system())
-		)
-		if not v["ok"]:
-			return {"ok": false, "reason": v["reason"]}
-		var p: Dictionary = v["payload"]
-		var ticket_name := str(p.get("name", ""))
-		if NameValidator.validate(ticket_name) != NameValidator.Result.OK:
-			return {"ok": false, "reason": NetProtocol.REJECT_NAME}
-		return {
-			"ok": true,
-			"uid": str(p["uid"]),
-			"name": NameValidator.normalize(ticket_name),
-			"color": int(p.get("color", 0)),
-			"owner": bool(p.get("own", false)),
-		}
-	# LAN development: no ticket; lower trust (documented). The id only keys reconnects.
-	var lan_name := str(hello.get("name", ""))
-	if NameValidator.validate(lan_name) != NameValidator.Result.OK:
-		return {"ok": false, "reason": NetProtocol.REJECT_NAME}
-	var lan_id := str(hello.get("lan_id", ""))
-	if lan_id.length() < 8 or lan_id.length() > 64:
-		return {"ok": false, "reason": NetProtocol.REJECT_MALFORMED}
-	return {
-		"ok": true,
-		"uid": "lan-" + SaveIO.sha256_text(lan_id).substr(0, 16),
-		"name": NameValidator.normalize(lan_name),
-		"color": int(hello.get("color", 0))
-	}
 
 
 func _reject(peer: int, reason: String) -> void:
@@ -293,7 +307,7 @@ func _sender_pid(kind: String) -> int:
 	if not limiter.allow(peer, kind, Time.get_ticks_msec() / 1000.0):
 		if int(limiter.dropped.get(peer, 0)) > 400:
 			Log.warn("net", "Disconnecting abusive peer", {"peer": peer})
-			_mp.disconnect_peer(peer)
+			_drop_peer.call_deferred(peer)
 		return 0
 	return int(_peers[peer]["pid"])
 
@@ -341,7 +355,7 @@ func _first_member() -> int:
 	var pids := _names.keys()
 	pids.sort()
 	for pid in pids:
-		if trust == Trust.LAN_HOST and int(pid) == 1:
+		if host_plays() and int(pid) == 1:
 			return 1
 		if _peer_of(int(pid)) != 0:
 			return int(pid)
@@ -355,7 +369,7 @@ func _publish_room() -> void:
 	var pids := _names.keys()
 	pids.sort()
 	for pid in pids:
-		var connected := _peer_of(int(pid)) != 0 or (trust == Trust.LAN_HOST and int(pid) == 1)
+		var connected := _peer_of(int(pid)) != 0 or (host_plays() and int(pid) == 1)
 		(
 			members
 			. append(
@@ -371,6 +385,7 @@ func _publish_room() -> void:
 		)
 	room["members"] = members
 	room["owner_pid"] = _owner_pid
+	room["allowed_maps"] = allowed_maps
 	room["phase"] = _phase
 	room_updated.emit(room)
 	_rpc_all("_s_room", [room])
@@ -399,6 +414,8 @@ func server_set_options(map_id: Variant, difficulty_id: Variant) -> void:
 	var def := Session.map_def(map_id)
 	if def == null or not def.is_playable() or def.is_tutorial:
 		return
+	if not allowed_maps.is_empty() and not allowed_maps.has(map_id):
+		return
 	if Session.difficulty(difficulty_id) == null or not def.supported_difficulties.has(StringName(difficulty_id)):
 		return
 	room["map_id"] = map_id
@@ -422,11 +439,7 @@ func server_kick(target: Variant) -> void:
 		return
 	_banned[str(_peers[peer]["uid"])] = true
 	_rpc_to(peer, "_s_kicked", [NetProtocol.REJECT_KICKED])
-	get_tree().create_timer(0.2).timeout.connect(
-		func() -> void:
-			if _mp and _mp.multiplayer_peer:
-				_mp.disconnect_peer(peer)
-	)
+	get_tree().create_timer(0.2).timeout.connect(func() -> void: _drop_peer(peer))
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -445,7 +458,7 @@ func server_start() -> bool:
 	var members := _names.keys()
 	members.sort()
 	_match_config = {
-		"mode": "online" if trust == Trust.DEDICATED else "lan",
+		"mode": ["online", "lan", "relay"][trust],
 		"map_id": room["map_id"],
 		"difficulty_id": room["difficulty_id"],
 		"seed": _rng.randi(),
@@ -462,7 +475,7 @@ func server_start() -> bool:
 	map = built["map"]
 	mc = built["match"]
 	mc.net = self
-	mc.local_player_id = my_pid if trust == Trust.LAN_HOST else -1
+	mc.local_player_id = my_pid if host_plays() else -1
 	mc.enemy_spawned.connect(_on_enemy_spawned)
 	for i in members.size():
 		var pid := int(members[i])
@@ -472,7 +485,7 @@ func server_start() -> bool:
 		mc.state.players[pid]["yaw"] = spawn.basis.get_euler().y
 		if pid != my_pid:
 			_spawn_avatar(pid, spawn.origin, spawn.basis.get_euler().y)
-	if trust == Trust.LAN_HOST:
+	if host_plays():
 		local_player = LevelLoader.spawn_local_player(map, mc, my_pid, str(_names[my_pid]), members.find(my_pid))
 		local_player.input_enabled = false
 		_loaded[my_pid] = true
@@ -490,7 +503,7 @@ func can_start() -> bool:
 	if _names.is_empty():
 		return false
 	for pid in _names:
-		var connected := _peer_of(int(pid)) != 0 or (trust == Trust.LAN_HOST and int(pid) == 1)
+		var connected := _peer_of(int(pid)) != 0 or (host_plays() and int(pid) == 1)
 		if connected and int(pid) != _owner_pid and not bool(_ready.get(pid, false)):
 			return false
 	return true
@@ -647,6 +660,15 @@ func _c_revive(target: Variant, start: Variant) -> void:
 func _c_leave() -> void:
 	var peer := _mp.get_remote_sender_id()
 	if _peers.has(peer):
+		_drop_peer.call_deferred(peer)
+
+
+## Server-initiated disconnect. SceneMultiplayer.disconnect_peer() forgets the
+## peer without emitting peer_disconnected, so record the departure first
+## (away / left / lobby removal), then drop the connection.
+func _drop_peer(peer: int) -> void:
+	_on_peer_disconnected(peer)
+	if _mp and _mp.multiplayer_peer and _mp.get_peers().has(peer):
 		_mp.disconnect_peer(peer)
 
 
@@ -760,8 +782,8 @@ func _server_tick(delta: float) -> void:
 			mc.player_left(int(pid))
 	_broadcast_timer -= delta
 	if _broadcast_timer <= 0.0:
-		_broadcast_timer = 1.0 / NetProtocol.BROADCAST_HZ
-		_rpc_all_unreliable("_s_players", [_players_packet()])
+		_broadcast_timer = 1.0 / broadcast_hz
+		_rpc_all_unreliable("_s_players", [NetProtocol.players_packet(mc.state.players)])
 		for e in mc.enemies:
 			if is_instance_valid(e) and e is Watcher:
 				var w: Watcher = e
@@ -772,15 +794,6 @@ func _server_tick(delta: float) -> void:
 	if _time_timer <= 0.0:
 		_time_timer = NetProtocol.TIME_SYNC_SECONDS
 		_rpc_all_unreliable("_s_time", [mc.state.elapsed])
-
-
-func _players_packet() -> Dictionary:
-	var out := {}
-	for pid in mc.state.players:
-		var p: Dictionary = mc.state.players[pid]
-		var flags := (1 if p.get("crouch", false) else 0) | (4 if p.get("flashlight", false) else 0)
-		out[int(pid)] = [MatchState.array_to_vec(p["pos"]), float(p["yaw"]), flags]
-	return out
 
 
 func _on_enemy_spawned(enemy: Node) -> void:
@@ -824,18 +837,21 @@ func _client_auth(id: int, data: PackedByteArray) -> void:
 		return
 	my_pid = int(parsed.get("pid", 0))
 	_mp.complete_auth(1)
-	joined.emit(my_pid)
 
 
-## Never close from inside a multiplayer callback: the API is mid-poll.
+## Never close (or let listeners close) from inside a multiplayer callback:
+## the API is mid-poll. Listeners hear about it after the poll returns.
 func _fail(reason: String) -> void:
-	join_failed.emit(reason)
-	close.call_deferred()
+	_after_poll.call_deferred(join_failed, reason)
 
 
 func _on_server_disconnected() -> void:
-	disconnected.emit("NET_LOST")
-	close.call_deferred()
+	_after_poll.call_deferred(disconnected, "NET_LOST")
+
+
+func _after_poll(sig: Signal, reason: String) -> void:
+	close()
+	sig.emit(reason)
 
 
 # --- Client: requests ------------------------------------------------------------------------------
@@ -849,7 +865,7 @@ func set_ready(value: bool) -> void:
 func request_start() -> void:
 	if mode == Mode.CLIENT:
 		rpc_id(1, "_c_start")
-	elif mode == Mode.SERVER and trust == Trust.LAN_HOST:
+	elif mode == Mode.SERVER and host_plays():
 		server_start()
 
 
@@ -868,7 +884,8 @@ func request_options(map_id: String, difficulty_id: String) -> void:
 
 
 func leave() -> void:
-	if mode == Mode.CLIENT and _mp and _mp.multiplayer_peer:
+	var peer := _mp.multiplayer_peer if _mp else null
+	if mode == Mode.CLIENT and peer and peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED:
 		rpc_id(1, "_c_leave")
 	close()
 

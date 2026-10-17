@@ -109,6 +109,12 @@ func wallet() -> Dictionary:
 	return await request("GET", "/v1/wallet")
 
 
+## Buys a cosmetic with the verified wallet. The idempotency key makes a
+## retried request (lost reply, double tap) charge at most once.
+func purchase(item_id: String, idempotency_key: String) -> Dictionary:
+	return await request("POST", "/v1/shop/purchase", {"item_id": item_id, "idempotency_key": idempotency_key})
+
+
 func logout() -> void:
 	if has_session():
 		await request("POST", "/v1/logout", {})

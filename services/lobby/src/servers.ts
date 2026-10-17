@@ -14,6 +14,8 @@ export interface RoomLaunch {
   mapId: string;
   difficultyId: string;
   maxPlayers: number;
+  /** Maps the room owner has unlocked; the game server refuses switching to others. */
+  allowedMaps: string[];
 }
 
 export interface Allocation {
@@ -72,6 +74,7 @@ export class LocalSpawner implements Allocator {
       "--server", `--port=${port}`, `--room=${launch.roomId}`, `--code=${launch.code}`,
       `--map=${launch.mapId}`, `--difficulty=${launch.difficultyId}`, `--max-players=${launch.maxPlayers}`,
       `--reconnect-window=${this.opts.reconnectWindow ?? 60}`,
+      `--allowed-maps=${launch.allowedMaps.join(",")}`,
     ];
     const child = spawn(this.opts.godotBin, args, {
       env: {

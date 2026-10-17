@@ -67,9 +67,9 @@ func _present() -> void:
 		)
 
 
-func authority_interact(_ctx: Dictionary) -> void:
+func authority_interact(ctx: Dictionary) -> void:
 	if match_ctrl.state.elapsed < _playing_until:
 		return
 	match_ctrl.set_entity_state(entity_id, {"plays": int(state.get("plays", 0)) + 1})
-	match_ctrl.emit_noise(interact_origin(), 7.0, "tape")
+	match_ctrl.emit_noise(interact_origin(), 7.0, "tape", int(ctx["player_id"]))
 	match_ctrl.set_flag(heard_flag)

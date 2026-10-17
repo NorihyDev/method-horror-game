@@ -66,7 +66,11 @@ func put(pos: Vector3) -> void:
 
 ## Sends an interaction like a client would (waits out the rate limit first).
 func use(entity_id: String, sub: int = 0, action: String = "use", args: Dictionary = {}) -> bool:
-	await get_tree().create_timer(MatchController.INTERACT_MIN_INTERVAL + 0.02).timeout
+	# Wall clock, like the rate limit itself (scene timers follow smoothed frame
+	# deltas and can fire a little early under load).
+	var until := Time.get_ticks_msec() + int((MatchController.INTERACT_MIN_INTERVAL + 0.02) * 1000.0)
+	while Time.get_ticks_msec() < until:
+		await get_tree().process_frame
 	return mc.server_interact(1, entity_id, sub, action, args)
 
 

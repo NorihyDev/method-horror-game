@@ -69,11 +69,29 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
-  online-e2e:
-    name: Online end-to-end (lobby + dedicated server + 2 clients)
-    needs: [godot, lobby]
+  relay:
+    name: Relay (Cloudflare Worker) tests & typecheck
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: services/relay
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: services/relay/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  online-e2e:
+    name: Online end-to-end (relay + 2 Godot clients)
+    needs: [godot, relay]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Cache Godot download
@@ -87,18 +105,27 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: services/lobby/package-lock.json
-      - name: Install lobby dependencies
-        working-directory: services/lobby
+          cache-dependency-path: services/relay/package-lock.json
+      - name: Install relay dependencies
+        working-directory: services/relay
         run: npm ci
       - name: Import project
         run: timeout 600 godot --headless --path game --import
-      - name: Create, join, play, reconnect and record results across processes
-        working-directory: services/lobby
-        run: GODOT_BIN="$(command -v godot)" timeout 600 npm run e2e
-      - name: Clean up stray Godot processes
+      - name: Start the relay locally (wrangler dev, no Cloudflare account needed)
+        working-directory: services/relay
+        run: |
+          nohup npx wrangler dev --port 8787 --ip 127.0.0.1 > /tmp/relay.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8787/v1/health && exit 0; sleep 2; done
+          cat /tmp/relay.log; exit 1
+      - name: Relay protocol checks
+        working-directory: services/relay
+        run: RELAY_URL=http://127.0.0.1:8787 timeout 120 node scripts/check-relay.ts
+      - name: Create, join, play, reconnect, finish and host departure across processes
+        working-directory: services/relay
+        run: GODOT_BIN="$(command -v godot)" RELAY_URL=http://127.0.0.1:8787 timeout 900 npm run e2e
+      - name: Clean up
         if: always()
-        run: pkill -x godot || true
+        run: pkill -x godot || true; pkill -f "wrangler dev" || true
 
   secrets:
     name: Secret scan
