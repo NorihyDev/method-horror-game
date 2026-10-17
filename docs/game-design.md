@@ -17,7 +17,9 @@ METHOD is both the studio and part of the fiction's visual language
 
 1. **Anticipation over shock.** Footsteps behind walls, keys jingling, lamps
    that flicker when it is near. Jump scares are earned (first sight at close
-   range) and rate-limited (75 s cooldown, reducible in settings).
+   range) and rate-limited (75 s cooldown, reducible in settings). Between
+   encounters the scare director (below) fills the quiet; it never fires
+   during danger.
 2. **Readable rules.** The threat sees and hears in ways players can learn.
    No vision through walls, no teleporting, no spawning on players.
 3. **Noise has a cost.** Sprinting, doors, wrong keypad codes, a short circuit,
@@ -27,7 +29,7 @@ METHOD is both the studio and part of the fiction's visual language
 5. **Every required puzzle is solvable alone.** Co-op helps (wider timing
    window) but is never required.
 
-## Session shape (15–25 minutes)
+## Session shape (15–26 minutes)
 
 | Phase | Trigger | What changes |
 |---|---|---|
@@ -42,6 +44,10 @@ METHOD is both the studio and part of the fiction's visual language
 The caretaker Edwin Marsh was "Subject 07" of Dr. I. Varga's perception trial.
 Brass lenses were fitted where his eyes were; he learned to "see what people
 hide" and stopped sleeping. The site was chained shut in 1998.
+
+The **west wing** (pantry off the kitchen, bathroom, nursery off the living
+room) loops back to the hallway, so a chase can circle. It adds hiding
+spots, a note and item spots that the seeded placement can use.
 
 ### Objective chain (data-driven, `scripts/maps/house/house_rules.gd`)
 
@@ -106,6 +112,40 @@ Lamps within 9 m flicker (slow dimming with *Reduce flashing*), its key ring
 jingles while it patrols, heavy breathing and footsteps are positional, and
 sound captions describe them with direction when enabled.
 
+### Rage
+
+The longer the enemy has been in the building, the sharper it gets. Its
+sight, hearing and prowling speed grow by a fraction per minute, capped by
+difficulty (table below). Its chase speed grows by only 40 % of that, so a
+sprint still gets away. `DifficultyDefinition.rage()`.
+
+### Scares between encounters
+
+`scripts/world/scare_director.gd` runs on each player's own device and only
+presents. It never changes match state, moves the real enemy or hurts
+anyone, so it is safe in co-op and keeps rule 2.
+
+- **When:** after the first 25 s, every 48–90 s on Normal. The gap is ×1.5
+  on Story, ×0.8 on Hard and ×0.6 on Nightmare, and shrinks 15 % per phase.
+- **Never:** during a chase, while hiding, or with the enemy within 10 m.
+- **What:**
+  - a whisper at your ear;
+  - knocking in the nearest wall;
+  - something running past behind you;
+  - nearby lamps bursting and staying dark for 5–8 s;
+  - the flashlight dying for 2 s with breathing behind you;
+  - a distant scream;
+  - a door slamming;
+  - a dark figure down the corridor that is gone when the beam reaches it.
+- **Reduced jump scares:** only the whisper, knock, scream and door, all
+  quieter.
+- **Caught:** a downing or fatal hit turns your view to the enemy, with a
+  scream and a torn, red screen. Survivable hits get a sharp stab.
+- **Enemy close:** the screen edges close in and throb red in time with the
+  heartbeat.
+
+The tear effects and the throb are off with *Reduce flashing*.
+
 ### Fairness guarantees
 
 No teleporting (stuck recovery snaps at most 1.5 m back onto the navmesh), no
@@ -118,7 +158,9 @@ A closed clinical wing where METHOD ran sensory-isolation trials. One floor,
 about 30 × 24 m: ambulance bay (exit), reception (start), triage,
 maintenance, a curtained patient ward, the staff wing behind a card reader
 (generator room, pharmacy, security office, staff room) and an observation
-wing whose one-way glass looks into the patient cells.
+wing whose one-way glass looks into the patient cells. Behind the ward, a
+morgue (body drawers, an examination slab) and its cold store form a dead
+end with one door.
 
 ### Objective chain (`scripts/maps/ward/ward_rules.gd`)
 
@@ -260,6 +302,8 @@ their device has unlocked.
 | Hearing | ×0.6 | ×1.0 | ×1.25 | ×1.5 |
 | Sight | ×0.7 | ×1.0 | ×1.2 | ×1.35 |
 | Search persistence | ×0.6 | ×1.0 | ×1.35 | ×1.7 |
+| Rage (per minute since arrival, cap) | none | +1.2 %, +10 % | +2.2 %, +20 % | +3.5 %, +30 % |
+| Scares between encounters | every 72–135 s | every 48–90 s | every 38–72 s | every 29–54 s |
 | Attack wind-up | 0.95 s | 0.7 s | 0.55 s | 0.45 s |
 | Attack cooldown | 3.0 s | 2.2 s | 1.8 s | 1.4 s |
 | Grace before arrival | 90 s | 50 s | 30 s | 15 s |

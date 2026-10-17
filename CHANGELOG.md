@@ -6,6 +6,31 @@ dates are ISO 8601.
 ## [Unreleased]
 
 ### Added
+- **More horror.**
+  - A scare director plays local-only frights in quiet moments: whispers,
+    knocking, running steps, lamps bursting, the flashlight dying, a distant
+    scream, a slammed door, and a figure down the corridor that vanishes in
+    the beam.
+  - Being caught turns you to face the enemy with a scream and a torn, red
+    screen.
+  - The screen throbs with your heartbeat while the enemy is near.
+  - Nine new synthesized sounds, with captions.
+- **Better graphics.** Flashlight beams glow through the dust (new "Light
+  shafts" setting), and every room is dressed with seeded blood, scratches,
+  tally marks and stains.
+- **More to explore.**
+  - The House has a west wing (pantry, bathroom, nursery) that loops back
+    to the hallway.
+  - The Black Ward has a morgue and a cold store.
+  - Estimates rise to 25 and 26 minutes.
+- **Tougher over time.** The enemy's rage builds with every minute it has
+  been in the building: up to +10 % on Normal, +20 % on Hard and +30 % on
+  Nightmare.
+- **Easier on touch screens.**
+  - Buttons sit in a thumb arc measured from the corner.
+  - Pushing the stick past its ring runs.
+  - Taps go to the nearest button.
+  - Use has aim assist.
 - **Punky**, a realistic, rigged teammate model with idle, walk, run, crouch,
   crouch-walk and downed-crawl animations. Co-op teammates now appear as him
   instead of capsules.

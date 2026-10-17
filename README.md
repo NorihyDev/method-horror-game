@@ -122,7 +122,7 @@ Difficulty rules are explicit in-game and in [docs/game-design.md](docs/game-des
 
 | Action | Keyboard / mouse | Controller | Touch |
 |---|---|---|---|
-| Move | W A S D / arrows | Left stick | Left-side joystick (floating or fixed) |
+| Move | W A S D / arrows | Left stick | Left-side joystick (floating or fixed); push past the ring to run |
 | Look | Mouse | Right stick | Drag on the right side |
 | Interact (hold for some) | E | A | USE |
 | Sprint | Shift (hold/toggle) | L3 or LT | RUN |
@@ -133,8 +133,11 @@ Difficulty rules are explicit in-game and in [docs/game-design.md](docs/game-des
 | Ping (co-op) | Q | RB | PING |
 | Dev objective inspector | F3 (debug builds only) | — | — |
 
-Keyboard keys are rebindable; touch buttons can be moved, resized, faded and
-mirrored for left-handed play.
+Keyboard keys are rebindable. On touch, the buttons sit in an arc around the
+right thumb, measured from the screen corner so wide phones keep them in
+reach. Use has aim assist: anything usable near the centre of the view
+counts. The buttons can be moved, resized, faded and mirrored for
+left-handed play.
 
 ## Running tests
 
