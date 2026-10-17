@@ -15,6 +15,7 @@ export const CATALOG: Record<string, { slot: string; price: number }> = {
 
 export const MAP_REWARDS: Record<string, { escape: number; first: number; optional: number; collectible: number }> = {
   house: { escape: 100, first: 150, optional: 25, collectible: 10 },
+  black_ward: { escape: 120, first: 175, optional: 25, collectible: 10 },
 };
 
 export const DIFFICULTY_MULTIPLIER: Record<string, number> = {

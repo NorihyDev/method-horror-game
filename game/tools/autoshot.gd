@@ -19,6 +19,21 @@ const SHOTS := {
 		["11_dining_lit", Vector3(12.8, 0.05, 6.0), 0.9, -0.1, true],
 		["12_study", Vector3(11.0, 0.05, 11.0), -2.6, -0.1, true],
 	],
+	"black_ward":
+	[
+		["01_reception_start", Vector3(12.0, 0.05, 3.2), PI, -0.05, false],
+		["02_reception_north", Vector3(12.0, 0.05, 7.4), 0.0, -0.05, false],
+		["03_bay_shutter", Vector3(4.0, 0.05, 6.8), 0.0, 0.0, false],
+		["04_corridor_east", Vector3(1.5, 0.05, 9.5), -PI / 2, -0.05, false],
+		["05_ward", Vector3(4.0, 0.05, 11.8), PI, -0.1, false],
+		["06_ward_lit", Vector3(4.0, 0.05, 11.8), PI, -0.1, true],
+		["07_generator_panel", Vector3(11.6, 0.05, 14.0), PI / 2, -0.1, false],
+		["08_staff_corridor", Vector3(14.5, 0.05, 11.6), PI, -0.05, true],
+		["09_security_console", Vector3(18.8, 0.05, 12.6), PI, -0.2, true],
+		["10_observation_glass", Vector3(22.6, 0.05, 15.0), PI, -0.05, true],
+		["11_observation_monitors", Vector3(23.4, 0.05, 16.5), PI / 2, -0.05, true],
+		["12_staff_room", Vector3(18.5, 0.05, 17.0), PI, -0.1, true],
+	],
 }
 
 var _out := ""
@@ -69,7 +84,8 @@ func _ready() -> void:
 			var e: Node3D = match_ctrl.enemies[0]
 			var fwd := Vector3(-sin(float(shot[2])), 0, -cos(float(shot[2])))
 			e.global_position = map.closest_nav_point((shot[1] as Vector3) + fwd * 3.5)
-			e.look_at(shot[1], Vector3.UP)
+			var target: Vector3 = shot[1]
+			e.look_at(Vector3(target.x, e.global_position.y, target.z), Vector3.UP)
 		for i in 24:
 			await get_tree().physics_frame
 		await RenderingServer.frame_post_draw

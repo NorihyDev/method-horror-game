@@ -7,6 +7,12 @@ extends Interactable
 @export var height := 2.6
 @export var open_seconds := 40.0
 @export var open_flag := "garage_open"
+## Set when someone first tries it (the "find a way out" objective).
+@export var try_flag := "exit_found"
+@export var stuck_message := "GARAGE_STUCK"
+@export var door_prompt := "PROMPT_GARAGE_DOOR"
+@export var loop_sound := "garage_loop"
+@export var noise_kind := "garage"
 
 var panel: AnimatableBody3D
 var _emitter: AudioStreamPlayer3D
@@ -16,7 +22,7 @@ var _progress := 0.0
 
 
 func _ready() -> void:
-	prompt_key = "PROMPT_GARAGE_DOOR"
+	prompt_key = door_prompt
 	panel = AnimatableBody3D.new()
 	panel.collision_layer = DoorEntity.LAYER_DOOR | GeoBuilder.LAYER_WORLD
 	panel.collision_mask = 0
@@ -44,7 +50,7 @@ func _ready() -> void:
 			panel
 		)
 	add_target(Vector3(width, height, 0.2), Vector3(0, height * 0.5, 0.05), 0, panel)
-	_emitter = AudioService.make_emitter("garage_loop", 4.0, 45.0)
+	_emitter = AudioService.make_emitter(loop_sound, 4.0, 45.0)
 	_emitter.position = Vector3(0, height, 0.5)
 	add_child(_emitter)
 
@@ -76,14 +82,15 @@ func _physics_process(delta: float) -> void:
 func get_prompt(_pid: int, _sub: int) -> String:
 	if _progress > 0.0:
 		return ""
-	return tr("PROMPT_GARAGE_DOOR")
+	return tr(door_prompt)
 
 
 func authority_interact(ctx: Dictionary) -> void:
-	match_ctrl.set_flag("exit_found")
+	if not try_flag.is_empty():
+		match_ctrl.set_flag(try_flag)
 	if _progress <= 0.0:
 		world_sound("door_locked", 0.0, 16.0)
-		match_ctrl.notify_player(int(ctx["player_id"]), "GARAGE_STUCK")
+		match_ctrl.notify_player(int(ctx["player_id"]), stuck_message)
 
 
 ## Called by the map on the authority each physics tick.
@@ -94,7 +101,7 @@ func authority_tick(delta: float) -> void:
 	_noise_timer -= delta
 	if _noise_timer <= 0.0:
 		_noise_timer = 2.0
-		match_ctrl.emit_noise(global_position + Vector3(0, 1.5, 1.0), 60.0, "garage")
+		match_ctrl.emit_noise(global_position + Vector3(0, 1.5, 1.0), 60.0, noise_kind)
 	_sync_timer -= delta
 	if _sync_timer <= 0.0 or p >= 1.0:
 		_sync_timer = 0.25

@@ -1,6 +1,8 @@
-[gd_resource type="Resource" script_class="MapDefinition" load_steps=1 format=3]
+[gd_resource type="Resource" script_class="MapDefinition" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/core/map_definition.gd" id="1_map"]
+[ext_resource type="Script" path="res://scripts/maps/ward/ward_map.gd" id="2_builder"]
+[ext_resource type="Script" path="res://scripts/maps/ward/ward_rules.gd" id="3_rules"]
 
 [resource]
 script = ExtResource("1_map")
@@ -8,14 +10,18 @@ id = &"black_ward"
 title_key = "MAP_BLACK_WARD"
 description_key = "MAP_BLACK_WARD_DESC"
 location_key = "MAP_BLACK_WARD_LOC"
-status = 1
+status = 0
 sort_order = 2
-
+builder_script = ExtResource("2_builder")
+rules_script = ExtResource("3_rules")
 max_players = 6
 is_tutorial = false
 estimated_minutes = 22
 preview_color = Color(0.15, 0.2, 0.22, 1)
+briefing_keys = PackedStringArray("BRIEF_WARD_1", "BRIEF_WARD_2", "BRIEF_WARD_3")
 base_escape_reward = 120
 first_completion_bonus = 175
 optional_objective_reward = 25
 collectible_reward = 10
+ambience_sound = &"amb_ward_loop"
+enemy_profile = &"sister"
