@@ -899,5 +899,7 @@
 	"SET_BENCH_CONFIRM": "The benchmark takes about a minute per location and returns to the main menu. Run it now?",
 	"BENCH_RUNNING": "Benchmark running…",
 	"BENCH_DONE": "Benchmark results",
-	"BENCH_SAVED": "Full report saved to: %s"
+	"BENCH_SAVED": "Full report saved to: %s",
+
+	"CAP_MONITOR_FAST": "Monitor beeping fast"
 }

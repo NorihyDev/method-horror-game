@@ -9,9 +9,14 @@ const SURFACE_2 := Color("1c1c1f")
 const LINE := Color("2c2b2e")
 const TEXT := Color("e8e2d4")
 const TEXT_DIM := Color("9d978b")
-const TEXT_FAINT := Color("625e57")
+## Quietest readable text: still 4.5:1 on every surface (WCAG AA).
+const TEXT_FAINT := Color("8d877d")
+## Disabled controls only (exempt from contrast rules); never for information.
+const DISABLED := Color("625e57")
 const CRIMSON := Color("8e1b1b")
 const CRIMSON_HI := Color("b42727")
+## Crimson for text (status, warnings): readable on dark surfaces.
+const DANGER := Color("e35d5d")
 const WARN := Color("c9a227")
 const OK := Color("7f9c6b")
 
@@ -121,7 +126,7 @@ static func _build() -> Theme:
 		t.set_color("font_hover_color", type, Color.WHITE)
 		t.set_color("font_pressed_color", type, Color.WHITE)
 		t.set_color("font_focus_color", type, Color.WHITE)
-		t.set_color("font_disabled_color", type, TEXT_FAINT)
+		t.set_color("font_disabled_color", type, DISABLED)
 	t.set_constant("h_separation", "Button", 10)
 
 	# Inputs
@@ -147,7 +152,7 @@ static func _build() -> Theme:
 	t.set_stylebox("grabber_area_highlight", "HSlider", flat(CRIMSON_HI, Color.TRANSPARENT, 0, 2, 0, 3))
 	t.set_icon("grabber", "HSlider", _circle_icon(22, TEXT))
 	t.set_icon("grabber_highlight", "HSlider", _circle_icon(24, Color.WHITE))
-	t.set_icon("grabber_disabled", "HSlider", _circle_icon(22, TEXT_FAINT))
+	t.set_icon("grabber_disabled", "HSlider", _circle_icon(22, DISABLED))
 
 	# Progress bars
 	t.set_stylebox("background", "ProgressBar", flat(Color(0, 0, 0, 0.55), LINE, 1, 2, 0, 0))

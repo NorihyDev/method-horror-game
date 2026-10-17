@@ -163,6 +163,7 @@ func _row(key: String, spec: Dictionary) -> Control:
 				if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 					Settings.set_value(key, v)
 		)
+		s.accessibility_name = tr(label)
 		h.add_child(s)
 		h.add_child(readout)
 		control = h

@@ -16,7 +16,7 @@ autoloads exist, uses isolated `test_*` save/settings files, prints one line per
 test and exits `0` (pass), `1` (failures) or `2` (240 s watchdog — a hang is a
 failure). `--filter=<substring>` selects files.
 
-### Coverage (93 Godot tests + 18 lobby tests + 1 end-to-end run)
+### Coverage (102 Godot tests + 18 lobby tests + 1 end-to-end run)
 
 | File | What it proves |
 |---|---|
@@ -35,6 +35,8 @@ failure). `--filter=<substring>` selects files.
 | `integration/test_ward_playthrough.gd` | Full Black Ward escape through the authority API: shutter with no power, card reader without/with card, generator without relay, wrong breaker pattern trips the board, right pattern powers the wing, monitors + roster give the code, wrong then right code, console, shutter, escape; console refuses without power; monitors dark until power |
 | `integration/test_sister.gd` | The ward uses the sister profile; she ignores a lit player in plain sight; close footsteps start a hunt, crouched ones do not; distant or machine noise is only investigated; silence loses her; bumping into her is not safe |
 | `integration/test_station_playthrough.gd` | Full Last Train escape: collapsed exit, help point refuses without a route, key, frame refuses without power, two cells, wrong route refused, right route set, train called, hold-out, boarding; the platform edge stays closed; ghost trains mask footsteps near the tracks only; The Lineman sees along his beam and not beside it |
+| `integration/test_accessibility.gd` | Every text colour reaches WCAG 2.2 AA (4.5:1) on every surface, button text in every state too; every menu screen, every settings tab and the confirm dialog: each interactive control is at least 48 px (base resolution), has an accessible name for screen readers and can take keyboard/controller focus; every enemy cue has a caption in EN and FR; looping sounds (humming, trains, motors) caption while audible and not when far or stopped |
+| `unit/test_benchmark.gd` | Benchmark cost percentiles and the per-map summary line, including maps that report an error |
 | `integration/test_watcher.gd` | Never spawns near/in sight of players; hears loud noise and investigates; ignores inaudible noise; sees and chases a lit player in front; no vision through walls; telegraphed attack damages exactly once; checks the locker it saw you enter |
 
 ### Visual checks (need a GPU)
@@ -98,6 +100,12 @@ Run on at least one phone, one tablet and desktop before calling a milestone
 - [ ] Tutorial completes.
 - [ ] App to background mid-match (home button / alt-tab): solo pauses; resume works.
 - [ ] Android back: closes overlays → pause → confirm quit from main menu.
+
+### Accessibility (needs a device and assistive tech)
+- [ ] With TalkBack (Android) or Narrator / NVDA (Windows), menus read button and setting names; note what is missing (Godot's AccessKit support differs by platform).
+- [ ] Sound captions on, eyes only: the Sister's humming, ghost trains, the arriving train, the garage motor and fast monitor beeps all show a caption with a direction.
+- [ ] Interface scale 1.3: every screen still fits without clipped buttons.
+- [ ] Touch: every menu button is easy to hit with a thumb on the smallest test phone (targets are about 32 dp at scale 1.0 on a 6.3" 1080p screen; Android recommends 48 dp, reached at roughly interface scale 1.3).
 
 ### Audio & graphics settings
 - [ ] Every volume slider audibly changes its bus; mute; night mode; mono.

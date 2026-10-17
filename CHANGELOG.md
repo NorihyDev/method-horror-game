@@ -57,8 +57,19 @@ dates are ISO 8601.
 - Frame-time benchmark for device profiling (development builds): per-map
   frame times, GPU/CPU/script/physics cost, draw calls and memory, saved as
   JSON and printed to the log.
+- Automated accessibility audit: text contrast, touch-target size, screen-reader
+  names and focus on every menu screen, and caption coverage of every cue.
 
 ### Fixed
+- Faint informational text (notes, locked-map reasons, hints) and red status
+  text now meet WCAG AA contrast; disabled controls keep the dim tone.
+- Settings sliders, toggles and map cards had no screen-reader name; sliders
+  were below the touch-target minimum.
+- Long sounds played from emitters (the Sister's humming, ghost and arriving
+  trains, the garage motor, enemy breathing) never produced captions; the
+  Lineman's breathing had none. The ward monitors' fast beeping is now
+  captioned too.
+- Locked-map reasons no longer run past the map card.
 - Multiplayer: a client could send Ready before its connection existed;
   server-side leaves, kicks and flood disconnects did not mark players away.
 - The house's basement cage gate and door materials were never applied.

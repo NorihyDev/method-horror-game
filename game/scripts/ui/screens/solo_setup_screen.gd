@@ -85,6 +85,7 @@ func _map_card(m: MapDefinition) -> Button:
 	h.add_child(swatch)
 	var v := UI.vbox(2)
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_child(UI.label(m.title_key, ThemeFactory.FONT_BODY + 2))
 	var status := ""
@@ -105,9 +106,13 @@ func _map_card(m: MapDefinition) -> Button:
 		ThemeFactory.TEXT_DIM if m.is_playable() and unlocked else ThemeFactory.TEXT_FAINT
 	)
 	s.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	# Long statuses end in an ellipsis inside the card (the full text is the card's accessible name).
+	s.clip_text = true
+	s.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	v.add_child(s)
 	h.add_child(v)
 	b.add_child(h)
+	b.accessibility_name = "%s. %s" % [tr(m.title_key), status]
 	var id := String(m.id)
 	_map_buttons[id] = b
 	if m.is_playable() and unlocked:

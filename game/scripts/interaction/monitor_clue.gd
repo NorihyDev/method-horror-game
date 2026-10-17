@@ -6,6 +6,8 @@ extends Interactable
 ## when The Sister is near: the ward's version of flickering lamps.
 
 const NEAR_ENEMY := 9.0
+## Closeness (0..1) from which the beeping counts as fast.
+const FAST_BEEP := 0.5
 
 var powered := false
 var _screen_mat: StandardMaterial3D
@@ -86,3 +88,6 @@ func _process(delta: float) -> void:
 		map = map.get_parent()
 	if map:
 		AudioService.play_3d("monitor_beep", map, global_position, -14.0 + near * 6.0, 9.0)
+		# The fast beep is the cue that she is close: caption it for players who cannot hear it.
+		if near >= FAST_BEEP:
+			AudioService.caption_at("CAP_MONITOR_FAST", global_position, 4.0)

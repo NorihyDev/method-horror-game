@@ -899,5 +899,7 @@
 	"SET_BENCH_CONFIRM": "Le test prend environ une minute par lieu et revient au menu principal. Le lancer maintenant ?",
 	"BENCH_RUNNING": "Test de performance en cours…",
 	"BENCH_DONE": "Résultats du test de performance",
-	"BENCH_SAVED": "Rapport complet enregistré dans : %s"
+	"BENCH_SAVED": "Rapport complet enregistré dans : %s",
+
+	"CAP_MONITOR_FAST": "Un moniteur bipe vite"
 }

@@ -23,7 +23,7 @@ func build() -> void:
 	left.add_child(UI.spacer(10, true))
 	var studio := UI.caption("METHOD")
 	studio.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	studio.add_theme_color_override("font_color", ThemeFactory.CRIMSON_HI)
+	studio.add_theme_color_override("font_color", ThemeFactory.DANGER)
 	left.add_child(studio)
 	var title := UI.title("GAME_TITLE", 64)
 	title.add_theme_constant_override("outline_size", 0)

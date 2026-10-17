@@ -146,7 +146,7 @@ func _refresh_list() -> void:
 		n.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 		row.add_child(n)
 		var danger := status == MatchState.STATUS_DOWNED
-		var s := UI.label(key, ThemeFactory.FONT_SMALL, ThemeFactory.CRIMSON_HI if danger else ThemeFactory.TEXT_DIM)
+		var s := UI.label(key, ThemeFactory.FONT_SMALL, ThemeFactory.DANGER if danger else ThemeFactory.TEXT_DIM)
 		s.add_theme_constant_override("outline_size", 5)
 		s.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 		row.add_child(s)
