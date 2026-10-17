@@ -32,6 +32,8 @@ export interface TicketPayload {
   name: string;
   color: number;
   exp: number;
+  /** Room owner per the lobby: the game server gives this player owner controls. */
+  own?: boolean;
 }
 
 export function signTicket(payload: TicketPayload, secret: string): string {

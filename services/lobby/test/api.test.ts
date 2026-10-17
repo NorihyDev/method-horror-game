@@ -91,7 +91,9 @@ test("rooms: create, join by code, password, full, started, reconnect, close", a
   const roomId = created.json.room_id as string;
   assert.match(code, /^\d{6}$/);
   assert.deepEqual(created.json.server, { host: "10.0.0.5", port: 24600 });
-  assert.equal(verifyTicket(created.json.ticket as string, cfg.ticketSecret, roomId, clock)?.uid, owner.id);
+  const ownerTicket = verifyTicket(created.json.ticket as string, cfg.ticketSecret, roomId, clock);
+  assert.equal(ownerTicket?.uid, owner.id);
+  assert.equal(ownerTicket?.own, true, "the game server learns the room owner from the signed ticket");
   assert.equal((await call("POST", "/v1/rooms", { map_id: "black_ward", difficulty_id: "normal" }, owner.token)).json.error, "MAP_UNAVAILABLE");
 
   const p2 = await guest("Second");
@@ -103,6 +105,7 @@ test("rooms: create, join by code, password, full, started, reconnect, close", a
   const joined = await call("POST", "/v1/rooms/join", { code, password: "s3cret" }, p2.token);
   assert.equal(joined.status, 200);
   assert.equal(joined.json.owner, false);
+  assert.equal(verifyTicket(joined.json.ticket as string, cfg.ticketSecret, roomId, clock)?.own, false);
 
   const p3 = await guest("Third");
   assert.equal((await call("POST", "/v1/rooms/join", { code, password: "s3cret" }, p3.token)).json.error, "ROOM_FULL");

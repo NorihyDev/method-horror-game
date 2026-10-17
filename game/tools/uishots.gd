@@ -15,6 +15,10 @@ func _ready() -> void:
 		Saves.set_display_name("Night Owl")
 	Saves.apply_local_reward("uishots-demo", 260, "demo")
 	await _wait(10)
+	if AppInfo.has_arg("--uishots-mp"):
+		await _multiplayer_shots()
+		get_tree().quit(0)
+		return
 	await _screen("splash", "01_splash", 30)
 	await _screen("notice", "02_notice")
 	await _screen("name_entry", "03_name_entry")
@@ -92,6 +96,59 @@ func _ready() -> void:
 	await _wait(30)
 	await _shot("21_results")
 	get_tree().quit(0)
+
+
+## Multiplayer screens, using a real LAN-hosted session on this machine and
+## one simulated teammate record for the in-match HUD.
+## Usage: godot --path game -- --uishots=<dir> --uishots-mp --lobby=http://127.0.0.1:9
+func _multiplayer_shots() -> void:
+	app.reset_to("main_menu")
+	await _wait(30)
+	app.goto("multiplayer")
+	await _wait(15)
+	await _shot("mp_01_multiplayer")
+	var flow := Session.ensure_online()
+	if not flow.host_lan().is_empty():
+		push_error("LAN host failed")
+		return
+	await _wait(20)
+	await _shot("mp_02_lobby_lan_host")
+	flow.net.request_start()
+	await _wait(150)
+	var gameplay := app.current()
+	if gameplay == null or gameplay.name != "Gameplay":
+		push_error("no gameplay screen: %s" % (gameplay.name if gameplay else "none"))
+		return
+	var player: PlayerController = gameplay.get("player")
+	var mc: MatchController = gameplay.get("mc")
+	mc.enemy_enabled = false
+	# A simulated teammate (record + avatar) so the team HUD has content.
+	mc.add_player_record(2, "Mara")
+	var mate_pos := Vector3(8.2, 0.05, 13.6)
+	mc.state.players[2]["pos"] = MatchState.vec_to_array(mate_pos)
+	flow.net.call("_spawn_avatar", 2, mate_pos, PI)
+	player.global_position = Vector3(9.0, 0.05, 15.6)
+	player.set("_yaw", -0.6)
+	player.set("_pitch", -0.25)
+	await _wait(40)
+	var team: TeamHud = gameplay.get("team_hud")
+	team.call("_on_ping", 2, mate_pos + Vector3(-1.5, 1.2, -3.0), 2)
+	await _wait(20)
+	await _shot("mp_03_team_hud_ping")
+	mc.state.players[1]["status"] = MatchState.STATUS_DOWNED
+	mc.player_status_changed.emit(1, MatchState.STATUS_DOWNED)
+	await _wait(40)
+	await _shot("mp_04_downed")
+	mc.state.players[1]["status"] = MatchState.STATUS_DEAD
+	mc.player_status_changed.emit(1, MatchState.STATUS_DEAD)
+	await _wait(200)
+	await _shot("mp_05_spectating")
+	var result := mc.build_result("victory")
+	result["mode"] = "online"
+	gameplay.call("_leave_world")
+	Session.finish_match(result)
+	await _wait(30)
+	await _shot("mp_06_results_online")
 
 
 func _screen(screen_name: String, file: String, frames: int = 12) -> void:

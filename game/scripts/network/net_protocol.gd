@@ -110,8 +110,8 @@ class RateLimiter:
 		"lobby": [10.0, 4.0],
 		"ping": [3.0, 1.0],
 	}
-	var _buckets: Dictionary = {}
 	var dropped: Dictionary = {}
+	var _buckets: Dictionary = {}
 
 	func allow(peer: int, kind: String, now: float) -> bool:
 		var lim: Array = limits.get(kind, [5.0, 2.0])

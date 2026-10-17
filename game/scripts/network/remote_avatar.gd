@@ -42,7 +42,13 @@ func _ready() -> void:
 	_part(CapsuleMesh.new(), coat, Vector3(0, 0.95, 0), Vector3(0.34, 0.95, 0.34))
 	_part(SphereMesh.new(), skin, Vector3(0, 1.62, 0), Vector3(0.22, 0.24, 0.22))
 	_part(BoxMesh.new(), MaterialLib.flat(Color(0.1, 0.1, 0.11), 0.9), Vector3(0, 0.25, 0), Vector3(0.3, 0.5, 0.2))
-	_part(CylinderMesh.new(), MaterialLib.flat(Color(0.15, 0.15, 0.16), 0.4, 0.6), Vector3(0.22, 1.25, -0.25), Vector3(0.05, 0.22, 0.05), Vector3(PI / 2, 0, 0))
+	_part(
+		CylinderMesh.new(),
+		MaterialLib.flat(Color(0.15, 0.15, 0.16), 0.4, 0.6),
+		Vector3(0.22, 1.25, -0.25),
+		Vector3(0.05, 0.22, 0.05),
+		Vector3(PI / 2, 0, 0)
+	)
 	_light = SpotLight3D.new()
 	_light.position = Vector3(0.22, 1.3, -0.4)
 	_light.spot_range = 14.0

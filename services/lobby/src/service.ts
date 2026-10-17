@@ -340,7 +340,10 @@ export class LobbyService {
 
   private joinResponse(room: RoomRow, user: User): Record<string, unknown> {
     const ticket = signTicket(
-      { v: 1, room: room.id, uid: user.id, name: user.name, color: user.color, exp: this.now() + this.cfg.ticketTtlSeconds },
+      {
+        v: 1, room: room.id, uid: user.id, name: user.name, color: user.color,
+        exp: this.now() + this.cfg.ticketTtlSeconds, own: room.owner_id === user.id,
+      },
       this.cfg.ticketSecret,
     );
     return {

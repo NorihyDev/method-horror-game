@@ -42,12 +42,15 @@ func prepare() -> void:
 	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	nm.geometry_collision_mask = GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP
 	nm.geometry_source_geometry_mode = NavigationMesh.SOURCE_GEOMETRY_ROOT_NODE_CHILDREN
-	nm.agent_radius = 0.42
-	nm.agent_height = 1.9
-	nm.agent_max_climb = 0.35
-	nm.agent_max_slope = 42.0
 	nm.cell_size = 0.1
 	nm.cell_height = 0.1
+	# Whole numbers of cells (the baker rounds anything else): 5 cells = 0.5 m
+	# radius, 3 cells = 0.3 m climb. The epsilon keeps float division from
+	# flooring 3 cells to 2.
+	nm.agent_radius = 5 * nm.cell_size
+	nm.agent_height = 19 * nm.cell_height
+	nm.agent_max_climb = 3 * nm.cell_height + 0.000001
+	nm.agent_max_slope = 42.0
 	nav_region.navigation_mesh = nm
 	add_child(nav_region)
 	builder = GeoBuilder.new(nav_region)

@@ -8,10 +8,14 @@ var hud: Hud
 var touch: TouchControls
 var intensity: IntensityController
 var inspector: DebugInspector
+var team_hud: TeamHud
+var spectator: SpectatorCamera
 var _overlay: OverlayPanel
 var _started := false
 var _ending := false
 var _online := false
+var _net: NetBridge
+var _ping_cooldown := 0.0
 
 
 func _init() -> void:
@@ -42,6 +46,11 @@ func on_enter(p: Dictionary) -> void:
 			touch.enabled_buttons.append("ping")
 		player.touch = touch
 	hud.bind(player, mc, use_touch)
+	if _online and mc.net is NetBridge:
+		_net = mc.net
+		team_hud = TeamHud.new()
+		add_child(team_hud)
+		team_hud.bind(mc, _net, player, use_touch)
 	if DebugInspector.allowed():
 		inspector = DebugInspector.new()
 		inspector.match_ctrl = mc
@@ -55,7 +64,10 @@ func on_enter(p: Dictionary) -> void:
 	AudioService.play_ambience(String(mc.map_def.ambience_sound), 3.0, -4.0)
 	player.input_enabled = true
 	_refresh_input_mode()
-	mc.begin()
+	# A multiplayer server already began the match at its start barrier.
+	if not mc.running:
+		mc.begin()
+	_apply_local_status(str(mc.state.player(player.player_id).get("status", MatchState.STATUS_ALIVE)))
 
 
 func on_exit() -> void:
@@ -81,14 +93,8 @@ func _connect_match() -> void:
 	mc.local_player_died.connect(_on_died)
 	mc.player_status_changed.connect(
 		func(pid: int, status: String) -> void:
-			if pid != player.player_id:
-				return
-			if status == MatchState.STATUS_ESCAPED:
-				player.on_escaped()
-				hud.set_status("HUD_ESCAPED")
-				AudioService.play_2d("escape_sting", AudioService.BUS_MUSIC, -2.0)
-			elif status == MatchState.STATUS_DOWNED:
-				hud.set_status("HUD_DOWNED")
+			if pid == player.player_id:
+				_apply_local_status(status)
 	)
 	mc.match_finished.connect(_on_finished)
 	mc.phase_changed.connect(
@@ -114,6 +120,103 @@ func _default_touch_buttons() -> PackedStringArray:
 	return b
 
 
+## Presentation of the local player's server-decided status.
+func _apply_local_status(status: String) -> void:
+	match status:
+		MatchState.STATUS_ESCAPED:
+			if player.escaped:
+				return
+			player.set_downed(false)
+			player.on_escaped()
+			hud.set_status("HUD_ESCAPED")
+			AudioService.play_2d("escape_sting", AudioService.BUS_MUSIC, -2.0)
+			_spectate_later()
+		MatchState.STATUS_DOWNED:
+			player.set_downed(true)
+			hud.set_status("HUD_DOWNED")
+			if touch:
+				touch.release_all()
+				touch.enabled_buttons = ["flashlight", "pause"]
+		MatchState.STATUS_ALIVE:
+			if player.downed:
+				player.set_downed(false)
+				hud.set_status("")
+				if touch:
+					touch.enabled_buttons = _default_touch_buttons()
+		MatchState.STATUS_DEAD:
+			if _online and not player.dead:
+				player.set_downed(false)
+				player.on_died()
+				hud.set_status("HUD_DEAD_MP")
+				AudioService.play_2d("defeat_sting", AudioService.BUS_MUSIC, -4.0)
+				_spectate_later()
+
+
+func _spectate_later() -> void:
+	if not _online:
+		return
+	await get_tree().create_timer(2.0).timeout
+	if is_inside_tree() and not _ending:
+		_start_spectating()
+
+
+func _start_spectating() -> void:
+	if spectator:
+		return
+	spectator = SpectatorCamera.new()
+	spectator.match_ctrl = mc
+	spectator.local_pid = player.player_id
+	map.add_child(spectator)
+	spectator.global_transform = player.camera.global_transform
+	spectator.target_changed.connect(
+		func(display_name: String) -> void:
+			team_hud.set_spectating(display_name)
+			if display_name.is_empty():
+				player.camera.current = true
+			else:
+				spectator.current = true
+	)
+	hud.set_status("")
+	hud.set_minimal(true)
+	if touch:
+		touch.enabled_buttons = ["interact", "pause"]
+	if not spectator.next_target():
+		team_hud.set_spectating("")
+
+
+func _send_ping() -> void:
+	if not _online or _ping_cooldown > 0.0 or player.dead or player.downed or player.escaped or player.is_hidden():
+		return
+	var cam := player.camera
+	var from := cam.global_position
+	var dir := -cam.global_basis.z
+	var mask := GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP | Interactable.LAYER_INTERACT | DoorEntity.LAYER_DOOR
+	var q := PhysicsRayQueryParameters3D.create(from, from + dir * 28.0, mask)
+	q.exclude = [player.get_rid()]
+	var hit := map.get_world_3d().direct_space_state.intersect_ray(q)
+	var reach := 28.0 if hit.is_empty() else from.distance_to(hit["position"])
+	var pos := from + dir * minf(reach, 12.0) if hit.is_empty() else (hit["position"] as Vector3)
+	var kind := 0
+	if not hit.is_empty() and (hit["collider"] as Object).has_meta("interactable"):
+		kind = 1
+	# Danger only for an enemy in front of the first wall: no pinging through walls.
+	for e in mc.enemies:
+		if not is_instance_valid(e) or not (e as Node3D).is_visible_in_tree():
+			continue
+		var epos := (e as Node3D).global_position + Vector3(0, 1.2, 0)
+		var t := (epos - from).dot(dir)
+		if t > 0.0 and t <= reach + 0.5 and (from + dir * t).distance_to(epos) < 1.4:
+			kind = 2
+			pos = epos
+	_ping_cooldown = 1.2
+	_net.send_ping(pos, kind)
+
+
+func _process(delta: float) -> void:
+	if _ping_cooldown > 0.0:
+		_ping_cooldown -= delta
+
+
 func _connect_entity(ent: Interactable) -> void:
 	if ent is KeypadEntity:
 		(ent as KeypadEntity).open_ui_requested.connect(_open_keypad)
@@ -130,6 +233,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		get_viewport().set_input_as_handled()
 		open_pause()
+	elif spectator and event.is_action_pressed("interact"):
+		get_viewport().set_input_as_handled()
+		spectator.next_target()
+	elif _online and event.is_action_pressed("ping"):
+		get_viewport().set_input_as_handled()
+		_send_ping()
 	elif event.is_action_pressed("inventory"):
 		get_viewport().set_input_as_handled()
 		_open_inventory()
@@ -162,6 +271,11 @@ func _on_touch_pressed(button: String) -> void:
 	match button:
 		"pause":
 			open_pause()
+		"ping":
+			_send_ping()
+		"interact":
+			if spectator:
+				spectator.next_target()
 		"inventory":
 			_open_inventory()
 		"flashlight":
@@ -215,7 +329,8 @@ func _show_overlay(o: OverlayPanel, pause_world: bool) -> void:
 
 
 func open_pause() -> void:
-	if _overlay or _ending or player.dead:
+	# Solo death has its own overlay; dead or spectating online players can still leave.
+	if _overlay or _ending or (player.dead and not _online):
 		return
 	var pm := PauseMenu.new()
 	pm.match_ctrl = mc
@@ -264,7 +379,7 @@ func open_pause() -> void:
 
 
 func _open_inventory() -> void:
-	if _overlay or player.dead or player.is_hidden():
+	if _overlay or player.dead or player.downed or player.is_hidden():
 		return
 	var inv := InventoryPanel.new()
 	inv.match_ctrl = mc

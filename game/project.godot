@@ -53,6 +53,10 @@ pointing/emulate_mouse_from_touch=true
 3d_physics/layer_6="trigger"
 3d_physics/layer_7="prop"
 
+[method]
+
+online/lobby_url=""
+
 [navigation]
 
 3d/default_cell_size=0.1

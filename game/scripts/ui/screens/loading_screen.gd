@@ -70,7 +70,11 @@ func on_enter(p: Dictionary) -> void:
 	col.add_child(_error_box)
 	AudioService.stop_music(1.0)
 	AudioService.play_ambience("", 1.0)
-	if bool(p.get("online", false)):
+	if bool(p.get("waiting", false)):
+		# Reconnecting: the flow replaces this screen when the server sends the level.
+		_status.text = "MP_STATUS_RECONNECTING"
+		_bar.value = 0.15
+	elif bool(p.get("online", false)):
 		_load_online.call_deferred()
 	else:
 		_load.call_deferred()

@@ -29,6 +29,7 @@ const STEP_DISTANCE_WALK := 1.7
 const NOISE_WALK := 5.5
 const NOISE_SPRINT := 13.0
 const NOISE_CROUCH := 1.6
+const REVIVE_RADIUS := 2.2
 
 var config: Dictionary = {}
 var map: MapBase
@@ -59,8 +60,6 @@ var _hint_timer := 0.0
 var _rng := RandomNumberGenerator.new()
 ## target pid -> {"reviver": pid, "started": elapsed}
 var _revives: Dictionary = {}
-
-const REVIVE_RADIUS := 2.2
 
 
 func setup(p_map: MapBase, p_config: Dictionary) -> void:

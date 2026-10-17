@@ -27,6 +27,7 @@ var _gauge: CrankGauge
 var _status_label: Label
 var _focus: Interactable
 var _hint_new := false
+var _minimal := false
 
 
 func _init() -> void:
@@ -187,7 +188,7 @@ func _process(delta: float) -> void:
 	_layout()
 	if _battery_show_time > 0.0:
 		_battery_show_time -= delta
-	_battery_box.visible = player != null and (_battery_show_time > 0.0 or player.battery < 0.3)
+	_battery_box.visible = not _minimal and player != null and (_battery_show_time > 0.0 or player.battery < 0.3)
 	_gauge.visible = _focus is GarageMotor and (_focus as GarageMotor).is_crank_ready()
 	if _gauge.visible:
 		var motor := _focus as GarageMotor
@@ -210,7 +211,7 @@ func _on_focus(prompt: String, ent: Interactable, _sub: int) -> void:
 func _on_stamina(v: float) -> void:
 	_stamina.value = v
 	(_stamina_box.get_meta("value") as Label).text = "%d%%" % int(v * 100)
-	_stamina_box.visible = v < 0.99
+	_stamina_box.visible = v < 0.99 and not _minimal
 
 
 func _on_battery(v: float) -> void:
@@ -243,6 +244,15 @@ func push_notice(text: String) -> void:
 
 func set_status(text_key: String) -> void:
 	_status_label.text = text_key
+
+
+## Dead or spectating in multiplayer: only objectives and notices remain.
+func set_minimal(on: bool) -> void:
+	_minimal = on
+	_hotbar.visible = not on
+	_reticle.visible = not on
+	_prompt.visible = not on
+	_stamina_box.visible = false
 
 
 func _refresh_objectives() -> void:

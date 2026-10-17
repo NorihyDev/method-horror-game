@@ -12,6 +12,8 @@ enum Kind { ONLINE, LAN_HOST, LAN_CLIENT }
 const CONNECT_RETRIES := 8
 const RETRY_SECONDS := 1.5
 const RECONNECT_ATTEMPTS := 5
+## Validated player count; 5–6 stay locked until sync/performance checks pass.
+const LAN_MAX_PLAYERS := 4
 
 var app: App
 var kind: Kind = Kind.ONLINE
@@ -26,6 +28,7 @@ var _port := 0
 var _connect_attempts := 0
 var _joined := false
 var _leaving := false
+var _reconnecting := false
 
 
 static func create(p_app: App) -> OnlineFlow:
@@ -56,9 +59,11 @@ func _make_bridge() -> void:
 	net.join_failed.connect(_on_join_failed)
 	net.disconnected.connect(_on_disconnected)
 	net.load_requested.connect(_on_load_requested)
-	net.match_begun.connect(func() -> void:
-		in_match = true
-		begun.emit())
+	net.match_begun.connect(
+		func() -> void:
+			in_match = true
+			begun.emit()
+	)
 
 
 # --- Starting a session -----------------------------------------------------------------
@@ -109,7 +114,7 @@ func host_lan() -> String:
 	net.host_color = Saves.avatar_color_index()
 	var err := net.host(
 		NetProtocol.LAN_PORT,
-		{"room_id": "lan", "map_id": "house", "difficulty_id": "normal", "max_players": NetProtocol.MAX_PLAYERS - 1},
+		{"room_id": "lan", "map_id": "house", "difficulty_id": "normal", "max_players": LAN_MAX_PLAYERS - 1},
 		NetBridge.Trust.LAN_HOST
 	)
 	if err != OK:
@@ -138,8 +143,8 @@ func join_lan(address: String) -> String:
 
 func _on_joined(_pid: int) -> void:
 	_joined = true
-	if in_match:
-		return
+	if in_match or _reconnecting:
+		return  # the server sends the running match's level next
 	if not app.current() or app.current().name != "Lobby":
 		app.goto("lobby", {"flow": self})
 
@@ -160,6 +165,8 @@ func _on_join_failed(reason: String) -> void:
 func _on_disconnected(reason: String) -> void:
 	if _leaving:
 		return
+	if net and net.mc and net.mc.is_finished():
+		return  # results are already showing; the server may simply close first
 	if in_match and kind == Kind.ONLINE and Settings.b("auto_reconnect") and reason == "NET_LOST":
 		_reconnect()
 		return
@@ -168,7 +175,25 @@ func _on_disconnected(reason: String) -> void:
 
 func _reconnect() -> void:
 	status_changed.emit("MP_STATUS_RECONNECTING")
-	app.toast(tr("MP_STATUS_RECONNECTING"))
+	# Leave the dead world behind a waiting screen before freeing it.
+	in_match = false
+	get_tree().paused = false
+	AudioService.stop_all_world()
+	app.post_fx.set_active(false)
+	(
+		app
+		. reset_to(
+			"loading",
+			{
+				"online": true,
+				"flow": self,
+				"waiting": true,
+				"map_id": str(net.room.get("map_id", room_info.get("map_id", ""))),
+				"difficulty_id": str(net.room.get("difficulty_id", room_info.get("difficulty_id", "normal"))),
+			}
+		)
+	)
+	app.set_world(null)
 	for attempt in RECONNECT_ATTEMPTS:
 		await get_tree().create_timer(2.0).timeout
 		if _leaving:
@@ -178,6 +203,7 @@ func _reconnect() -> void:
 			continue
 		in_match = false
 		_joined = false
+		_reconnecting = true
 		app.set_world(null)
 		_make_bridge()
 		_connect_online(r["room"])
@@ -186,17 +212,25 @@ func _reconnect() -> void:
 
 
 func _on_load_requested(config: Dictionary) -> void:
-	app.reset_to("loading", {"online": true, "flow": self, "config": config})
+	_reconnecting = false
+	var params := config.duplicate()
+	params.merge({"online": true, "flow": self, "config": config}, true)
+	app.reset_to("loading", params)
 
 
 func _abort(reason: String) -> void:
 	if _leaving:
 		return
-	var message := tr(reason) if tr(reason) != reason else tr("NET_GENERIC_ERROR")
 	leave()
 	Session.quit_to_menu()
 	app.goto("multiplayer")
-	app.alert("MP_DISCONNECTED_TITLE", message)
+	app.alert("MP_DISCONNECTED_TITLE", describe_error(reason))
+
+
+## Player-facing text for a reason key from the lobby service or game server.
+static func describe_error(reason: String) -> String:
+	var text := TranslationServer.translate(reason)
+	return text if text != reason else TranslationServer.translate("NET_GENERIC_ERROR")
 
 
 # --- Leaving ---------------------------------------------------------------------------------

@@ -20,20 +20,29 @@ var session_path := "user://online_session.json"
 
 
 func _ready() -> void:
-	base_url = AppInfo.arg_value("--lobby", OS.get_environment("METHOD_LOBBY_URL"))
-	if base_url.is_empty():
-		base_url = str(ProjectSettings.get_setting(SETTING, ""))
-	base_url = base_url.trim_suffix("/")
+	base_url = configured_url()
 	if AppInfo.uses_isolated_storage():
 		session_path = "user://test_online_session.json"
 	_load_session()
 
 
+## The lobby service URL for this build/run ("" when none is configured).
+static func configured_url() -> String:
+	var url := AppInfo.arg_value("--lobby", OS.get_environment("METHOD_LOBBY_URL"))
+	if url.is_empty():
+		url = str(ProjectSettings.get_setting(SETTING, ""))
+	return url.trim_suffix("/")
+
+
 ## Returns "" when usable, otherwise a translation key explaining why not.
 func availability() -> String:
-	if base_url.is_empty():
+	return availability_for(base_url)
+
+
+static func availability_for(url: String) -> String:
+	if url.is_empty():
 		return "MP_UNAVAILABLE_SERVICE"
-	if not is_secure_url(base_url):
+	if not is_secure_url(url):
 		return "MP_INSECURE_SERVICE"
 	return ""
 
@@ -124,16 +133,26 @@ func request(method: String, path: String, body: Dictionary = {}, auth: bool = t
 	var http := HTTPRequest.new()
 	http.timeout = TIMEOUT
 	add_child(http)
-	var headers := PackedStringArray([
-		"Content-Type: application/json",
-		"X-Method-Protocol: %d" % AppInfo.PROTOCOL_VERSION,
-	])
+	var headers := PackedStringArray(
+		[
+			"Content-Type: application/json",
+			"X-Method-Protocol: %d" % AppInfo.PROTOCOL_VERSION,
+		]
+	)
 	if auth and has_session():
 		headers.append("Authorization: Bearer " + token)
-	var verb := {
-		"GET": HTTPClient.METHOD_GET, "POST": HTTPClient.METHOD_POST,
-		"PATCH": HTTPClient.METHOD_PATCH, "DELETE": HTTPClient.METHOD_DELETE,
-	}.get(method, HTTPClient.METHOD_GET) as int
+	var verb := (
+		(
+			{
+				"GET": HTTPClient.METHOD_GET,
+				"POST": HTTPClient.METHOD_POST,
+				"PATCH": HTTPClient.METHOD_PATCH,
+				"DELETE": HTTPClient.METHOD_DELETE,
+			}
+			. get(method, HTTPClient.METHOD_GET)
+		)
+		as int
+	)
 	var payload := "" if method == "GET" else JSON.stringify(body)
 	var err := http.request(base_url + path, headers, verb, payload)
 	if err != OK:

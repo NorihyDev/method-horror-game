@@ -82,7 +82,20 @@ func test_string_tables_cover_code_keys() -> void:
 		"OPT_",
 		"SET_",
 		"SHOP_SLOT_",
-		"CLR"
+		"CLR",
+		# HTTP verbs, environment variable names and dynamic key prefixes.
+		"GET",
+		"POST",
+		"PATCH",
+		"DELETE",
+		"NET_",
+		"TEAM_",
+		"SERVICE_ERROR",
+		"METHOD_DTLS_CERT",
+		"METHOD_DTLS_KEY",
+		"METHOD_LOBBY_URL",
+		"METHOD_SERVER_SECRET",
+		"METHOD_TICKET_SECRET",
 	]
 	for key in referenced:
 		if ignore.has(key):

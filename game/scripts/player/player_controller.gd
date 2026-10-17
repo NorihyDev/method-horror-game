@@ -54,6 +54,8 @@ var sprinting := false
 var hidden_spot: HiddenInfo
 var dead := false
 var escaped := false
+## Multiplayer: knocked down, waiting for a revive. Can look, not move or act.
+var downed := false
 
 var _shape: CollisionShape3D
 var _capsule: CapsuleShape3D
@@ -257,6 +259,13 @@ func _physics_process(delta: float) -> void:
 	if dead or escaped:
 		_tick_presentation(delta, Vector2.ZERO)
 		return
+	if downed:
+		if input_enabled:
+			_gather_look(delta)
+		velocity = Vector3.ZERO
+		_tick_presentation(delta, Vector2.ZERO)
+		_tick_battery(delta)
+		return
 	if hidden_spot:
 		if input_enabled:
 			_gather_look(delta)
@@ -325,6 +334,8 @@ func _tick_presentation(delta: float, move: Vector2) -> void:
 	var eye := EYE_CROUCH if crouching else EYE_STAND
 	if dead:
 		eye = 0.3
+	elif downed:
+		eye = 0.45
 	var bob := Vector3.ZERO
 	var speed := Vector2(velocity.x, velocity.z).length()
 	var motion_ok := Settings.b("head_bob") and not Settings.motion_reduced()
@@ -342,7 +353,8 @@ func _tick_presentation(delta: float, move: Vector2) -> void:
 		if Settings.b("camera_shake") and not Settings.motion_reduced():
 			shake_off = Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0) * _shake * 0.02
 	if not hidden_spot:
-		head.rotation = Vector3(_pitch, _yaw, 0)
+		# Roll (z) belongs to the death/downed tweens.
+		head.rotation = Vector3(_pitch, _yaw, head.rotation.z)
 		var tilt := -move.x * deg_to_rad(1.2) if motion_ok else 0.0
 		camera.rotation.z = lerpf(camera.rotation.z, tilt, delta * 6.0)
 	camera.position = shake_off
@@ -507,7 +519,7 @@ func _activate(ent: Interactable, sub: int) -> void:
 
 ## Re-evaluates the prompt (e.g. after inventory changes).
 func refresh_focus() -> void:
-	_focus_prompt = "\u0000"
+	_focus_prompt = "<refresh>"  # never a real prompt, so the next tick re-emits
 
 
 # --- Hiding ---------------------------------------------------------------------------
@@ -582,6 +594,27 @@ func on_died() -> void:
 func on_escaped() -> void:
 	escaped = true
 	input_enabled = false
+
+
+## Multiplayer down/revive presentation; the server decides both transitions.
+func set_downed(on: bool) -> void:
+	if downed == on or dead:
+		return
+	downed = on
+	velocity = Vector3.ZERO
+	crouching = false
+	sprinting = false
+	_sprint_toggle = false
+	viewmodel.visible = not on
+	_focus = null
+	_focus_prompt = ""
+	_set_hold(0.0)
+	focus_changed.emit("", null, 0)
+	var t := create_tween()
+	t.tween_property(head, "rotation:z", deg_to_rad(18) if on else 0.0, 0.5)
+	if on:
+		_shake = 0.8
+		_vibrate(1.0)
 
 
 func _vibrate(strength: float) -> void:

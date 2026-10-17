@@ -5,8 +5,14 @@ const SECRET := "test-secret-not-for-production-0123456789"
 
 
 func _payload(exp_offset: int = 300) -> Dictionary:
-	return {"v": 1, "room": "room-abc", "uid": "user-12345678", "name": "Ann", "color": 2,
-		"exp": int(Time.get_unix_time_from_system()) + exp_offset}
+	return {
+		"v": 1,
+		"room": "room-abc",
+		"uid": "user-12345678",
+		"name": "Ann",
+		"color": 2,
+		"exp": int(Time.get_unix_time_from_system()) + exp_offset
+	}
 
 
 func test_valid_ticket_verifies() -> void:
@@ -64,7 +70,10 @@ func test_validators() -> void:
 
 func test_ticket_minted_by_lobby_service_verifies() -> void:
 	# Minted by services/lobby/src/security.ts signTicket(); exp 4102444800 (2100-01-01).
-	var from_node := "eyJ2IjoxLCJyb29tIjoicm9vbV9ub2RlIiwidWlkIjoidXNyX2Zyb21ub2RlMSIsIm5hbWUiOiJCb2IiLCJjb2xvciI6MywiZXhwIjo0MTAyNDQ0ODAwfQ.X0ocpKkCUYXu2xpGVfVgzh2lfzqIvdVxeybVYZTHTQ0"
+	var from_node := (
+		"eyJ2IjoxLCJyb29tIjoicm9vbV9ub2RlIiwidWlkIjoidXNyX2Zyb21ub2RlMSIsIm5hbWUiOiJCb2IiLCJjb2xvciI6MywiZXhwIjo0MTAyNDQ0ODAwfQ"
+		+ ".X0ocpKkCUYXu2xpGVfVgzh2lfzqIvdVxeybVYZTHTQ0"
+	)
 	var r := NetProtocol.verify_ticket(from_node, SECRET, "room_node", int(Time.get_unix_time_from_system()))
 	assert_true(r["ok"], "cross-language ticket: " + str(r))
 	assert_eq(str(r.get("payload", {}).get("uid", "")), "usr_fromnode1")

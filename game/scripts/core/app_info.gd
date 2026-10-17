@@ -49,11 +49,13 @@ static func arg_value(arg_name: String, default_value: String = "") -> String:
 	return default_value
 
 
-## Automated runs (tests, smoke, screenshot and --script tools) use separate
-## test_* save files so they never touch a player's real profile.
+## Automated runs (tests, smoke, screenshot and --script tools, bots) and
+## dedicated servers use separate test_* save files so they never touch a
+## player's real profile.
 static func uses_isolated_storage() -> bool:
-	if has_arg("--test") or has_arg("--autoshot") or has_arg("--uishots") or has_arg("--smoke"):
-		return true
+	for flag in ["--test", "--autoshot", "--uishots", "--smoke", "--bot", "--server"]:
+		if has_arg(flag):
+			return true
 	var args := OS.get_cmdline_args()
 	return args.has("--script") or args.has("-s")
 

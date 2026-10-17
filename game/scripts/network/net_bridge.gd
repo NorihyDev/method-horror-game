@@ -39,6 +39,8 @@ var map: MapBase
 var local_player: PlayerController
 ## Dedicated servers: shared secret with the lobby service (never on clients).
 var ticket_secret := ""
+## Seconds a disconnected player's slot is kept during a match.
+var reconnect_window := NetProtocol.RECONNECT_WINDOW
 var expected_room_id := ""
 ## Display name / color of a LAN host's own player.
 var host_name := ""
@@ -213,7 +215,8 @@ func _server_auth(peer: int, data: PackedByteArray) -> void:
 	if not reconnect:
 		_ready[pid] = false
 	_peers[peer] = {"uid": uid, "pid": pid, "reconnect": reconnect, "connected": false}
-	if _owner_pid == 0:
+	# The lobby names the owner in their ticket; otherwise the first member owns.
+	if _owner_pid == 0 or (bool(identity.get("owner", false)) and _phase == PHASE_LOBBY):
 		_owner_pid = pid
 	var reply := {"ok": true, "pid": pid, "reconnect": reconnect}
 	_mp.send_auth(peer, JSON.stringify(reply).to_utf8_buffer())
@@ -231,7 +234,13 @@ func _identify(hello: Dictionary) -> Dictionary:
 		var ticket_name := str(p.get("name", ""))
 		if NameValidator.validate(ticket_name) != NameValidator.Result.OK:
 			return {"ok": false, "reason": NetProtocol.REJECT_NAME}
-		return {"ok": true, "uid": str(p["uid"]), "name": NameValidator.normalize(ticket_name), "color": int(p.get("color", 0))}
+		return {
+			"ok": true,
+			"uid": str(p["uid"]),
+			"name": NameValidator.normalize(ticket_name),
+			"color": int(p.get("color", 0)),
+			"owner": bool(p.get("own", false)),
+		}
 	# LAN development: no ticket; lower trust (documented). The id only keys reconnects.
 	var lan_name := str(hello.get("name", ""))
 	if NameValidator.validate(lan_name) != NameValidator.Result.OK:
@@ -239,7 +248,12 @@ func _identify(hello: Dictionary) -> Dictionary:
 	var lan_id := str(hello.get("lan_id", ""))
 	if lan_id.length() < 8 or lan_id.length() > 64:
 		return {"ok": false, "reason": NetProtocol.REJECT_MALFORMED}
-	return {"ok": true, "uid": "lan-" + SaveIO.sha256_text(lan_id).substr(0, 16), "name": NameValidator.normalize(lan_name), "color": int(hello.get("color", 0))}
+	return {
+		"ok": true,
+		"uid": "lan-" + SaveIO.sha256_text(lan_id).substr(0, 16),
+		"name": NameValidator.normalize(lan_name),
+		"color": int(hello.get("color", 0))
+	}
 
 
 func _reject(peer: int, reason: String) -> void:
@@ -342,11 +356,19 @@ func _publish_room() -> void:
 	pids.sort()
 	for pid in pids:
 		var connected := _peer_of(int(pid)) != 0 or (trust == Trust.LAN_HOST and int(pid) == 1)
-		members.append({
-			"pid": int(pid), "name": _names[pid], "color": int(_colors.get(pid, 0)),
-			"ready": bool(_ready.get(pid, false)) or int(pid) == _owner_pid,
-			"owner": int(pid) == _owner_pid, "away": not connected,
-		})
+		(
+			members
+			. append(
+				{
+					"pid": int(pid),
+					"name": _names[pid],
+					"color": int(_colors.get(pid, 0)),
+					"ready": bool(_ready.get(pid, false)) or int(pid) == _owner_pid,
+					"owner": int(pid) == _owner_pid,
+					"away": not connected,
+				}
+			)
+		)
 	room["members"] = members
 	room["owner_pid"] = _owner_pid
 	room["phase"] = _phase
@@ -400,9 +422,11 @@ func server_kick(target: Variant) -> void:
 		return
 	_banned[str(_peers[peer]["uid"])] = true
 	_rpc_to(peer, "_s_kicked", [NetProtocol.REJECT_KICKED])
-	get_tree().create_timer(0.2).timeout.connect(func() -> void:
-		if _mp and _mp.multiplayer_peer:
-			_mp.disconnect_peer(peer))
+	get_tree().create_timer(0.2).timeout.connect(
+		func() -> void:
+			if _mp and _mp.multiplayer_peer:
+				_mp.disconnect_peer(peer)
+	)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -540,13 +564,14 @@ func _snapshot() -> Dictionary:
 
 # --- Server: gameplay intents ----------------------------------------------------------------
 
-
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)
 func _c_motion(pos: Variant, yaw: Variant, speed: Variant, flags: Variant) -> void:
 	var pid := _sender_pid("motion")
 	if pid <= 0 or mc == null or not mc.running:
 		return
-	if not (NetProtocol.finite_vec(pos) and NetProtocol.finite_num(yaw) and NetProtocol.finite_num(speed) and flags is int):
+	if not (
+		NetProtocol.finite_vec(pos) and NetProtocol.finite_num(yaw) and NetProtocol.finite_num(speed) and flags is int
+	):
 		return
 	var p := mc.state.player(pid)
 	if p.is_empty() or p["status"] != MatchState.STATUS_ALIVE or not str(p["hiding"]).is_empty():
@@ -730,7 +755,7 @@ func _server_tick(delta: float) -> void:
 	if _phase != PHASE_PLAYING or mc == null:
 		return
 	for pid in _away_since.keys():
-		if mc.state.elapsed - float(_away_since[pid]) > NetProtocol.RECONNECT_WINDOW:
+		if mc.state.elapsed - float(_away_since[pid]) > reconnect_window:
 			_away_since.erase(pid)
 			mc.player_left(int(pid))
 	_broadcast_timer -= delta
@@ -740,7 +765,9 @@ func _server_tick(delta: float) -> void:
 		for e in mc.enemies:
 			if is_instance_valid(e) and e is Watcher:
 				var w: Watcher = e
-				_rpc_all_unreliable("_s_enemy", [str(w.name), w.global_position, w.rotation.y, w.net_anim(), w.net_lens()])
+				_rpc_all_unreliable(
+					"_s_enemy", [str(w.name), w.global_position, w.rotation.y, w.net_anim(), w.net_lens()]
+				)
 	_time_timer -= delta
 	if _time_timer <= 0.0:
 		_time_timer = NetProtocol.TIME_SYNC_SECONDS
@@ -788,7 +815,11 @@ func _client_auth(id: int, data: PackedByteArray) -> void:
 		return
 	var parsed: Variant = JSON.parse_string(data.get_string_from_utf8())
 	if not parsed is Dictionary or not bool(parsed.get("ok", false)):
-		var reason := str(parsed.get("reason", NetProtocol.REJECT_MALFORMED)) if parsed is Dictionary else NetProtocol.REJECT_MALFORMED
+		var reason := (
+			str(parsed.get("reason", NetProtocol.REJECT_MALFORMED))
+			if parsed is Dictionary
+			else NetProtocol.REJECT_MALFORMED
+		)
 		_fail(reason)
 		return
 	my_pid = int(parsed.get("pid", 0))
@@ -898,7 +929,6 @@ func rtt_ms() -> int:
 
 
 # --- Client: incoming ----------------------------------------------------------------------------
-
 
 @rpc("authority", "call_remote", "reliable")
 func _s_room(data: Dictionary) -> void:
