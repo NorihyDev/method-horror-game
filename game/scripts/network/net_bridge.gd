@@ -151,6 +151,8 @@ func join(address: String, port: int, hello: Dictionary, dtls_trusted: X509Certi
 	_mp.peer_authentication_failed.connect(func(_id: int) -> void: _fail("NET_REJECT_TIMEOUT"))
 	_mp.connection_failed.connect(func() -> void: _fail("NET_UNREACHABLE"))
 	_mp.server_disconnected.connect(_on_server_disconnected)
+	# Only once both sides finished authenticating can RPCs reach the server.
+	_mp.connected_to_server.connect(func() -> void: joined.emit(my_pid))
 	_mp.multiplayer_peer = _enet
 	mode = Mode.CLIENT
 	return OK
@@ -293,7 +295,7 @@ func _sender_pid(kind: String) -> int:
 	if not limiter.allow(peer, kind, Time.get_ticks_msec() / 1000.0):
 		if int(limiter.dropped.get(peer, 0)) > 400:
 			Log.warn("net", "Disconnecting abusive peer", {"peer": peer})
-			_mp.disconnect_peer(peer)
+			_drop_peer.call_deferred(peer)
 		return 0
 	return int(_peers[peer]["pid"])
 
@@ -422,11 +424,7 @@ func server_kick(target: Variant) -> void:
 		return
 	_banned[str(_peers[peer]["uid"])] = true
 	_rpc_to(peer, "_s_kicked", [NetProtocol.REJECT_KICKED])
-	get_tree().create_timer(0.2).timeout.connect(
-		func() -> void:
-			if _mp and _mp.multiplayer_peer:
-				_mp.disconnect_peer(peer)
-	)
+	get_tree().create_timer(0.2).timeout.connect(func() -> void: _drop_peer(peer))
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -647,6 +645,15 @@ func _c_revive(target: Variant, start: Variant) -> void:
 func _c_leave() -> void:
 	var peer := _mp.get_remote_sender_id()
 	if _peers.has(peer):
+		_drop_peer.call_deferred(peer)
+
+
+## Server-initiated disconnect. SceneMultiplayer.disconnect_peer() forgets the
+## peer without emitting peer_disconnected, so record the departure first
+## (away / left / lobby removal), then drop the connection.
+func _drop_peer(peer: int) -> void:
+	_on_peer_disconnected(peer)
+	if _mp and _mp.multiplayer_peer and _mp.get_peers().has(peer):
 		_mp.disconnect_peer(peer)
 
 
@@ -824,7 +831,6 @@ func _client_auth(id: int, data: PackedByteArray) -> void:
 		return
 	my_pid = int(parsed.get("pid", 0))
 	_mp.complete_auth(1)
-	joined.emit(my_pid)
 
 
 ## Never close from inside a multiplayer callback: the API is mid-poll.
