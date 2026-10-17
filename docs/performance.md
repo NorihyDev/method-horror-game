@@ -26,7 +26,7 @@ in this file once picked.
 | Script time | ≤ 4 ms |
 | Memory | ≤ 900 MB total process |
 | Load to briefing | ≤ 6 s (measured on desktop: level build ≈ 1–2 s; smoke run incl. 300 frames 5.2 s) |
-| APK size | ≤ 60 MB (current debug, three maps: 41.5 MB) |
+| APK size | ≤ 60 MB (current debug, five maps: 42.5 MB) |
 
 ## What is already done to stay inside budget
 
@@ -52,7 +52,8 @@ in this file once picked.
 ### Built-in benchmark (development builds)
 
 *Settings → Graphics → Run benchmark* (debug builds, from the main menu), or
-`godot --path game -- --bench` on desktop. For each playable map it builds the
+`godot --path game -- --bench [--preset=low|medium|high]` on desktop (the
+preset applies to that run only). For each playable map it builds the
 level at the current graphics settings, walks the patrol route with the enemy
 present for 20 s (power off for the first half, on for the second) and
 records:
@@ -84,17 +85,27 @@ is also printed to logcat with the `BENCH` prefix.
 ### Desktop reference (not a phone)
 
 2026-10-17, laptop with an RTX 3050 Laptop GPU, Windows 11, Godot 4.7.2,
-Mobile renderer, 1280×720, *High* preset, 60 FPS cap. Useful only to compare
-maps and spot regressions; it says nothing about phone performance.
+Mobile renderer, 1280×720, 60 FPS cap, `--bench --preset=<preset>`. Useful
+only to compare maps, presets and builds; it says nothing about phone
+performance. Every run held 60 FPS with no frame over 33 ms.
 
-| Map | Frame p95 | GPU avg (p95) | CPU render | Scripts | Physics | Draw calls | Primitives | VRAM |
-|---|---|---|---|---|---|---|---|---|
-| The Abandoned House | 16.7 ms (cap) | 2.56 ms (4.31) | 0.68 ms | 2.17 ms | 0.66 ms | 183 | 60 k | 114 MB |
-| The Black Ward | 16.7 ms (cap) | 2.35 ms (4.48) | 0.72 ms | 2.34 ms | 0.54 ms | 200 | 70 k | 118 MB |
-| Last Train | 16.7 ms (cap) | 2.30 ms (5.48) | 0.49 ms | 1.84 ms | 0.57 ms | 196 | 44 k | 120 MB |
+| Map | Draw calls High / Medium / Low | GPU avg ms High / Medium / Low | Scripts ms (High) | Primitives (High) | VRAM |
+|---|---|---|---|---|---|
+| The Abandoned House | 183 / 230 / 157 | 3.29 / 2.58 / 1.76 | 2.31 | 60 k | 114 MB |
+| The Black Ward | 189 / 241 / 176 | 3.26 / 2.46 / 1.75 | 2.45 | 67 k | 118 MB |
+| Last Train | 192 / 195 / 134 | 2.94 / 2.30 / 1.73 | 2.06 | 44 k | 120 MB |
+| The Silent School | **274 / 285** / 208 | 3.12 / 2.37 / 1.70 | 2.14 | 19 k | 121 MB |
+| METHOD Facility | **255 / 261** / 192 | 2.52 / 2.06 / 1.54 | 1.89 | 12 k | 120 MB |
 
-All three maps stay within the draw-call (≤ 250), triangle (≤ 300 k) and
-script-time (≤ 4 ms) budgets above on this run.
+Every map stays within the triangle (≤ 300 k) and script-time (≤ 4 ms)
+budgets. **The Silent School and METHOD Facility exceed the 250 draw-call
+budget at High and Medium** (more rooms, doors and lockers in view along the
+corridors); at Low they fit. Already done to reduce them: geometry batched in
+16 m bands (kept under the Mobile renderer's 8-lamps-per-mesh limit), unseen
+outer wall faces share the room material, the school's door chain is one
+mesh. Next if phones need it: merge door and locker entity meshes, or set the
+phone default to Low for these two maps. Medium draws more than High on some
+maps because its shadow settings differ; worth a look during the phone pass.
 
 ### Phones
 

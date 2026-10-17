@@ -15,12 +15,12 @@
 
 ## Reward table (per map, `resources/maps/*.tres`)
 
-| Source | The Abandoned House | The Black Ward | Last Train |
-|---|---|---|---|
-| Escape | 100 | 120 | 140 |
-| First escape from this location | 150 | 175 | 200 |
-| Each optional objective completed | 25 | 25 | 25 |
-| Each **new** METHOD file (first time found) | 10 | 10 | 10 |
+| Source | The Abandoned House | The Black Ward | Last Train | The Silent School | METHOD Facility |
+|---|---|---|---|---|---|
+| Escape | 100 | 120 | 140 | 150 | 160 |
+| First escape from this location | 150 | 175 | 200 | 225 | 250 |
+| Each optional objective completed | 25 | 25 | 25 | 25 | 30 |
+| Each **new** METHOD file (first time found) | 10 | 10 | 10 | 10 | 15 |
 | Difficulty multiplier on escape totals | Story ×0.75 · Normal ×1 · Hard ×1.5 · Nightmare ×2 |
 
 Defeat pays only for newly found files (no multiplier). Online, files stay

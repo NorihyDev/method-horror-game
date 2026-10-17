@@ -5,9 +5,10 @@ Players investigate abandoned locations tied to METHOD — a vanished research
 organization whose experiments altered perception — and escape the
 supernatural threats those experiments left behind.
 
-> **Status: Milestone 4 — three playable maps, online economy.** *The
-> Abandoned House*, *The Black Ward* and *Last Train* are fully playable solo
-> (offline, unlocked in order) and in co-op. Online co-op (lobby service,
+> **Status: all five maps playable; release work in progress.** *The
+> Abandoned House*, *The Black Ward*, *Last Train*, *The Silent School* and
+> *METHOD Facility* are fully playable solo (offline, unlocked in order) and
+> in co-op. Online co-op (lobby service,
 > private 6-digit rooms, dedicated server, reconnect, verified wallet and
 > shop) and a LAN development mode work end to end **on one machine** —
 > verified by automated multi-process tests, including a lossy, high-latency
@@ -23,6 +24,8 @@ supernatural threats those experiments left behind.
 | ![Fuse panel](docs/screenshots/fuse_panel.jpg) | ![HUD with touch controls](docs/screenshots/touch_hud.jpg) |
 | ![The Sister in the Black Ward](docs/screenshots/ward_sister.jpg) | ![Observation room](docs/screenshots/ward_observation.jpg) |
 | ![The Lineman on the platform](docs/screenshots/station_lineman.jpg) | ![A ghost train passing](docs/screenshots/station_ghost_train.jpg) |
+| ![The Headmistress in the school corridor](docs/screenshots/school_headmistress.jpg) | ![Music-room chimes](docs/screenshots/school_chimes.jpg) |
+| ![Subject Zero in the facility](docs/screenshots/facility_subject.jpg) | ![The freight lift arrives](docs/screenshots/facility_lift.jpg) |
 
 *Screenshots are real renders of the current build (desktop, Mobile renderer).*
 
@@ -64,7 +67,7 @@ supernatural threats those experiments left behind.
 | In-match co-op: teammates, pings, downed/revive, spectating | Implemented; screenshot-verified, covered by integration tests |
 | LAN development mode (lower trust, no coins) | Implemented, tested in-process |
 | **Internet play across separate networks** | **Unverified** — needs a deployed host ([deployment.md](docs/deployment.md)) |
-| Maps 4–5 | **Planned**, shown as "Coming later" |
+| *The Silent School* (music box by ear, PA bell tune → chimes, The Headmistress: frozen while watched in light) and *METHOD Facility* (finale reusing every system; Subject Zero: blind in the dark, sighted once powered; freight-lift hold-out) | Implemented; full playthrough, enemy-rule, 300-seed solvability and co-op replication tests; screenshot-checked |
 | iOS | Architecture only; **no signed or device-tested build** |
 
 ## Setup
@@ -230,9 +233,9 @@ Key ideas (details in [docs/architecture.md](docs/architecture.md)):
    ⏳ internet verification (needs a deployed host).
 4. ✅ Verified online economy and shop, map progression, Maps 2 (*The Black
    Ward*) and 3 (*Last Train*).
-5. Animation/audio/UI refinement, accessibility testing, Android device
-   profiling, release signing.
-6. Maps 4 (*The Silent School*) and 5 (*METHOD Facility*).
+5. ⏳ ✅ benchmark tool, accessibility audit and fixes, debug APK with all
+   maps; ⏳ phone profiling, signed release (needs the owner's keystore).
+6. ✅ Maps 4 (*The Silent School*) and 5 (*METHOD Facility*).
 
 Exact current state and next steps: [docs/continuation.md](docs/continuation.md).
 
