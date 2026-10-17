@@ -56,7 +56,7 @@ func get_prompt(_pid: int, _sub: int) -> String:
 	return tr("PROMPT_CLOSE_DRAWER") if bool(state.get("open", false)) else tr("PROMPT_OPEN_DRAWER")
 
 
-func authority_interact(_ctx: Dictionary) -> void:
+func authority_interact(ctx: Dictionary) -> void:
 	match_ctrl.set_entity_state(entity_id, {"open": not bool(state.get("open", false))})
 	world_sound("drawer", -4.0, 10.0)
-	match_ctrl.emit_noise(interact_origin(), 3.0, "drawer")
+	match_ctrl.emit_noise(interact_origin(), 3.0, "drawer", int(ctx["player_id"]))

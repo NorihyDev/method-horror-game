@@ -96,6 +96,9 @@ func test_string_tables_cover_code_keys() -> void:
 		"METHOD_LOBBY_URL",
 		"METHOD_SERVER_SECRET",
 		"METHOD_TICKET_SECRET",
+		# Stenciled labels on world props (not UI text).
+		"RELAY",
+		"START",
 	]
 	for key in referenced:
 		if ignore.has(key):

@@ -54,6 +54,6 @@ func authority_interact(ctx: Dictionary) -> void:
 		return
 	match_ctrl.give_item(pid, output)
 	world_sound("workbench", -2.0, 18.0)
-	match_ctrl.emit_noise(interact_origin(), 9.0, "workbench")
+	match_ctrl.emit_noise(interact_origin(), 9.0, "workbench", pid)
 	var def: ItemDefinition = Session.item(output)
 	match_ctrl.notify_player(pid, "CRAFTED", [tr(def.name_key if def else output)])

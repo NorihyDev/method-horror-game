@@ -123,7 +123,7 @@ func authority_interact(ctx: Dictionary) -> void:
 	if not hide_flag.is_empty():
 		match_ctrl.set_flag(hide_flag)
 	world_sound("locker_open" if style == "locker" else "door_creak", -6.0, 12.0)
-	match_ctrl.emit_noise(interact_origin(), 3.5, "hide")
+	match_ctrl.emit_noise(interact_origin(), 3.5, "hide", pid)
 	for e in match_ctrl.enemies:
 		if is_instance_valid(e):
 			e.call("on_player_hid", pid, self)
@@ -136,4 +136,4 @@ func release(pid: int) -> void:
 	match_ctrl.set_entity_state(entity_id, {"occupant": 0})
 	match_ctrl.set_player_hiding(pid, "")
 	world_sound("locker_close" if style == "locker" else "door_close", -6.0, 14.0)
-	match_ctrl.emit_noise(interact_origin(), 4.0, "hide")
+	match_ctrl.emit_noise(interact_origin(), 4.0, "hide", pid)

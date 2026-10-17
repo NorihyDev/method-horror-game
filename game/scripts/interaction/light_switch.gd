@@ -43,7 +43,7 @@ func get_prompt(_pid: int, _sub: int) -> String:
 	return tr("PROMPT_LIGHTS_OFF") if bool(state.get("on", true)) else tr("PROMPT_LIGHTS_ON")
 
 
-func authority_interact(_ctx: Dictionary) -> void:
+func authority_interact(ctx: Dictionary) -> void:
 	match_ctrl.set_entity_state(entity_id, {"on": not bool(state.get("on", true))})
 	world_sound("switch", -6.0, 8.0)
-	match_ctrl.emit_noise(interact_origin(), 2.5, "switch")
+	match_ctrl.emit_noise(interact_origin(), 2.5, "switch", int(ctx["player_id"]))

@@ -81,13 +81,7 @@ func on_enter(p: Dictionary) -> void:
 
 
 func _briefing_keys(map: MapDefinition) -> PackedStringArray:
-	if map == null:
-		return []
-	if map.is_tutorial:
-		return ["BRIEF_TUTORIAL_1", "BRIEF_TUTORIAL_2"]
-	if String(map.id) == "house":
-		return ["BRIEF_HOUSE_1", "BRIEF_HOUSE_2", "BRIEF_HOUSE_3"]
-	return []
+	return map.briefing_keys if map else PackedStringArray()
 
 
 func _tip() -> String:

@@ -75,7 +75,7 @@ func authority_interact(ctx: Dictionary) -> void:
 	new_state["taken"] = true
 	match_ctrl.set_entity_state(entity_id, new_state)
 	world_sound("pickup", -6.0, 10.0)
-	match_ctrl.emit_noise(interact_origin(), 2.0, "pickup")
+	match_ctrl.emit_noise(interact_origin(), 2.0, "pickup", pid)
 	var def: ItemDefinition = Session.item(item_id)
 	match_ctrl.notify_player(pid, "PICKED_UP", [tr(def.name_key if def else item_id)])
 

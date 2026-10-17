@@ -165,7 +165,7 @@ func authority_interact(ctx: Dictionary) -> void:
 	if needle_in_window(pid, press_time):
 		s["successes"] = int(s.get("successes", 0)) + 1
 		world_sound("crank_ok", 0.0, 22.0)
-		match_ctrl.emit_noise(interact_origin(), 8.0, "crank")
+		match_ctrl.emit_noise(interact_origin(), 8.0, "crank", pid)
 		if int(s["successes"]) >= SUCCESSES_NEEDED:
 			s["started"] = true
 			match_ctrl.set_entity_state(entity_id, s)
@@ -173,6 +173,6 @@ func authority_interact(ctx: Dictionary) -> void:
 			return
 	else:
 		world_sound("crank_clank", 3.0, 35.0)
-		match_ctrl.emit_noise(interact_origin(), 22.0, "clank")
+		match_ctrl.emit_noise(interact_origin(), 22.0, "clank", pid)
 		match_ctrl.notify_player(pid, "CRANK_MISS")
 	match_ctrl.set_entity_state(entity_id, s)

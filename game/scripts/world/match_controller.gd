@@ -209,7 +209,7 @@ func begin() -> void:
 	running = true
 	# Restored checkpoints must also restore presentation tied to flags.
 	if map:
-		map.set_power(state.has_flag("power_on"))
+		map.set_power(state.has_flag(rules.power_flag))
 	if state.phase == MatchState.Phase.BRIEFING:
 		_set_phase(MatchState.Phase.EXPLORE)
 	if state.flags.has("enemy_arrived"):
@@ -397,19 +397,20 @@ func set_flag(flag: String) -> void:
 	flag_changed.emit(flag)
 	if net and is_authority:
 		net.call("broadcast_flag", flag)
-	match flag:
-		"power_on":
-			_set_phase(MatchState.Phase.ESCALATE)
-		"garage_open":
-			_set_phase(MatchState.Phase.FINAL)
+	if rules.phase_flags.has(flag):
+		var next_phase: MatchState.Phase = rules.phase_flags[flag]
+		_set_phase(next_phase)
 	_flag_presentation(flag)
 	_evaluate_objectives()
 
 
 ## Presentation consequences of flags, on every peer.
 func _flag_presentation(flag: String) -> void:
-	if flag == "power_on" and map:
+	if map == null:
+		return
+	if flag == rules.power_flag:
 		map.set_power(true)
+	map.on_flag(self, flag)
 
 
 func add_counter(counter: String, delta: int = 1) -> int:
@@ -435,14 +436,20 @@ func notify_all(key: String, args: Array = []) -> void:
 
 
 ## Gameplay noise heard by enemies. Radius in meters before difficulty scaling.
-func emit_noise(pos: Vector3, radius: float, kind: String, _source_pid: int = 0) -> void:
+## `source_pid` names the player who made it (0 = the world). The map may mask
+## noise (a passing train drowns out everything near the tracks).
+func emit_noise(pos: Vector3, radius: float, kind: String, source_pid: int = 0) -> void:
 	noise_emitted.emit(pos, radius, kind)
 	if not is_authority:
 		return
 	var mult := difficulty.scaled_hearing(state.player_count)
+	if map:
+		mult *= map.noise_mask(pos, kind)
+	if mult <= 0.0:
+		return
 	for e in enemies:
 		if is_instance_valid(e):
-			e.call("hear", pos, radius * mult, kind)
+			e.call("hear", pos, radius * mult, kind, source_pid)
 
 
 ## Plays a positional sound on every client exactly once.
@@ -882,7 +889,9 @@ func client_apply_snapshot(snap: Dictionary) -> bool:
 	_restore_dynamic_entities()
 	apply_all_states()
 	if map:
-		map.set_power(state.has_flag("power_on"))
+		map.set_power(state.has_flag(rules.power_flag))
+		for flag in state.flags:
+			map.on_flag(self, str(flag))
 	objectives_changed.emit()
 	for pid in state.players:
 		inventory_changed.emit(int(pid))

@@ -21,6 +21,8 @@ enum Status { PLAYABLE, COMING_LATER }
 @export var estimated_minutes: int = 20
 ## Preview tint used by the procedural map card.
 @export var preview_color: Color = Color(0.2, 0.18, 0.17)
+## Translation keys shown on the loading/briefing screen.
+@export var briefing_keys: PackedStringArray = []
 @export_group("Rewards")
 @export var base_escape_reward: int = 100
 @export var first_completion_bonus: int = 150
@@ -30,6 +32,9 @@ enum Status { PLAYABLE, COMING_LATER }
 @export var ambience_sound: StringName = &"amb_house_loop"
 @export var tension_music: StringName = &"mus_tension_loop"
 @export var chase_music: StringName = &"mus_chase_loop"
+@export_group("Enemy")
+## EnemyProfile id: "watcher", "sister" or "lineman" (scripts/ai/enemy_profile.gd).
+@export var enemy_profile: StringName = &"watcher"
 
 
 func is_playable() -> bool:

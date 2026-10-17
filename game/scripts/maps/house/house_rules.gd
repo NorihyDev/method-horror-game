@@ -24,6 +24,7 @@ const FILES_NEEDED := 3
 
 func setup(p_player_count: int, p_difficulty: DifficultyDefinition) -> void:
 	super.setup(p_player_count, p_difficulty)
+	phase_flags = {"power_on": MatchState.Phase.ESCALATE, "garage_open": MatchState.Phase.FINAL}
 	_objectives()
 	_solvability()
 

@@ -17,10 +17,6 @@ const WIN_TOP := 2.05
 var garage_door: GarageDoor
 
 
-func briefing_keys() -> PackedStringArray:
-	return ["BRIEF_HOUSE_1", "BRIEF_HOUSE_2", "BRIEF_HOUSE_3"]
-
-
 func build_level() -> void:
 	prepare()
 	PropFactory.rng.seed = 4242
@@ -380,18 +376,14 @@ func _entities() -> void:
 	# Doors (node origin = hinge, panel extends along local +X).
 	_door("door_dining", Vector3(10.4, 0, 7), 0, 1.2)
 	_door("door_living", Vector3(2.0, 0, 10), 0, 1.2)
-	var study := _door("door_study", Vector3(11.4, 0, 10), 0, 1.2, "item:study_key", "DOOR_LOCKED_KEY")
-	study.material = "dark_wood"
+	_door("door_study", Vector3(11.4, 0, 10), 0, 1.2, "item:study_key", "DOOR_LOCKED_KEY", {"material": "dark_wood"})
 	_door("door_garage", Vector3(14, 0, 8.2), -90, 1.2)
 	_door("door_utility", Vector3(15.4, 0, 10), 0, 1.2)
-	var basement := _door("door_basement", Vector3(21, 0, 10.3), -90, 1.1, "flag:power_on", "DOOR_MAGLOCK")
-	basement.material = "metal_dark"
-	var front := _door("door_front", Vector3(7.4, 0, 18), 0, 1.2, "chained", "DOOR_CHAINED")
-	front.try_flag = "exit_found"
-	front.swing = -1.0
-	var gate := _door("cage_gate", Vector3(13.6, BY, 24), 0, 1.2, "external", "CAGE_LOCKED")
-	gate.style = "cage"
-	gate.height = 2.3
+	_door("door_basement", Vector3(21, 0, 10.3), -90, 1.1, "flag:power_on", "DOOR_MAGLOCK", {"material": "metal_dark"})
+	_door(
+		"door_front", Vector3(7.4, 0, 18), 0, 1.2, "chained", "DOOR_CHAINED", {"try_flag": "exit_found", "swing": -1.0}
+	)
+	_door("cage_gate", Vector3(13.6, BY, 24), 0, 1.2, "external", "CAGE_LOCKED", {"style": "cage", "height": 2.3})
 
 	var panel := FusePanel.new()
 	panel.entity_id = "fuse_panel"
@@ -477,14 +469,24 @@ func _door_seconds() -> float:
 	return 40.0
 
 
+## `props` are applied before the door enters the tree (its visuals and
+## collision are built in `_ready`).
 func _door(
-	id: String, hinge: Vector3, rot_deg: float, width: float, lock: String = "", msg: String = "DOOR_LOCKED"
+	id: String,
+	hinge: Vector3,
+	rot_deg: float,
+	width: float,
+	lock: String = "",
+	msg: String = "DOOR_LOCKED",
+	props: Dictionary = {}
 ) -> DoorEntity:
 	var d := DoorEntity.new()
 	d.entity_id = id
 	d.width = width
 	d.lock = lock
 	d.locked_message = msg
+	for key in props:
+		d.set(key, props[key])
 	add_entity(d, Transform3D(Basis(Vector3.UP, deg_to_rad(rot_deg)), hinge))
 	return d
 

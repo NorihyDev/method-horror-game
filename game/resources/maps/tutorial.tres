@@ -22,3 +22,4 @@ base_escape_reward = 0
 first_completion_bonus = 0
 optional_objective_reward = 0
 collectible_reward = 0
+briefing_keys = PackedStringArray("BRIEF_TUTORIAL_1", "BRIEF_TUTORIAL_2")
