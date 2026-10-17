@@ -24,6 +24,10 @@ var profile_path := PROFILE_PATH
 var checkpoint_path := CHECKPOINT_PATH
 var wallet := Wallet.new()
 var catalog := CosmeticCatalog.new()
+## Last known verified online wallet (display cache only — the lobby service
+## is the authority; editing this changes nothing online).
+var online_owned: Dictionary = {}
+var online_balance := -1
 ## Set when the primary file was corrupt and a backup or defaults were used.
 var load_recovered := false
 
@@ -48,6 +52,12 @@ func load_profile() -> void:
 	_ensure_shape()
 	wallet.load_dict(data["wallet"])
 	wallet.grant_defaults(catalog)
+	var cache: Dictionary = data["online_cache"]
+	online_balance = int(cache.get("balance", -1))
+	online_owned.clear()
+	for id in cache.get("owned", []):
+		if not catalog.get_item(str(id)).is_empty():
+			online_owned[str(id)] = true
 	if load_recovered:
 		Log.warn("saves", "Profile recovered from backup or reset", {"source": res["source"]})
 	save()
@@ -189,7 +199,7 @@ func purchase(item_id: String) -> Wallet.PurchaseResult:
 
 
 func equip(item_id: String) -> bool:
-	var ok := wallet.equip(item_id, catalog)
+	var ok := wallet.equip(item_id, catalog, online_owned)
 	if ok:
 		save()
 		profile_changed.emit()
@@ -197,7 +207,29 @@ func equip(item_id: String) -> bool:
 
 
 func equipped_item(slot: String) -> Dictionary:
-	return catalog.get_item(wallet.equipped_in(slot, catalog))
+	return catalog.get_item(equipped_id(slot))
+
+
+func equipped_id(slot: String) -> String:
+	return wallet.equipped_in(slot, catalog, online_owned)
+
+
+## Owned in either wallet (the item can be worn).
+func is_owned_anywhere(item_id: String) -> bool:
+	return wallet.is_owned(item_id) or online_owned.has(item_id)
+
+
+## Stores what the lobby service reported for the online wallet.
+func set_online_wallet(balance: int, owned_ids: Array) -> void:
+	online_balance = balance
+	online_owned.clear()
+	for id in owned_ids:
+		if not catalog.get_item(str(id)).is_empty():
+			online_owned[str(id)] = true
+	data["online_cache"] = {"balance": balance, "owned": online_owned.keys()}
+	save()
+	wallet_changed.emit(wallet.balance)
+	profile_changed.emit()
 
 
 # --- Checkpoint ------------------------------------------------------------
@@ -274,6 +306,8 @@ func _ensure_shape() -> void:
 		data["progress"]["maps"] = {}
 	if not data.get("wallet") is Dictionary:
 		data["wallet"] = {}
+	if not data.get("online_cache") is Dictionary:
+		data["online_cache"] = {}
 
 
 static func _generate_local_id() -> String:

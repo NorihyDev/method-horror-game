@@ -134,6 +134,30 @@ func _owner() -> bool:
 	if not recorded:
 		return _fail("match result never reached the verified wallet")
 	_event("result_recorded")
+	return await _check_online_shop(client)
+
+
+## The real shop screen with the online wallet, as the same guest (the shop's
+## own client reads the default session file, so hand it this bot's token).
+func _check_online_shop(client: LobbyClient) -> bool:
+	var shared := LobbyClient.new()
+	add_child(shared)
+	shared.token = client.token
+	shared.call("_save_session")
+	var shop: Screen = app.goto("shop")
+	shop.call("_switch", 1)
+	if not await _wait(func() -> bool: return bool(shop.get("_online_ready")), 30.0):
+		return _fail("shop never loaded the online wallet")
+	if Saves.online_balance != 0:
+		return _fail("unexpected online balance %d after a defeat" % Saves.online_balance)
+	_event("shop_online_wallet")
+	var item := Saves.catalog.get_item("flashlight_sodium")
+	shop.call("_buy_online", "flashlight_sodium", item)
+	if not await _wait(func() -> bool: return app.has_modal(), 30.0):
+		return _fail("no answer to the online purchase")
+	if Saves.online_owned.has("flashlight_sodium"):
+		return _fail("an unaffordable online purchase went through")
+	_event("shop_purchase_refused")
 	return true
 
 

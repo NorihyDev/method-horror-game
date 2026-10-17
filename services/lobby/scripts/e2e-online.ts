@@ -32,7 +32,7 @@ const PORT_OFFSET = 100;
 
 const OWNER_EVENTS = [
   "code", "owner", "guest_ready", "in_match", "interaction_applied", "teammate_away", "teammate_back",
-  "result_recorded", "done",
+  "result_recorded", "shop_online_wallet", "shop_purchase_refused", "done",
 ];
 const GUEST_EVENTS = [
   "wrong_password_refused", "unknown_code_refused", "joined", "in_match", "saw_interaction", "reconnected_with_state",

@@ -50,9 +50,11 @@ func purchase(item_id: String, catalog: CosmeticCatalog, timestamp: int) -> Purc
 	return PurchaseResult.OK
 
 
-func equip(item_id: String, catalog: CosmeticCatalog) -> bool:
+## `also_owned`: items owned elsewhere (the verified online wallet) that may
+## be worn too. Equipping is purely cosmetic and local.
+func equip(item_id: String, catalog: CosmeticCatalog, also_owned: Dictionary = {}) -> bool:
 	var item := catalog.get_item(item_id)
-	if item.is_empty() or not owned.has(item_id):
+	if item.is_empty() or not (owned.has(item_id) or also_owned.has(item_id)):
 		return false
 	equipped[item["slot"]] = item_id
 	return true
@@ -62,9 +64,9 @@ func is_owned(item_id: String) -> bool:
 	return owned.has(item_id)
 
 
-func equipped_in(slot: String, catalog: CosmeticCatalog) -> String:
+func equipped_in(slot: String, catalog: CosmeticCatalog, also_owned: Dictionary = {}) -> String:
 	var id: String = equipped.get(slot, "")
-	if id.is_empty() or not owned.has(id):
+	if id.is_empty() or not (owned.has(id) or also_owned.has(id)):
 		return catalog.default_for(slot)
 	return id
 
