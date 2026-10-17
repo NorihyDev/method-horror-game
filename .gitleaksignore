@@ -1,0 +1,3 @@
+# Test-only ticket secret in an earlier commit (fake value used by the
+# in-process multiplayer test; later commits mark the line gitleaks:allow).
+835807330ef0e90504561b2eb68d7dce6d54afcf:game/tests/integration/test_multiplayer.gd:generic-api-key:6
