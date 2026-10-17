@@ -109,8 +109,33 @@ settings carry `schema_version` with forward migrations (tested from v0).
 world audio, unpauses, disables post-FX and dynamic resolution. Screens are
 freed when popped. Tween/timer callbacks guard `is_inside_tree()`.
 
-## Multiplayer (planned, M3)
+## Multiplayer
 
-See [networking.md](networking.md). The authority path above is already the
-server path; M3 adds the transport (`net` bridge on `MatchController`), the
-lobby service and the dedicated server entry point.
+Full protocol and flows: [networking.md](networking.md). Deployment:
+[deployment.md](deployment.md).
+
+```
+game/scripts/network/
+  net_protocol.gd      constants, tickets (HMAC), rate-limit buckets, payload checks
+  net_bridge.gd        the single RPC node: server auth/lobby/start barrier/broadcasts,
+                       client requests and incoming state; owns its SceneMultiplayer
+  online_flow.gd       one session on this device: online (lobby + server) or LAN;
+                       retries, reconnect, screen changes, cleanup
+  lobby_client.gd      HTTPS client for the lobby service; guest token storage
+  dedicated_server.gd  `--server` entry point: env secrets, idle/lifetime limits,
+                       signed status + result reports to the lobby
+  remote_avatar.gd     other players (interpolated; server-side physics proxy)
+  revive_target.gd     focus target on a downed teammate
+services/lobby/        Node 24 lobby service (src/, test/, scripts/e2e-online.ts)
+```
+
+- The server runs the **same** `MatchController` as solo. `MatchController.net`
+  is the bridge; authority methods call `net.broadcast_*` after mutating, and
+  clients apply `client_apply_*` without re-running rules.
+- `NetBridge` installs its own `SceneMultiplayer` on its parent branch
+  (`get_tree().set_multiplayer(mp, parent_path)`), so a server and clients can
+  share one process in tests, each in its own `SubViewport` world.
+- Clients never receive the seeded variant (`MatchState.client_snapshot()`).
+- UI: `multiplayer_screen.gd` → `lobby_screen.gd` → `loading_screen.gd`
+  (start barrier) → `gameplay_screen.gd` with `TeamHud` (teammates, pings,
+  revive/bleed-out bars, spectating) and `SpectatorCamera`.

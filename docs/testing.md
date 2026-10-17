@@ -7,6 +7,8 @@
 ./tools/lint.sh                                      # gdformat --check + gdlint (pip install -r tools/requirements-dev.txt)
 ./tools/godot.sh --headless --path game -- --test    # unit + integration tests
 ./tools/godot.sh --headless --path game -- --smoke   # startup smoke: build map, nav, spawn enemy, 300 frames
+(cd services/lobby && npm ci && npm test && npm run typecheck)   # lobby service (16 tests)
+(cd services/lobby && GODOT_BIN=/path/to/godot npm run e2e)     # online end to end, separate processes
 ```
 
 The test runner (`game/tests/test_runner.gd`) runs inside the real project so
@@ -14,7 +16,7 @@ autoloads exist, uses isolated `test_*` save/settings files, prints one line per
 test and exits `0` (pass), `1` (failures) or `2` (240 s watchdog — a hang is a
 failure). `--filter=<substring>` selects files.
 
-### Coverage (62 tests)
+### Coverage (71 Godot tests + 16 lobby tests + 1 end-to-end run)
 
 | File | What it proves |
 |---|---|
@@ -25,6 +27,10 @@ failure). `--filter=<substring>` selects files.
 | `unit/test_economy.gd` | Inventory capacity/stacking/atomic removes/malformed loads; reward idempotency; catalog prices; insufficient funds; owned/equip rules; serialization; reward math; local rewards apply once |
 | `unit/test_snapshot_and_strings.gd` | Snapshot round trip through JSON; client snapshots hide answers; malformed snapshots sanitized/rejected; EN/FR key parity and placeholder counts; every key referenced in code exists |
 | `integration/test_house_playthrough.gd` | **Full escape through the authority API** (front door, key, study, fuses incl. short-circuit + recovery, maglock, wrong then right code, gear/belt/workbench/motor, crank miss + lag-compensated hits, door, escape zone, victory result, rewards applied once); invalid/remote requests rejected; no interaction through walls; closed drawers block items; drop & recover key items; checkpoint restore; stale/future crank times ignored; tutorial chain |
+| `unit/test_net_protocol.gd` | Ticket signing/verification (bad signature, wrong room, expired, malformed, oversize), a ticket minted by the Node service verifies in Godot, constant-time compare, rate-limit buckets, finite-value checks |
+| `integration/test_multiplayer.gd` | Server + 2 clients over real localhost ENet in one process: lobby/ownership, wrong-room and expired tickets refused, ready/start barrier, late join refused, clients never get puzzle answers, replicated interaction, two players racing for one pickup (exactly one wins), teleport/NaN/server-only RPC/malformed/kick cheats ignored, disconnect + reconnect into the same slot with progress and inventory; downed players replicate and cannot act, out-of-range revive refused, revive completes for revive_time, walking away cancels, bleed-out kills, last player down ends the match in defeat; LAN host plays and hosts |
+| `services/lobby/test/*.test.ts` | Guest sessions (validation, auth, profile, logout, protocol check), name rules mirrored from the client, rooms (create, join by code, passwords, full, started, member reconnect tickets, owner-only close, expiry), owner flag in tickets, code-guess and guest-creation rate limits, ticket and server-signature binding/expiry, scrypt passwords, idempotent match credits and purchases |
+| `services/lobby/scripts/e2e-online.ts` | Real processes: lobby + spawned dedicated server + 2 headless clients driving the real screens: create, wrong password and unknown code refused, join by code, ready, start barrier, replicated interaction, drop + reconnect with full snapshot, leave, result credited in the verified wallet; all game traffic through a relay adding latency, jitter and loss |
 | `integration/test_watcher.gd` | Never spawns near/in sight of players; hears loud noise and investigates; ignores inaudible noise; sees and chases a lit player in front; no vision through walls; telegraphed attack damages exactly once; checks the locker it saw you enter |
 
 ### Visual checks (need a GPU)
@@ -32,15 +38,19 @@ failure). `--filter=<substring>` selects files.
 ```bash
 ./tools/shots.sh <dir> [--watcher]          # 12 level reference shots + contact sheet
 ./tools/godot.sh --path game -- --uishots=<dir>   # every screen and overlay
+./tools/godot.sh --path game -- --uishots=<dir> --uishots-mp --lobby=http://127.0.0.1:9   # multiplayer screens
 ```
 
 ### CI
 
-`.github/workflows/ci.yml`: lint, import/compile, tests, smoke, gitleaks,
-dependency review. `build.yml`: exports + exported-build smoke + APK.
-**These workflows have not run on GitHub yet** (no remote). Their steps were
-executed locally on Windows (lint, compile, tests, smoke, gitleaks, Windows and
-Android exports); the Linux runner path is untested until the first push.
+`.github/workflows/ci.yml`: lint, import/compile, tests, smoke, lobby service
+tests + typecheck, online end-to-end, gitleaks, dependency review.
+`build.yml`: exports + exported-build smoke + APK.
+
+The first GitHub run (2026-10-16, push to `main`) **failed**: shell scripts
+were committed from Windows without the executable bit, and gitleaks flagged
+the fake test ticket secret. Both are fixed on `network/multiplayer`; the
+Linux runner results for that branch are recorded in its pull request.
 
 ## Manual QA checklist
 
@@ -91,6 +101,20 @@ Run on at least one phone, one tablet and desktop before calling a milestone
 - [ ] Low/Medium/High presets visibly differ; render scale and FSR; MSAA; shadows off/low/high; dust particles; fog distance; exposure.
 - [ ] Battery saver caps at 30 FPS.
 - [ ] Settings persist after restart; "Undo changes" restores.
+
+### Multiplayer (two or more devices)
+- [ ] Create a room; the code shows and copies; a second device joins with the code (and the password when set).
+- [ ] Wrong code, wrong password, full room and "match started" each show a clear message.
+- [ ] Owner changes map/difficulty; members see it. Owner removes a member; they are told and cannot rejoin.
+- [ ] Start is disabled until everyone is ready, with the reason shown; everyone enters the match together.
+- [ ] Doors, items, fuses, keypad and crank changes appear on every device; only one player gets a contested item.
+- [ ] Pings (Q / RB / PING button) appear for everyone with name, kind and distance.
+- [ ] Getting downed: bleed-out bar, look-only; a teammate's hold-to-revive restores you; walking away cancels.
+- [ ] Bleeding out → spectating a teammate; Interact/USE switches; pause → leave works.
+- [ ] Turn Wi-Fi off mid-match for < 60 s: "Reconnecting…", then back in the same match with your items. Teammates see "Reconnecting…".
+- [ ] Pause menu never freezes the match for others.
+- [ ] Results: online note and wallet balance; LAN says no coins.
+- [ ] LAN: host shows its address; a second device joins by IP; both labeled LAN test.
 
 ### Failure handling
 - [ ] Corrupt `profile.json` by hand → game reports recovery from backup.

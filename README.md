@@ -5,11 +5,13 @@ Players investigate abandoned locations tied to METHOD — a vanished research
 organization whose experiments altered perception — and escape the
 supernatural threats those experiments left behind.
 
-> **Status: Milestone 2 (solo vertical slice).** *The Abandoned House* is fully
-> playable solo from the main menu to escape/defeat and results, offline, on
-> desktop. Android is configured and exports, but **hardware testing on real
-> phones is still pending**. Online/LAN multiplayer is **not built yet**
-> (see [Roadmap](#roadmap)). Every claim below is labeled.
+> **Status: Milestone 3 (multiplayer) — implemented, not yet internet-verified.**
+> *The Abandoned House* is fully playable solo, offline. Online co-op (lobby
+> service, private 6-digit rooms, dedicated server, reconnect) and a LAN
+> development mode work end to end **on one machine** — verified by automated
+> multi-process tests, including a lossy, high-latency link. **No public
+> server is deployed**, so internet play across networks is unverified, and
+> **no phone has run the game yet**. Every claim below is labeled.
 
 ![Main menu](docs/screenshots/main_menu.jpg)
 
@@ -48,7 +50,11 @@ supernatural threats those experiments left behind.
 | Settings (graphics/audio/controls/gameplay/accessibility), EN/FR | Implemented, persistence tested |
 | Saves: versioned, atomic, checksummed, backup recovery, checkpoints | Implemented, tested |
 | Local coin economy + cosmetic shop (no real money) | Implemented, tested |
-| Online multiplayer, lobby service, room codes, LAN dev mode | **Not built** (Milestone 3); menu shows the reason |
+| Lobby service: guest identity, private rooms, 6-digit codes, passwords, rate limits, tickets, verified wallet | Implemented, 16 service tests |
+| Online co-op: create/join by code, lobby, start barrier, shared state, reconnect, results credited by the server | Implemented; end-to-end test with real processes (lobby + dedicated server + 2 clients) incl. 300 ms RTT / 10% loss |
+| In-match co-op: teammates, pings, downed/revive, spectating | Implemented; screenshot-verified, covered by integration tests |
+| LAN development mode (lower trust, no coins) | Implemented, tested in-process |
+| **Internet play across separate networks** | **Unverified** — needs a deployed host ([deployment.md](docs/deployment.md)) |
 | Maps 2–5 | **Planned**, shown as "Coming later" |
 | iOS | Architecture only; **no signed or device-tested build** |
 
@@ -108,6 +114,7 @@ Difficulty rules are explicit in-game and in [docs/game-design.md](docs/game-des
 | Flashlight | F | Y | LIGHT |
 | Inventory | Tab / I | X | BAG |
 | Pause | Esc / P | Start | II |
+| Ping (co-op) | Q | RB | PING |
 | Dev objective inspector | F3 (debug builds only) | — | — |
 
 Keyboard keys are rebindable; touch buttons can be moved, resized, faded and
@@ -117,8 +124,10 @@ mirrored for left-handed play.
 
 ```bash
 ./tools/check.sh                                    # compile every script (fails on any error)
-./tools/godot.sh --headless --path game -- --test   # 62 unit + integration tests, exit code = result
+./tools/godot.sh --headless --path game -- --test   # 71 unit + integration tests, exit code = result
 ./tools/godot.sh --headless --path game -- --test --filter=watcher
+cd services/lobby && npm ci && npm test && npm run typecheck   # lobby service
+GODOT_BIN=/path/to/godot npm run e2e     # online end to end: lobby + server + 2 clients
 ```
 
 Tests run in isolated `test_*` save files and never touch your profile. A
@@ -157,11 +166,13 @@ game/
   scripts/player/        first-person controller + viewmodel
   scripts/ai/            The Watcher (state machine) + procedural rig/animations
   scripts/maps/          per-map builder + rules (house, tutorial)
+  scripts/network/       NetBridge (RPC endpoint), OnlineFlow, lobby client, dedicated server
   scripts/ui/            App root, theme, HUD, touch controls, screens, overlays
   resources/             maps, difficulties, items (.tres)
   localization/          en.json, fr.json
   tests/                 runner, unit and integration tests
   tools/                 asset generators, screenshot tools, parse checker
+services/lobby/          lobby service (Node 24, TypeScript, SQLite) + online e2e test
 tools/                   shell helpers (godot launcher, check, shots, import config)
 docs/                    design, architecture, security, testing, releases, …
 ```
@@ -170,8 +181,8 @@ Key ideas (details in [docs/architecture.md](docs/architecture.md)):
 
 - **One authoritative rules path.** `MatchController` validates every
   interaction (sender, state, range, line of sight, rate, payload) and mutates
-  match state; entities only present it. Solo runs as its own authority, so the
-  multiplayer server will run the same code.
+  match state; entities only present it. Solo runs as its own authority, and
+  the dedicated server runs the same code.
 - **Data-driven objectives** with a dependency graph and a **reachability
   solver** that proves each seeded item layout is winnable (no key behind its
   own door).
@@ -188,15 +199,19 @@ Key ideas (details in [docs/architecture.md](docs/architecture.md)):
 - Placeholder art and audio are procedural: readable and original, not
   photoreal. The tape "voice" is unintelligible by design; subtitles carry it.
 - Offline coins are local and tamperable by design (see [docs/economy.md](docs/economy.md)).
-- No multiplayer yet; no cloud save or account linking (not promised).
+- Online services are not deployed; internet play is unverified. Gameplay
+  traffic is unencrypted (DTLS is supported server-side but not yet used by
+  the client). Co-op is capped at 4 players until 5–6 are validated.
+- No cloud save or account linking (not promised). The online guest identity
+  lives on the device and is lost on reinstall.
 
 ## Roadmap
 
 1. ✅ Foundation — project, theme, generated assets, docs, CI workflows.
 2. ✅ Solo vertical slice — *The Abandoned House*, tutorial, menus, saves, settings, economy.
-3. ⏳ Authoritative multiplayer: local 2-client validation → guest identity + lobby
-   service → private 6-digit rooms → dedicated server allocation → reconnect →
-   internet verification.
+3. ⏳ Authoritative multiplayer: ✅ local 2-client validation, guest identity +
+   lobby service, private 6-digit rooms, dedicated server allocation, reconnect;
+   ⏳ internet verification (needs a deployed host).
 4. Verified online economy, Maps 2 (*The Black Ward*) and 3 (*Last Train*).
 5. Animation/audio/UI refinement, accessibility testing, Android device
    profiling, release signing.
@@ -207,7 +222,7 @@ Exact current state and next steps: [docs/continuation.md](docs/continuation.md)
 ## Documentation
 
 [Game design](docs/game-design.md) · [Architecture](docs/architecture.md) ·
-[Networking plan](docs/networking.md) · [Security & threat model](docs/security.md) ·
+[Networking](docs/networking.md) · [Security & threat model](docs/security.md) ·
 [Economy](docs/economy.md) · [Performance budgets](docs/performance.md) ·
 [Testing & QA](docs/testing.md) · [Releases & exports](docs/releases.md) ·
 [Deployment](docs/deployment.md) · [Asset manifest](docs/asset-manifest.md) ·
