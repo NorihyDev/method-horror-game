@@ -8,20 +8,25 @@
 - Two wallets that never merge automatically:
   - **Local wallet** (offline, implemented): stored on the device, tamperable by
     design, used for solo play.
-  - **Verified wallet** (online, planned M3/M4): server-side ledger; the only one
-    that could ever back cross-device or competitive features.
+  - **Verified wallet** (online, implemented): the lobby service's ledger.
+    Credited only from game-server match reports, spent only through the
+    shop's online purchase endpoint. The game caches the last reported
+    balance and owned items for display; editing that cache changes nothing.
 
 ## Reward table (per map, `resources/maps/*.tres`)
 
-| Source | The Abandoned House |
-|---|---|
-| Escape | 100 |
-| First escape from this location | 150 |
-| Each optional objective completed | 25 |
-| Each **new** METHOD file (first time found) | 10 |
+| Source | The Abandoned House | The Black Ward | Last Train |
+|---|---|---|---|
+| Escape | 100 | 120 | 140 |
+| First escape from this location | 150 | 175 | 200 |
+| Each optional objective completed | 25 | 25 | 25 |
+| Each **new** METHOD file (first time found) | 10 | 10 | 10 |
 | Difficulty multiplier on escape totals | Story ×0.75 · Normal ×1 · Hard ×1.5 · Nightmare ×2 |
 
-Defeat pays only for newly found files (no multiplier).
+Defeat pays only for newly found files (no multiplier). Online, files stay
+local in this version: the verified wallet pays escape, first-completion and
+optional-objective rewards. The lobby's table (`services/lobby/src/catalog.ts`)
+is checked against the map resources by a test.
 
 ### Balance assumptions
 
@@ -48,7 +53,16 @@ Nothing local. There is no account linking or cloud save in this version and
 the UI says so (Profile → Identity). Online guest identities (M3) are also
 device-bound until a later, documented account-linking milestone.
 
-## Conflict handling (planned)
+## Online purchases
 
-When online arrives, the verified wallet is authoritative and separate; the
-local balance is shown separately and is never uploaded or merged.
+The shop switches between **This device** and **Online (verified)**. An
+online purchase sends the item id and a fresh idempotency key; the service
+reads the price from its own catalog, refuses insufficient funds and items
+already owned, and a retried request with the same key never charges twice
+(tested). Anything owned in either wallet can be worn — equipping is local
+and purely cosmetic.
+
+## Conflict handling
+
+The verified wallet is authoritative and separate; the local balance is shown
+separately and is never uploaded or merged.

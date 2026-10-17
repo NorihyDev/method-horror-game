@@ -41,7 +41,25 @@ dates are ISO 8601.
 - Online end-to-end test with separate processes and an impaired-link relay;
   networking and deployment documentation.
 
+- *The Black Ward*: a clinical wing with card doors, an emergency power board
+  (relay + breaker pattern from a schematic), observation monitors, a
+  night-round code and a bay shutter; The Sister, a blind enemy who hunts by
+  sound and hums until she does.
+- *Last Train*: a sealed station with a collapsed exit, power cells, a signal
+  lever frame and route card, a help point and an evacuation train to hold
+  out for; ghost trains as moving sound sources that mask noise; The
+  Lineman, who sees only along his headlamp beam.
+- Enemy profiles: one tested state machine, per-map senses, speeds, sounds
+  and body styles. 26 new procedural sounds, 4 new surfaces, 5 items.
+- Map unlocks in order: offline per device, online verified by the lobby
+  service, which also limits in-lobby map changes to the owner's unlocks.
+- The shop can use the verified online wallet with idempotent purchases.
+
 ### Fixed
+- Multiplayer: a client could send Ready before its connection existed;
+  server-side leaves, kicks and flood disconnects did not mark players away.
+- The house's basement cage gate and door materials were never applied.
+- The enemy could pick a furniture top as a navigation target.
 - CI: shell scripts are executable; gitleaks no longer flags the fake test
   ticket secret.
 - A NUL sentinel string produced Unicode warnings at every startup.

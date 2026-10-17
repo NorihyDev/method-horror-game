@@ -5,12 +5,12 @@ audio, music, fonts or models are included.
 
 | Asset | Path | Source | Author | License | Status |
 |---|---|---|---|---|---|
-| Surface textures (11 × albedo + normal, 512 px and 256 px) | `game/assets/generated/textures/` | `game/tools/generate_textures.gd` (FastNoiseLite + procedural patterns) | METHOD | Proprietary (METHOD) | Placeholder |
-| Sound effects, ambience, music loops (74 files) | `game/assets/audio/generated/` | `game/tools/generate_audio.gd` → `scripts/audio/sound_synth.gd` (noise, oscillators, filters, reverb) | METHOD | Proprietary (METHOD) | Placeholder |
+| Surface textures (15 × albedo + normal, 512 px and 256 px) | `game/assets/generated/textures/` | `game/tools/generate_textures.gd` (FastNoiseLite + procedural patterns) | METHOD | Proprietary (METHOD) | Placeholder |
+| Sound effects, ambience, music loops (100 files) | `game/assets/audio/generated/` | `game/tools/generate_audio.gd` → `scripts/audio/sound_synth.gd` + `sound_synth_maps.gd` (noise, oscillators, filters, reverb) | METHOD | Proprietary (METHOD) | Placeholder |
 | Surface shader | `game/assets/materials/surface.gdshader` | Hand-written | METHOD | Proprietary | Final candidate |
 | App icon | `game/icon.svg` | Hand-written SVG (METHOD "M" mark) | METHOD | Proprietary | Placeholder |
 | Level geometry & props | generated at runtime (`scripts/world/geo_builder.gd`, `prop_factory.gd`, map scripts) | Procedural | METHOD | Proprietary | Placeholder |
-| The Watcher model & animations | generated at runtime (`scripts/ai/watcher_rig.gd`) | Procedural joint hierarchy + AnimationPlayer tracks | METHOD | Proprietary | Placeholder |
+| Enemy models & animations (Watcher, Sister, Lineman) | generated at runtime (`scripts/ai/watcher_rig.gd`, one skeleton, three styles) | Procedural joint hierarchy + AnimationPlayer tracks | METHOD | Proprietary | Placeholder |
 | Viewmodel (hand + flashlight) | `scripts/player/viewmodel.gd` | Procedural | METHOD | Proprietary | Placeholder |
 | Item models | `scripts/interaction/item_visuals.gd` | Procedural | METHOD | Proprietary | Placeholder |
 | UI font | engine default (bundled with Godot, see THIRD_PARTY_NOTICES) + `SystemFont` serif/monospace requests | Godot / player's OS | — | Engine license; OS fonts are not redistributed | Final candidate |

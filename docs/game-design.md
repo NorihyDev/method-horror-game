@@ -112,11 +112,94 @@ No teleporting (stuck recovery snaps at most 1.5 m back onto the navmesh), no
 spawning within 12 m of or in sight of any living player, locked doors block
 its navigation, and every attack has a visible wind-up.
 
+## Map 2 — The Black Ward (Clinical Annex 02)
+
+A closed clinical wing where METHOD ran sensory-isolation trials. One floor,
+about 30 × 24 m: ambulance bay (exit), reception (start), triage,
+maintenance, a curtained patient ward, the staff wing behind a card reader
+(generator room, pharmacy, security office, staff room) and an observation
+wing whose one-way glass looks into the patient cells.
+
+### Objective chain (`scripts/maps/ward/ward_rules.gd`)
+
+1. **Find a way out** — the ambulance-bay shutter has no power.
+2. **Get into the staff wing** — a blue staff card (seeded among reception,
+   triage, ward, maintenance, bay).
+3. **Restore emergency power** — fit the starter relay in the generator
+   room's panel, then switch on exactly the circuits the electrician's
+   schematic (maintenance) lists as live and pull the start lever. A wrong
+   set trips every breaker open with a 24 m bang. *Puzzle: emergency
+   circuits (seeded 2–3 of 5).*
+4. **Get into the security office** — the red security card opens the
+   observation wing; with power on, four bed monitors show a bed number and a
+   reading; the night-round sheet (staff room) gives the bed order; the
+   security keypad takes the readings in that order. *Puzzle: observation
+   rooms + code.*
+5. **Open the ambulance bay** — the security console raises the shutter
+   (30–50 s, loud: final phase).
+6. **Escape** through the bay. Optional: 3 of 6 files, the interview tape,
+   escape without being caught.
+
+## Map 3 — Last Train (Transit Annex 03, Kessel Street)
+
+A sealed underground station: a ticket hall at street level (collapsed street
+exit, ticket office, kiosk, gates), a stair shaft down to a side platform
+beside two tracks, and maintenance rooms behind a locked door (signal box,
+store, corridor).
+
+### Objective chain (`scripts/maps/station/station_rules.gd`)
+
+1. **Find a way out** — the street stairs have collapsed.
+2. **Get into the maintenance tunnels** — the maintenance key (seeded in the
+   ticket hall or on the platform).
+3. **Power the signal box** — two power cells into the battery rack.
+4. **Set the evacuation route** — set the four levers Normal/Reverse as the
+   route card (ticket office) says, then press the plunger. A wrong route
+   rings a 26 m conflict bell. *Puzzle: signal routing (seeded 1–2 reversed).*
+5. **Call the evacuation train** from the platform help point.
+6. **Hold out until it arrives** (40/60/75/90 s by difficulty). Station
+   announcements count down; the approaching train's rumble grows and draws
+   the enemy to the platform.
+7. **Board the train** through its open doors. The platform edge stays
+   closed until then. Optional: 3 of 6 files, the signalman's tape, escape
+   without being caught.
+
+### Moving sound sources
+
+Every 70–110 s a train that should not exist rolls through on the far track
+(9 s pass, lit windows, positional rumble that moves with it). While it is
+within 14 m, every other noise there is cut to 30 % — for players and the
+enemy alike — and its rumble draws the enemy to the platform edge. Players
+can time noisy actions (levers, doors, running) to a pass.
+
+## Enemies
+
+All three share one state machine (`scripts/ai/watcher.gd`) and differ by
+`EnemyProfile` (`scripts/ai/enemy_profile.gd`): senses, speeds, sounds and
+body. Each map names its profile in its `.tres`.
+
+| | The Watcher (house) | The Sister (ward) | The Lineman (station) |
+|---|---|---|---|
+| Sight | 120° cone, 13 m; light ×1.35/×1.25, dark ×0.55 | **Blind**: only contact within 1.9 m | 56° headlamp beam, 17 m; **your light level is irrelevant** inside it |
+| Hearing | ×1.0 | **×1.35, hunts by sound**: player noise within 55 % of what she hears starts a direct hunt; louder or farther noise is investigated | ×0.9 |
+| Tracking after losing you | 1.4 s | 2.6 s (refreshed by every noise you make) | 1.8 s |
+| Speeds (walk / investigate / run, m/s) | 1.35 / 2.1 / 4.05 | 1.2 / 2.4 / 4.3 | 1.45 / 2.2 / 4.0 |
+| Warning cues | flickering lamps, key ring, breathing | flickering lamps, humming that **stops while she hunts**, monitors beep faster | flickering lamps, a visible headlamp beam, a guard's whistle |
+| How to survive | stay dark, crouch, break line of sight, hide where it did not see you | freeze, crouch-walk near her, never run close; she checks a locker only if she heard it shut | stay out of the beam, use passing trains as cover |
+
+## Progression
+
+Offline: The Black Ward unlocks after escaping The Abandoned House on this
+device, Last Train after The Black Ward. Online: the lobby service checks the
+room owner's **verified** online completions (`completions` table) and tells
+the game server which maps the owner may switch to; LAN hosts offer what
+their device has unlocked.
+
 ## Difficulty
 
 | | Story | Normal | Hard | Nightmare |
 |---|---|---|---|---|
-| Watcher speed | ×0.8 | ×1.0 | ×1.1 | ×1.2 |
+| Enemy speed | ×0.8 | ×1.0 | ×1.1 | ×1.2 |
 | Hearing | ×0.6 | ×1.0 | ×1.25 | ×1.5 |
 | Sight | ×0.7 | ×1.0 | ×1.2 | ×1.35 |
 | Search persistence | ×0.6 | ×1.0 | ×1.35 | ×1.7 |
@@ -129,7 +212,8 @@ its navigation, and every attack has a visible wind-up.
 | Crank timing window | 26 % | 17 % | 12 % | 9 % |
 | Hint tiers unlock every | 60 s | 120 s | 240 s | off |
 | Checkpoints | yes | yes | yes | no |
-| Garage door opening | 30 s | 40 s | 45 s | 50 s |
+| Exit opening (garage door, bay shutter) | 30 s | 40 s | 45 s | 50 s |
+| Evacuation train arrival (Last Train) | 40 s | 60 s | 75 s | 90 s |
 | Revive time (co-op) | 3 s | 4 s | 5 s | 6 s |
 | Bleed-out (co-op) | 75 s | 45 s | 30 s | 20 s |
 | Coin multiplier | ×0.75 | ×1 | ×1.5 | ×2 |
@@ -153,8 +237,6 @@ tutorial done and grants no coins.
 
 | Map | Distinct mechanic (planned) |
 |---|---|
-| 2 · The Black Ward | Access cards, emergency circuits, observation rooms; enemy perceives through camera feeds rather than light. |
-| 3 · Last Train | Signal routing, maintenance tunnels, moving sound sources (trains) that mask or reveal you; evacuation objective. |
 | 4 · The Silent School | Audio-based investigation in locked wings. |
 | 5 · METHOD Facility | Ties the story together using all systems. |
 

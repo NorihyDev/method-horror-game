@@ -8,54 +8,58 @@ Exact state and next steps. Updated 2026-10-17.
 |---|---|
 | 1. Foundation | Done |
 | 2. Solo vertical slice (*The Abandoned House*) | Done; desktop-verified; **phone hardware testing pending** |
-| 3. Multiplayer | Implemented and verified on one machine (in-process tests + multi-process end-to-end with an impaired link). **Internet verification pending**: needs a deployed host ([deployment.md](deployment.md)) |
-| 4. Online economy + Maps 2 and 3 | Next |
-| 5. Refinement, accessibility, Android profiling, signing | Later |
+| 3. Multiplayer | Done and verified on one machine (in-process tests + multi-process end-to-end on an impaired link, also on GitHub's Linux CI). **Internet verification pending**: needs a deployed host ([deployment.md](deployment.md)) |
+| 4. Online economy + Maps 2 and 3 | Done: *The Black Ward*, *Last Train*, enemy profiles, map unlocks (offline + verified online), online shop |
+| 5. Refinement, accessibility, Android profiling, signing | Next |
 | 6. Maps 4 and 5 | Later |
 
-Branches: `main` (merged work), `network/multiplayer` (milestone 3; merged
-through a pull request once CI passes on GitHub).
+Branches: `main` (milestones 1–3 core), `network/multiplayer` (milestone 3,
+PR #3 — open, CI green except dependency review), `content/maps-2-3`
+(milestone 4, stacked on `network/multiplayer`). Merging needs the owner's
+go-ahead.
 
 ## Verified (2026-10-17, Windows 11, Godot 4.7.2, Node 24.18)
 
-- `tools/check.sh`: 120 scripts compile. `tools/lint.sh`: clean.
-- `--test`: 71/71. `--smoke`: OK.
-- `services/lobby`: 16/16 tests, typecheck clean.
-- `npm run e2e`: passed at 120 ms RTT ±30 ms / 3% loss (default) and at
-  300 ms RTT ±80 ms / 10% loss.
-- Multiplayer screens screenshot-checked (`--uishots-mp`).
+- `tools/check.sh`: 139 scripts compile. `tools/lint.sh`: clean.
+- `--test`: 92/92. `--smoke`: OK.
+- `services/lobby`: 18/18 tests, typecheck clean.
+- `npm run e2e`: passed repeatedly at the default impairment and at 300 ms
+  RTT ±80 ms / 10% loss, including the online shop.
+- All three maps screenshot-checked (`tools/shots.sh <dir> --map=<id> [--watcher]`).
 
-## Not done in milestone 3
+## Known gaps
 
-1. Internet verification across separate networks (deploy per
-   [deployment.md](deployment.md), then the checklist there).
-2. DTLS on the client (`NetBridge.join` supports a trusted certificate; the
-   flow does not pass one yet).
-3. 5–6 players: protocol allows them; UI caps at 4 until a 6-client sync and
-   performance run passes.
-4. Local-player reconciliation beyond "reject and correct".
+1. Internet verification across separate networks (deploy, then the
+   checklist in [deployment.md](deployment.md)).
+2. No phone has run the game: touch controls, performance and thermals are
+   unmeasured.
+3. DTLS on the client; 5–6 players; local-player reconciliation beyond
+   "reject and correct".
+4. The repository's dependency graph is off, so the dependency-review CI job
+   fails until it is enabled (Settings → Code security → Dependency graph).
+5. Online, METHOD files (collectibles) are not part of the verified wallet.
 
-## Milestone 4 plan
+## Milestone 5 plan
 
-1. **Online economy UI:** shop and profile show the online wallet when signed
-   in (purchases through `/v1/shop/purchase` with idempotency keys), clearly
-   separate from offline coins.
-2. **Map progression:** unlock rules per map (solo progress offline; online
-   completions from the lobby's `completions` table).
-3. **Map 2 — *The Black Ward*:** distinct medical-facility layout, access-card
-   doors, emergency circuits, observation rooms, a new enemy with a different
-   perception rule; data-driven rules + solvability proof like the house.
-4. **Map 3 — *Last Train*:** station/maintenance layout, signal routing,
-   moving sound sources, evacuation objective, its own enemy setup.
-5. Each new map: collision, navigation, safe spawns, hiding spots, validated
-   item placement (300-seed solvability test), ambience, exit, playthrough
-   integration test, lobby `PLAYABLE_MAPS` + reward table update (the lobby
-   test that expects `black_ward` to be unavailable must change then).
+1. **Android device pass:** install the debug APK on a real phone; run the
+   manual QA checklist ([testing.md](testing.md)); profile frame time on all
+   three maps; tune the Mobile preset (shadows, lights per room, particle
+   counts) to the 30 FPS baseline.
+2. **Accessibility:** screen-reader-friendly focus order audit, colour-blind
+   check of every state that uses colour, caption coverage of every cue
+   (new maps included), remappable controller buttons.
+3. **Animation/audio/UI refinement:** per-enemy idle/search variations,
+   positional reverb zones (ward tile, station tunnel), menu diorama per map.
+4. **Release:** signed Android build through `release.yml` with protected
+   secrets (owner must create the keystore and secrets), store-listing copy
+   that matches [asset-manifest.md](asset-manifest.md) honesty limits.
+5. **Operations:** if a host is provided, deploy per
+   [deployment.md](deployment.md) and run the internet verification.
 
 ## How to resume
 
 ```bash
-git checkout main && git pull
+git checkout content/maps-2-3 && git pull
 export GODOT=/path/to/Godot_v4.7.2-stable
 ./tools/check.sh
 ./tools/godot.sh --headless --path game -- --test

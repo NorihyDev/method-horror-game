@@ -109,6 +109,17 @@ settings carry `schema_version` with forward migrations (tested from v0).
 world audio, unpauses, disables post-FX and dynamic resolution. Screens are
 freed when popped. Tween/timer callbacks guard `is_inside_tree()`.
 
+## Enemies and map-specific behavior
+
+`Watcher` (`scripts/ai/watcher.gd`) is the shared enemy brain; an
+`EnemyProfile` (`scripts/ai/enemy_profile.gd`) chosen by the map's
+`enemy_profile` sets senses, speeds, sounds and the rig style, so the
+Watcher, the Sister and the Lineman share one tested state machine. Noise
+carries the player who made it (`emit_noise(..., source_pid)`); maps can mask
+noise (`MapBase.noise_mask`, used by the station's ghost trains) and present
+flags (`MapBase.on_flag`). Each map's rules name their power flag and the
+flags that escalate the match phase (`MapRules.power_flag`, `phase_flags`).
+
 ## Multiplayer
 
 Full protocol and flows: [networking.md](networking.md). Deployment:
