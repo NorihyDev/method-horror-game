@@ -374,6 +374,55 @@ func test_new_maps_replicate() -> void:
 		await after_each()
 
 
+func test_final_maps_replicate() -> void:
+	for map_id in ["silent_school", "method_facility"]:
+		_start_server()
+		var snet: NetBridge = server["net"]
+		snet.server_set_options(map_id, "normal")
+		assert_eq(str(snet.room["map_id"]), map_id, "owner can pick %s" % map_id)
+		var a := _join("user-aaaaaaaa", "Ann")
+		clients.append(a)
+		assert_true(await _wait_for(func() -> bool: return _has_event(a, "joined")), "joined %s room" % map_id)
+		var anet: NetBridge = a["net"]
+		anet.request_start()
+		assert_true(await _wait_for(func() -> bool: return _has_event(a, "begun"), 900), "%s match began" % map_id)
+		assert_eq(String(anet.mc.map_def.id), map_id, "client built the same map")
+		snet.mc.set("_enemy_arrival_at", 0.0)
+		assert_true(
+			await _wait_for(func() -> bool: return not anet.mc.enemies.is_empty(), 600), "%s enemy replicated" % map_id
+		)
+		var puppet: Watcher = null if anet.mc.enemies.is_empty() else anet.mc.enemies[0]
+		if map_id == "silent_school":
+			if puppet:
+				assert_eq(puppet.profile.id, "headmistress", "client puppet uses the headmistress profile")
+			var box: Dictionary = anet.mc.state.entities["music_box"]
+			assert_eq((box.get("pos", []) as Array).size(), 3, "the music box position reaches the client")
+			assert_true(bool(box.get("playing", false)), "and it is playing")
+			snet.mc.set_flag("school_power")
+			assert_true(await _wait_for(func() -> bool: return anet.mc.map.power_on), "school power reaches the client")
+		else:
+			if puppet:
+				assert_eq(puppet.profile.id, "subject", "client puppet is Subject Zero")
+				assert_false(puppet.profile.sees, "blind in the dark")
+			snet.mc.set_flag("facility_power")
+			assert_true(
+				await _wait_for(func() -> bool: return (anet.mc.entities["monitor_1"] as MonitorClue).powered),
+				"cell monitors light up on the client"
+			)
+			if puppet:
+				assert_true(
+					await _wait_for(func() -> bool: return puppet.profile.sees), "the client's Subject Zero sees too"
+				)
+			snet.mc.set_flag("lift_called")
+			assert_true(
+				await _wait_for(
+					func() -> bool: return float(anet.mc.state.entities["freight_lift"].get("progress", 0.0)) > 0.0, 600
+				),
+				"lift progress reaches the client"
+			)
+		await after_each()
+
+
 ## Six players (the protocol maximum) on one dedicated-style server: every
 ## client joins, passes the start barrier, sees everyone move and receives a
 ## shared state change; the server's per-tick cost is measured.

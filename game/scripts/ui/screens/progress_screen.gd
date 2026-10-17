@@ -3,6 +3,20 @@ extends Screen
 
 const FILES := {
 	"house": ["house_kitchen", "house_living", "house_study", "house_garage", "house_utility", "house_basement"],
+	"black_ward": ["ward_reception", "ward_triage", "ward_maint", "ward_ward", "ward_pharmacy", "ward_obs"],
+	"last_train":
+	["station_office", "station_kiosk", "station_concourse", "station_platform", "station_signal", "station_store"],
+	"silent_school":
+	["school_class_a", "school_class_b", "school_class_c", "school_library", "school_staff", "school_music"],
+	"method_facility":
+	[
+		"facility_security",
+		"facility_archive",
+		"facility_observation",
+		"facility_cells",
+		"facility_break",
+		"facility_director",
+	],
 }
 
 

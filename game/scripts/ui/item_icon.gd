@@ -72,6 +72,12 @@ func _draw() -> void:
 			draw_rect(Rect2(c - Vector2(s * 0.8, s * 0.6), Vector2(s * 1.6, s * 1.3)), col)
 			draw_rect(Rect2(c - Vector2(s * 0.8, s * 0.6), Vector2(s * 1.6, s * 0.3)), Color(0.85, 0.7, 0.15))
 			draw_arc(c - Vector2(0, s * 0.62), s * 0.38, PI, TAU, 12, Color(0.6, 0.6, 0.62), s * 0.12, true)
+		"cutters":
+			var steel := Color(0.62, 0.63, 0.65)
+			draw_line(c + Vector2(-s * 0.9, s * 0.8), c + Vector2(s * 0.2, -s * 0.2), col, s * 0.22)
+			draw_line(c + Vector2(-s * 0.2, s * 0.9), c + Vector2(s * 0.2, -s * 0.2), col, s * 0.22)
+			draw_line(c + Vector2(s * 0.15, -s * 0.15), c + Vector2(s * 0.85, -s * 0.85), steel, s * 0.16)
+			draw_line(c + Vector2(s * 0.25, -s * 0.05), c + Vector2(s * 0.95, -s * 0.6), steel, s * 0.16)
 		_:
 			draw_rect(Rect2(c - Vector2(s, s) * 0.7, Vector2(s, s) * 1.4), col)
 	if count > 1:

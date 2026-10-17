@@ -57,6 +57,8 @@ var _seen_hiding: Dictionary = {}
 var _check_spot: HidingSpot
 var _pause := 0.0
 var _breath: AudioStreamPlayer3D
+## Headmistress: someone is looking at it in light right now (authority).
+var _watched := false
 ## Client puppets: last state received from the server.
 var _net_pos := Vector3.ZERO
 var _net_yaw := 0.0
@@ -93,6 +95,17 @@ func _ready() -> void:
 	add_child(cs)
 	if profile != null:
 		_build()
+
+
+## Swaps senses and sounds at runtime (Subject Zero when the power returns).
+## The body keeps its rig; only behaviour and voice change.
+func set_profile(p: EnemyProfile) -> void:
+	profile = p
+	if _breath:
+		_breath.stream = AudioService.stream(p.breath_sound)
+		_breath.volume_db = p.breath_db
+		if is_inside_tree():
+			_breath.play()
 
 
 func _build() -> void:
@@ -207,6 +220,8 @@ func _sense() -> void:
 	)
 	var best_pid := 0
 	var best_pos := Vector3.ZERO
+	if profile.freezes_when_watched:
+		_watched = is_watched()
 	if not profile.sees:
 		_sense_touch(eye)
 		return
@@ -260,6 +275,30 @@ func _sense() -> void:
 			_chase_pid = best_pid
 
 
+## True while a living player looks at it in light: their flashlight on it,
+## or it standing in a lit room, within their gaze and with nothing between.
+func is_watched() -> bool:
+	var chest := global_position + Vector3(0, 1.4, 0)
+	var lit_here := map.is_lit_at(global_position)
+	for target in match_ctrl.perceivable_players():
+		if not str(target["hiding"]).is_empty():
+			continue
+		var eye: Vector3 = target["pos"] + Vector3(0, 1.0 if target["crouch"] else 1.55, 0)
+		var to := chest - eye
+		var d := to.length()
+		if d > profile.watched_range or d < 0.01:
+			continue
+		var yaw := float(target.get("yaw", 0.0))
+		var look := Vector3(-sin(yaw), 0, -cos(yaw))
+		if look.dot(Vector3(to.x, 0, to.z).normalized()) < cos(profile.watched_fov_half):
+			continue
+		if not (lit_here or (bool(target["flashlight"]) and d <= 16.0)):
+			continue
+		if _clear_line(eye, chest):
+			return true
+	return false
+
+
 ## Blind: only bodily contact reveals a player (no cone, no light, no walls).
 func _sense_touch(eye: Vector3) -> void:
 	for target in match_ctrl.perceivable_players():
@@ -310,6 +349,13 @@ func _physics_process(delta: float) -> void:
 		_sense_timer = 0.15
 		_sense()
 	_tick_cues(delta)
+	if profile.freezes_when_watched and _watched and state != S.RECOVER:
+		# Held by a gaze: not a twitch, not even to finish a swing.
+		if state == S.ATTACK:
+			_enter(S.CHASE)
+		velocity = Vector3(0, velocity.y, 0)
+		rig.play("freeze")
+		return
 	if _pause > 0.0:
 		_pause -= delta
 		_move(Vector3.ZERO, 0.0, delta)

@@ -49,6 +49,14 @@ var attack_sound := "watcher_attack"
 ## Head-mounted lamp that lights what it looks at (visible beam = warning cue).
 var headlamp := false
 
+# Special rules ----------------------------------------------------------------
+## Cannot move while a living player looks at it in light (their flashlight
+## on it, or it standing in a lit room).
+var freezes_when_watched := false
+## How far a watching player's gaze holds it, and how wide their gaze counts.
+var watched_range := 20.0
+var watched_fov_half := deg_to_rad(32.0)
+
 
 static func for_id(profile_id: String) -> EnemyProfile:
 	match profile_id:
@@ -56,6 +64,10 @@ static func for_id(profile_id: String) -> EnemyProfile:
 			return sister()
 		"lineman":
 			return lineman()
+		"headmistress":
+			return headmistress()
+		"subject":
+			return subject_dark()
 	return watcher()
 
 
@@ -118,4 +130,72 @@ static func lineman() -> EnemyProfile:
 	p.screech_sound = "lineman_screech"
 	p.attack_sound = "watcher_attack"
 	p.headlamp = true
+	return p
+
+
+## Map 4. Sees and hears like the Watcher but moves only while nobody is
+## looking at her in light: hold her with a flashlight or a lit room, and she
+## is fast the moment every gaze leaves her. Heels clicking on the parquet.
+static func headmistress() -> EnemyProfile:
+	var p := EnemyProfile.new()
+	p.id = "headmistress"
+	p.name_key = "ENEMY_HEADMISTRESS"
+	p.rig_style = "headmistress"
+	p.base_sight = 14.0
+	p.light_flashlight = 1.3
+	p.light_lit = 1.2
+	p.hearing = 1.1
+	p.walk = 1.6
+	p.investigate = 2.6
+	p.run = 4.6
+	p.track_after_lost = 1.6
+	p.breath_sound = "headmistress_breath_loop"
+	p.breath_db = -8.0
+	p.step_sound = "headmistress_step"
+	p.cue_sound = "headmistress_chalk"
+	p.cue_interval = Vector2(10.0, 20.0)
+	p.growl_sound = "headmistress_hush"
+	p.screech_sound = "headmistress_scream"
+	p.attack_sound = "watcher_attack"
+	p.freezes_when_watched = true
+	return p
+
+
+## Map 5 before the power returns: Subject Zero is blind in the dark and
+## hunts by sound like the Sister (the facility's first trial).
+static func subject_dark() -> EnemyProfile:
+	var p := sister()
+	p.id = "subject"
+	p.name_key = "ENEMY_SUBJECT"
+	p.rig_style = "subject"
+	p.hearing = 1.25
+	p.walk = 1.3
+	p.breath_sound = "subject_breath_loop"
+	p.breath_db = -4.0
+	p.step_sound = "subject_step"
+	p.growl_sound = "subject_growl"
+	p.screech_sound = "subject_screech"
+	p.attack_sound = "watcher_attack"
+	return p
+
+
+## Map 5 once the lights are on: Subject Zero's eyes work again. It sees like
+## the Watcher (farther when you are lit) and keeps its sharp hearing.
+static func subject_lit() -> EnemyProfile:
+	var p := watcher()
+	p.id = "subject"
+	p.name_key = "ENEMY_SUBJECT"
+	p.rig_style = "subject"
+	p.base_sight = 14.0
+	p.hearing = 1.15
+	p.walk = 1.4
+	p.investigate = 2.3
+	p.run = 4.2
+	p.breath_sound = "subject_breath_loop"
+	p.breath_db = -4.0
+	p.step_sound = "subject_step"
+	p.cue_sound = ""
+	p.growl_sound = "subject_growl"
+	p.screech_sound = "subject_screech"
+	p.attack_sound = "watcher_attack"
 	return p

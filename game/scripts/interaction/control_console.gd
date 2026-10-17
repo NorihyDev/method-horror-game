@@ -12,6 +12,9 @@ extends Interactable
 @export var activate_sound := "switch"
 @export var noise_radius := 6.0
 @export var style := "console"
+## Can be used again after its first activation (a PA that replays its
+## message). Each use bumps `uses` in the entity state; the flag is set once.
+@export var repeatable := false
 
 var _lamp_mat: StandardMaterial3D
 
@@ -64,7 +67,7 @@ func _ready() -> void:
 
 
 func initial_state() -> Dictionary:
-	return {"done": false}
+	return {"done": false, "uses": 0}
 
 
 func apply_state(new_state: Dictionary) -> void:
@@ -83,11 +86,11 @@ func get_prompt(_pid: int, _sub: int) -> String:
 
 
 func get_hold_time(_pid: int, _sub: int) -> float:
-	return 0.0 if bool(state.get("done", false)) else hold_time
+	return 0.0 if bool(state.get("done", false)) and not repeatable else hold_time
 
 
 func authority_interact(ctx: Dictionary) -> void:
-	if bool(state.get("done", false)):
+	if bool(state.get("done", false)) and not repeatable:
 		return
 	var pid: int = ctx["player_id"]
 	for f in required_flags:
@@ -95,7 +98,7 @@ func authority_interact(ctx: Dictionary) -> void:
 			world_sound("card_deny", -4.0, 12.0)
 			match_ctrl.notify_player(pid, missing_message)
 			return
-	match_ctrl.set_entity_state(entity_id, {"done": true})
+	match_ctrl.set_entity_state(entity_id, {"done": true, "uses": int(state.get("uses", 0)) + 1})
 	world_sound(activate_sound, 0.0, 24.0)
 	match_ctrl.emit_noise(interact_origin(), noise_radius, "console", pid)
 	if not set_flag.is_empty():

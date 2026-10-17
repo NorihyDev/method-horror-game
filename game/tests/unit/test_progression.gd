@@ -19,16 +19,42 @@ func test_maps_unlock_in_order() -> void:
 	assert_true(Session.is_map_unlocked("tutorial"), "the tutorial is always open")
 	assert_false(Session.is_map_unlocked("black_ward"), "the ward waits for the house")
 	assert_false(Session.is_map_unlocked("last_train"), "the station waits for the ward")
-	assert_false(Session.is_map_unlocked("silent_school"), "planned maps are never unlocked")
+	assert_false(Session.is_map_unlocked("silent_school"), "the school waits for the station")
+	assert_false(Session.is_map_unlocked("method_facility"), "the facility waits for the school")
 	Saves.record_completion("house", "story", 600.0)
 	assert_true(Session.is_map_unlocked("black_ward"), "escaping the house opens the ward")
 	assert_false(Session.is_map_unlocked("last_train"))
 	Saves.record_completion("black_ward", "normal", 900.0)
 	assert_true(Session.is_map_unlocked("last_train"), "escaping the ward opens the station")
 	assert_eq(Array(Session.unlocked_map_ids()), ["house", "black_ward", "last_train"], "LAN rooms offer unlocked maps")
+	Saves.record_completion("last_train", "hard", 1100.0)
+	assert_true(Session.is_map_unlocked("silent_school"), "escaping the station opens the school")
+	assert_false(Session.is_map_unlocked("method_facility"))
+	Saves.record_completion("silent_school", "normal", 1000.0)
+	assert_true(Session.is_map_unlocked("method_facility"), "escaping the school opens the facility")
+	assert_eq(Session.unlocked_map_ids().size(), 5, "all five locations open in order")
 
 
 func test_locked_map_cannot_be_started() -> void:
 	var before := Session.match_config.duplicate()
 	Session.start_solo("last_train", "normal")
 	assert_eq(Session.match_config, before, "starting a locked map is refused")
+
+
+## Every playable location lists its recovered files on the progress screen,
+## one per collectible the map's rules define, readable in English and French.
+func test_every_map_file_is_listed_and_readable() -> void:
+	var files: Dictionary = load("res://scripts/ui/screens/progress_screen.gd").get("FILES")
+	for map in Session.maps:
+		if not map.is_playable() or map.is_tutorial:
+			continue
+		var listed: Array = files.get(String(map.id), [])
+		var rules: Object = map.rules_script.new()
+		var expected: int = (rules.get("FILE_IDS") as PackedStringArray).size() if rules.get("FILE_IDS") else 6
+		assert_eq(listed.size(), expected, "%s lists all its files" % map.id)
+		for fid in listed:
+			for locale in ["en", "fr"]:
+				var t := TranslationServer.get_translation_object(locale)
+				for suffix in ["_T", "_B"]:
+					var key: String = "FILE_" + str(fid).to_upper() + suffix
+					assert_false(str(t.get_message(key)).is_empty(), "%s missing in %s" % [key, locale])

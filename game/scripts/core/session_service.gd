@@ -31,6 +31,8 @@ const ITEM_PATHS: PackedStringArray = [
 	"res://resources/items/starter_relay.tres",
 	"res://resources/items/maint_key.tres",
 	"res://resources/items/power_cell.tres",
+	"res://resources/items/wing_key.tres",
+	"res://resources/items/bolt_cutters.tres",
 ]
 
 var app: App

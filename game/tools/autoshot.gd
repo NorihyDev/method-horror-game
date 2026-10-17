@@ -51,6 +51,39 @@ const SHOTS := {
 		["13_ghost_train", Vector3(20.0, -4.95, 9.6), 0.0, -0.12, true, "ghost_pass"],
 		["14_train_arrived", Vector3(20.0, -4.95, 11.2), 0.0, -0.05, true, "train_arrived"],
 	],
+	"silent_school":
+	[
+		["01_hall_start", Vector3(18.0, 0.05, 26.0), 0.0, -0.05, false],
+		["02_front_doors", Vector3(18.0, 0.05, 26.5), PI, -0.05, false],
+		["03_corridor_west", Vector3(22.0, 0.05, 16.0), PI / 2, -0.05, false],
+		["04_corridor_lit", Vector3(22.0, 0.05, 16.0), PI / 2, -0.05, true],
+		["05_classroom_a", Vector3(8.5, 0.05, 13.0), 0.3, -0.1, true],
+		["06_classroom_b_dark", Vector3(15.0, 0.05, 12.8), 0.0, -0.1, false],
+		["07_staff_pa", Vector3(24.0, 0.05, 12.5), 0.0, -0.1, true],
+		["08_caretaker", Vector3(32.0, 0.05, 12.5), 0.0, -0.1, true],
+		["09_wing_door", Vector3(30.0, 0.05, 16.0), -PI / 2, -0.05, true],
+		["10_music_chimes", Vector3(40.0, 0.05, 12.8), 0.0, -0.25, true],
+		["11_office", Vector3(48.0, 0.05, 12.8), 0.0, -0.1, true],
+		["12_library", Vector3(30.0, 0.05, 19.2), PI, -0.1, true],
+		["13_classroom_c", Vector3(6.0, 0.05, 19.2), PI, -0.1, true],
+	],
+	"method_facility":
+	[
+		["01_lobby_start", Vector3(20.0, 0.05, 27.0), PI, -0.05, false],
+		["02_lobby_north", Vector3(20.0, 0.05, 30.0), 0.0, -0.05, false],
+		["03_corridor", Vector3(24.0, 0.05, 18.0), PI / 2, -0.05, false],
+		["04_corridor_lit", Vector3(24.0, 0.05, 18.0), PI / 2, -0.05, true],
+		["05_containment", Vector3(7.0, 0.05, 21.5), PI, -0.1, true],
+		["06_cells_dark", Vector3(7.0, 0.05, 21.5), PI, -0.1, false],
+		["07_security", Vector3(4.0, 0.05, 14.5), 0.0, -0.1, true],
+		["08_archive", Vector3(13.0, 0.05, 14.5), 0.0, -0.1, true],
+		["09_observation", Vector3(24.0, 0.05, 13.0), 0.0, -0.05, true],
+		["10_generator", Vector3(35.0, 0.05, 13.0), 0.0, -0.15, true],
+		["11_liftbay", Vector3(44.0, 0.05, 14.5), 0.0, -0.05, true],
+		["12_lift_arrived", Vector3(44.0, 0.05, 9.5), 0.0, -0.05, true, "lift_arrived"],
+		["13_director", Vector3(31.0, 0.05, 21.5), PI, -0.1, true],
+		["14_break_room", Vector3(42.0, 0.05, 21.5), PI, -0.1, true],
+	],
 }
 
 var _out := ""
@@ -122,3 +155,5 @@ func _prepare(what: String, match_ctrl: MatchController) -> void:
 			match_ctrl.set_entity_state("ghost_train", {"start": match_ctrl.state.elapsed - 3.6, "dir": 1})
 		"train_arrived":
 			match_ctrl.set_entity_state("evac_train", {"progress": 1.0, "arrived": true})
+		"lift_arrived":
+			match_ctrl.set_entity_state("freight_lift", {"progress": 1.0, "arrived": true})

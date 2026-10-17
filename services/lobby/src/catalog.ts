@@ -17,6 +17,8 @@ export const MAP_REWARDS: Record<string, { escape: number; first: number; option
   house: { escape: 100, first: 150, optional: 25, collectible: 10 },
   black_ward: { escape: 120, first: 175, optional: 25, collectible: 10 },
   last_train: { escape: 140, first: 200, optional: 25, collectible: 10 },
+  silent_school: { escape: 150, first: 225, optional: 25, collectible: 10 },
+  method_facility: { escape: 160, first: 250, optional: 30, collectible: 15 },
 };
 
 export const DIFFICULTY_MULTIPLIER: Record<string, number> = {
@@ -32,6 +34,8 @@ export const PLAYABLE_MAPS = new Set(Object.keys(MAP_REWARDS));
 export const MAP_PREREQUISITE: Record<string, string> = {
   black_ward: "house",
   last_train: "black_ward",
+  silent_school: "last_train",
+  method_facility: "silent_school",
 };
 export const DIFFICULTIES = new Set(Object.keys(DIFFICULTY_MULTIPLIER));
 

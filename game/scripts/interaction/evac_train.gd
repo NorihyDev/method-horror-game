@@ -9,6 +9,9 @@ extends Interactable
 ## level; length along +X; the body extends toward -Z and the doors open
 ## toward +Z (the platform). Before arrival, edge barriers block the door gaps
 ## so nobody can step onto the track.
+##
+## `style = "lift"`: the same hold-out as a freight lift car that descends
+## its shaft (local +Y) instead of sliding in along +X.
 
 const WIDTH := 2.8
 const HEIGHT := 3.0
@@ -21,6 +24,13 @@ const SLIDE_PORTION := 0.12
 @export var length := 16.0
 @export var door_offsets: PackedFloat32Array = [-4.0, 4.0]
 @export var door_width := 1.6
+@export var style := "train"
+@export var arrive_sound := "train_arrive"
+@export var eta_key := "TRAIN_ETA"
+@export var arrived_key := "TRAIN_ARRIVED"
+@export var noise_kind := "train"
+## Lift: how far above its stop the car starts its descent.
+@export var drop_height := 12.0
 
 var _visual: Node3D
 var _body: StaticBody3D
@@ -104,7 +114,7 @@ func _ready() -> void:
 	add_child(_gates)
 	for x in door_offsets:
 		_col(_gates, Vector3(door_width + 0.4, 2.4, 0.2), Vector3(x, 1.2, 0.1))
-	_emitter = AudioService.make_emitter("train_arrive", 2.0, 60.0)
+	_emitter = AudioService.make_emitter(arrive_sound, 2.0, 60.0)
 	_emitter.position = Vector3(0, 1.5, -WIDTH * 0.5)
 	add_child(_emitter)
 	_present(0.0, false)
@@ -166,7 +176,11 @@ func seconds_left() -> int:
 func _present(progress: float, arrived: bool) -> void:
 	var slide := clampf((progress - (1.0 - SLIDE_PORTION)) / SLIDE_PORTION, 0.0, 1.0)
 	_visual.visible = slide > 0.0 or arrived
-	_visual.position.x = lerpf(SLIDE_FROM, 0.0, 1.0 - pow(1.0 - slide, 3.0)) if not arrived else 0.0
+	var travel := 1.0 - pow(1.0 - slide, 3.0) if not arrived else 1.0
+	if style == "lift":
+		_visual.position.y = lerpf(drop_height, 0.0, travel)
+	else:
+		_visual.position.x = lerpf(SLIDE_FROM, 0.0, travel)
 	_body.collision_layer = GeoBuilder.LAYER_WORLD if arrived else 0
 	_gates.collision_layer = 0 if arrived else GeoBuilder.LAYER_WORLD
 	for panel in _door_panels:
@@ -198,17 +212,17 @@ func authority_tick(delta: float) -> void:
 	if _announce_timer <= 0.0 and p < 1.0:
 		_announce_timer = 15.0
 		match_ctrl.world_sound("pa_chime", platform, 0.0, 50.0)
-		match_ctrl.notify_all("TRAIN_ETA", [maxi(1, ceili((1.0 - p) * arrival_seconds))])
+		match_ctrl.notify_all(eta_key, [maxi(1, ceili((1.0 - p) * arrival_seconds))])
 	_rumble_timer -= delta
 	if _rumble_timer <= 0.0:
 		_rumble_timer = 3.0
 		# The approaching train is loud: whatever hunts down here comes to look.
-		match_ctrl.emit_noise(platform, 40.0 * p + 10.0, "train")
+		match_ctrl.emit_noise(platform, 40.0 * p + 10.0, noise_kind)
 	_sync_timer -= delta
 	if p >= 1.0:
 		match_ctrl.set_entity_state(entity_id, {"progress": 1.0, "arrived": true})
 		match_ctrl.set_flag(arrived_flag)
-		match_ctrl.notify_all("TRAIN_ARRIVED")
+		match_ctrl.notify_all(arrived_key)
 	elif _sync_timer <= 0.0:
 		_sync_timer = 0.25
 		match_ctrl.set_entity_state(entity_id, {"progress": p, "arrived": false})
