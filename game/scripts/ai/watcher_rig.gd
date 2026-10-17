@@ -4,7 +4,10 @@ extends Node3D
 ## library authored in code. Joints are Node3D pivots so animations are plain
 ## rotation tracks. `style` picks the creature: "watcher" (bandaged caretaker
 ## with brass lenses), "sister" (blindfolded ward sister in a long gown),
-## "lineman" (track worker with a hard hat and a live headlamp). All share the
+## "lineman" (track worker with a hard hat and a live headlamp),
+## "headmistress" (porcelain-faced teacher in a long dark dress), "subject"
+## (Subject Zero: gaunt, gowned, a restraint collar and a broken brass
+## apparatus over one eye). All share the
 ## skeleton and animations. Replacement path: an imported rigged model
 ## exposing the same animation names (see docs/asset-replacement.md).
 
@@ -21,6 +24,7 @@ const ANIMS: PackedStringArray = [
 	"recover",
 	"hit",
 	"open_door",
+	"freeze",
 ]
 
 var anim: AnimationPlayer
@@ -56,6 +60,11 @@ func _ready() -> void:
 
 func play(anim_name: String, blend: float = 0.25, speed: float = 1.0) -> void:
 	if anim == null:
+		return
+	if anim_name == "freeze":
+		# Hold the current pose mid-motion (the Headmistress while watched).
+		_current = "freeze"
+		anim.speed_scale = 0.0
 		return
 	if anim_name == _current and anim.is_playing():
 		anim.speed_scale = speed
@@ -139,6 +148,18 @@ func _build_body() -> void:
 			bandage = MaterialLib.flat(Color(0.2, 0.19, 0.18), 0.9)
 			lens_mat.albedo_color = Color(1.0, 0.9, 0.7)
 			lens_mat.emission = Color(1.0, 0.85, 0.6)
+		"headmistress":
+			skin = MaterialLib.flat(Color(0.82, 0.8, 0.76), 0.35)
+			cloth = MaterialLib.flat(Color(0.06, 0.055, 0.065), 0.9)
+			coat = MaterialLib.flat(Color(0.09, 0.08, 0.1), 0.85)
+			bandage = MaterialLib.flat(Color(0.85, 0.83, 0.79), 0.3)
+			lens_mat.albedo_color = Color(0.02, 0.02, 0.02)
+			lens_mat.emission = Color(0.25, 0.02, 0.02)
+		"subject":
+			skin = MaterialLib.flat(Color(0.42, 0.42, 0.4), 0.9)
+			cloth = MaterialLib.flat(Color(0.5, 0.52, 0.5), 0.95)
+			coat = MaterialLib.flat(Color(0.55, 0.57, 0.55), 0.95)
+			bandage = MaterialLib.flat(Color(0.4, 0.39, 0.37), 0.9)
 
 	var hips := _joint("Hips", self, Vector3(0, 1.08, 0))
 	_limb(hips, Vector3(0.36, 0.18, 0.2), Vector3.ZERO, cloth)
@@ -154,6 +175,10 @@ func _build_body() -> void:
 		_sister_head(head, skin, bandage)
 	elif style == "lineman":
 		_lineman_head(head, brass)
+	elif style == "headmistress":
+		_headmistress_head(head)
+	elif style == "subject":
+		_subject_head(head, neck, brass)
 	else:
 		_watcher_head(head, bandage, brass)
 	_limbs(chest, hips, skin, cloth, coat)
@@ -252,6 +277,68 @@ func _lineman_head(head: Node3D, brass: Material) -> void:
 	head.add_child(headlamp)
 
 
+## Hair pulled into a tight bun and a smooth porcelain face with two dark
+## slits: nothing on it moves, which is the point.
+func _headmistress_head(head: Node3D) -> void:
+	var hair := MaterialLib.flat(Color(0.12, 0.11, 0.1), 0.8)
+	_limb(head, Vector3(0.235, 0.14, 0.22), Vector3(0, 0.25, -0.02), hair)
+	var bun := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.07
+	sphere.height = 0.12
+	sphere.radial_segments = 10
+	sphere.rings = 5
+	bun.mesh = sphere
+	bun.material_override = hair
+	bun.position = Vector3(0, 0.27, -0.13)
+	head.add_child(bun)
+	var face := _limb(
+		head, Vector3(0.19, 0.25, 0.04), Vector3(0, 0.12, 0.1), MaterialLib.flat(Color(0.9, 0.88, 0.84), 0.15)
+	)
+	face.rotation.x = deg_to_rad(-4)
+	for x in [-0.045, 0.045]:
+		var slit := MeshInstance3D.new()
+		var q := BoxMesh.new()
+		q.size = Vector3(0.05, 0.012, 0.01)
+		slit.mesh = q
+		slit.material_override = lens_mat
+		slit.position = Vector3(x, 0.15, 0.123)
+		head.add_child(slit)
+	# A thin pair of spectacles on a chain.
+	var wire := MaterialLib.flat(Color(0.5, 0.45, 0.3), 0.3, 0.8)
+	_limb(head, Vector3(0.17, 0.008, 0.008), Vector3(0, 0.155, 0.127), wire)
+
+
+## Shaved, gaunt; a steel restraint collar at the neck and the remains of a
+## brass optical rig bolted over the left eye (its lens glows when hunting).
+func _subject_head(head: Node3D, neck: Node3D, brass: Material) -> void:
+	var steel := MaterialLib.flat(Color(0.35, 0.36, 0.38), 0.4, 0.8)
+	var collar := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.055
+	torus.outer_radius = 0.085
+	torus.rings = 12
+	torus.ring_segments = 6
+	collar.mesh = torus
+	collar.material_override = steel
+	collar.position = Vector3(0, 0.06, 0)
+	neck.add_child(collar)
+	_limb(head, Vector3(0.07, 0.07, 0.05), Vector3(-0.045, 0.16, 0.1), brass)
+	var lens := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.022
+	sphere.height = 0.044
+	sphere.radial_segments = 8
+	sphere.rings = 4
+	lens.mesh = sphere
+	lens.material_override = lens_mat
+	lens.position = Vector3(-0.045, 0.16, 0.13)
+	head.add_child(lens)
+	for i in 3:
+		var stitch := _limb(head, Vector3(0.006, 0.08, 0.006), Vector3(0.05 + i * 0.012, 0.25, 0.06), steel)
+		stitch.rotation.z = deg_to_rad(70)
+
+
 ## Reflective stripes over the work vest.
 func _hi_vis(chest: Node3D, stripe: Material) -> void:
 	for y in [0.06, 0.2]:
@@ -284,6 +371,10 @@ func _limbs(chest: Node3D, hips: Node3D, skin: Material, cloth: Material, coat: 
 		length = 1.25
 	elif style == "lineman":
 		length = 0.42
+	elif style == "headmistress":
+		length = 1.3
+	elif style == "subject":
+		length = 0.7
 	for side in [-1, 1]:
 		var panel := _limb(_coat, Vector3(0.24, length, 0.03), Vector3(side * 0.12, -length * 0.44, 0.13), coat)
 		panel.rotation.x = deg_to_rad(-6)

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"bolt_cutters"
+name_key = "ITEM_BOLT_CUTTERS"
+description_key = "ITEM_BOLT_CUTTERS_DESC"
+is_key_item = true
+is_consumable = false
+stack_max = 1
+icon_color = Color(0.62, 0.12, 0.1, 1)
+shape = &"cutters"
+marking = 0

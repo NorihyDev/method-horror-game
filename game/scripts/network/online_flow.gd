@@ -1,32 +1,39 @@
 class_name OnlineFlow
 extends Node
-## One multiplayer session on this device: an online room (lobby service +
-## dedicated server) or a LAN development session. Translates network events
-## into screen changes and owns cleanup.
+## One multiplayer session on this device: an online room or a LAN
+## development session. Translates network events into screen changes and
+## owns cleanup.
+##
+## Online rooms go through the METHOD relay (Cloudflare Worker + one Durable
+## Object per room, services/relay). The room's creator hosts: their device
+## runs the match (rules, enemy AI, physics) exactly like a LAN host, and the
+## relay forwards packets between it and the guests over secure WebSockets.
+## If the creator leaves, the room ends for everyone.
 
 signal status_changed(text_key: String)
 signal begun
 
 enum Kind { ONLINE, LAN_HOST, LAN_CLIENT }
 
-const CONNECT_RETRIES := 8
-const RETRY_SECONDS := 1.5
-const RECONNECT_ATTEMPTS := 5
-## LAN hosts also run the match on their own device, so LAN rooms stay at 4
-## (online rooms, on a dedicated server, allow 6).
+## The host's device runs the match for everyone: rooms hold four players.
 const LAN_MAX_PLAYERS := 4
+## How long the room creator waits for the relay to admit them.
+const RELAY_CONNECT_SECONDS := 15.0
+
+## Reason key of the last session that ended in an error (tests, diagnostics).
+static var last_abort := ""
 
 var app: App
 var kind: Kind = Kind.ONLINE
 var net: NetBridge
-var lobby: LobbyClient
+var relay: RelayClient
+var relay_peer: RelayMultiplayerPeer
 var room_info: Dictionary = {}
 var in_match := false
 var _root: Node
 var _hello: Dictionary = {}
 var _address := ""
 var _port := 0
-var _connect_attempts := 0
 var _joined := false
 var _leaving := false
 var _reconnecting := false
@@ -41,9 +48,9 @@ static func create(p_app: App) -> OnlineFlow:
 
 
 func _ready() -> void:
-	lobby = LobbyClient.new()
-	lobby.name = "LobbyClient"
-	add_child(lobby)
+	relay = RelayClient.new()
+	relay.name = "RelayClient"
+	add_child(relay)
 	_make_bridge()
 
 
@@ -70,43 +77,71 @@ func _make_bridge() -> void:
 # --- Starting a session -----------------------------------------------------------------
 
 
+## Creates a private room and hosts it from this device. Returns "" once in
+## the lobby, or a message key.
 func create_online(map_id: String, difficulty_id: String, max_players: int, password: String) -> String:
 	kind = Kind.ONLINE
-	status_changed.emit("MP_STATUS_SIGNING_IN")
-	var g := await lobby.ensure_guest(Saves.display_name(), Saves.avatar_color_index())
-	if not g["ok"]:
-		return str(g["error"])
 	status_changed.emit("MP_STATUS_CREATING")
-	var r := await lobby.create_room(map_id, difficulty_id, max_players, password)
+	var players := clampi(max_players, 2, NetProtocol.RELAY_MAX_PLAYERS)
+	var r := await relay.create_room(players, password)
 	if not r["ok"]:
 		return str(r["error"])
-	_connect_online(r["room"])
+	if _leaving:
+		return "NET_LOST"
+	room_info = {"code": r["code"], "map_id": map_id, "difficulty_id": difficulty_id, "max_players": players}
+	status_changed.emit("MP_STATUS_CONNECTING")
+	relay_peer = RelayMultiplayerPeer.new()
+	if relay_peer.open(relay.socket_url(str(r["code"]), true, str(r["host_token"])), true) != OK:
+		return "NET_UNREACHABLE"
+	# Wait for the relay to admit us as the room's host before opening the lobby.
+	var deadline := Time.get_ticks_msec() + int(RELAY_CONNECT_SECONDS * 1000.0)
+	while relay_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTING:
+		relay_peer.poll()
+		if Time.get_ticks_msec() > deadline:
+			relay_peer.close()
+			return "NET_UNREACHABLE"
+		await get_tree().process_frame
+		if _leaving:
+			return "NET_LOST"
+	if relay_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return RelayClient.reason_key(relay_peer.last_error)
+	# Deferred: the relay reports from inside the multiplayer poll.
+	relay_peer.relay_error.connect(_on_host_relay_error, CONNECT_DEFERRED)
+	net.host_name = Saves.display_name()
+	net.host_color = Saves.avatar_color_index()
+	net.allowed_maps = Session.unlocked_map_ids()
+	var map := map_id if Session.is_map_unlocked(map_id) else "house"
+	net.host_relay(
+		relay_peer,
+		{"room_id": r["code"], "code": r["code"], "map_id": map, "difficulty_id": difficulty_id, "max_players": players}
+	)
+	_joined = true
+	app.goto("lobby", {"flow": self})
 	return ""
 
 
+## Joins a room by its code. Returns "" while connecting (the lobby opens on
+## success; failures come back as an alert), or a message key.
 func join_online(code: String, password: String) -> String:
 	kind = Kind.ONLINE
-	status_changed.emit("MP_STATUS_SIGNING_IN")
-	var g := await lobby.ensure_guest(Saves.display_name(), Saves.avatar_color_index())
-	if not g["ok"]:
-		return str(g["error"])
-	status_changed.emit("MP_STATUS_JOINING")
-	var r := await lobby.join_room(code, password)
-	if not r["ok"]:
-		return str(r["error"])
-	_connect_online(r["room"])
-	return ""
-
-
-func _connect_online(room: Dictionary) -> void:
-	room_info = room
-	var server: Dictionary = room.get("server", {})
-	_address = str(server.get("host", ""))
-	_port = int(server.get("port", 0))
-	_hello = {"ticket": str(room.get("ticket", ""))}
-	_connect_attempts = 0
+	var clean := code.strip_edges()
+	if clean.length() != 6 or not clean.is_valid_int():
+		return "NET_CODE_FORMAT"
+	if not RelayClient.is_configured():
+		return "MP_ONLINE_NOT_CONFIGURED"
+	room_info = {"code": clean, "password": password}
+	_hello = {"lan_id": Saves.local_id(), "name": Saves.display_name(), "color": Saves.avatar_color_index()}
 	status_changed.emit("MP_STATUS_CONNECTING")
-	net.join(_address, _port, _hello)
+	return _connect_guest()
+
+
+func _connect_guest() -> String:
+	relay_peer = RelayMultiplayerPeer.new()
+	var url := relay.socket_url(str(room_info["code"]), false, str(room_info.get("password", "")))
+	if relay_peer.open(url, false) != OK:
+		return "NET_UNREACHABLE"
+	net.join_relay(relay_peer, _hello)
+	return ""
 
 
 func host_lan() -> String:
@@ -134,7 +169,6 @@ func join_lan(address: String) -> String:
 	_address = clean
 	_port = NetProtocol.LAN_PORT
 	_hello = {"lan_id": Saves.local_id(), "name": Saves.display_name(), "color": Saves.avatar_color_index()}
-	_connect_attempts = CONNECT_RETRIES  # no boot delay to wait for on LAN
 	status_changed.emit("MP_STATUS_CONNECTING")
 	net.join(_address, _port, _hello)
 	return ""
@@ -152,16 +186,24 @@ func _on_joined(_pid: int) -> void:
 
 
 func _on_join_failed(reason: String) -> void:
-	# A freshly spawned dedicated server may still be booting.
-	if not _joined and reason == "NET_UNREACHABLE" and _connect_attempts < CONNECT_RETRIES and kind == Kind.ONLINE:
-		_connect_attempts += 1
-		await get_tree().create_timer(RETRY_SECONDS).timeout
-		if _leaving:
-			return
-		_make_bridge()
-		net.join(_address, _port, _hello)
+	_abort(_relay_reason(reason))
+
+
+## The relay's own refusal (room full, wrong password, host left...) explains
+## a failure better than the generic transport error.
+func _relay_reason(fallback: String) -> String:
+	if kind == Kind.ONLINE and relay_peer and not relay_peer.last_error.is_empty():
+		return RelayClient.reason_key(relay_peer.last_error)
+	return fallback
+
+
+## The room creator lost the relay: the room is gone for everyone.
+func _on_host_relay_error(code: String) -> void:
+	if _leaving:
 		return
-	_abort(reason)
+	if net and net.mc and net.mc.is_finished():
+		return
+	_abort(RelayClient.reason_key(code) if code != "HOST_LEFT" else "NET_LOST")
 
 
 func _on_disconnected(reason: String) -> void:
@@ -169,10 +211,12 @@ func _on_disconnected(reason: String) -> void:
 		return
 	if net and net.mc and net.mc.is_finished():
 		return  # results are already showing; the server may simply close first
-	if in_match and kind == Kind.ONLINE and Settings.b("auto_reconnect") and reason == "NET_LOST":
+	var why := _relay_reason(reason)
+	# A dropped guest can rejoin its slot while the host is still there.
+	if in_match and kind == Kind.ONLINE and Settings.b("auto_reconnect") and why == "NET_LOST":
 		_reconnect()
 		return
-	_abort(reason)
+	_abort(why)
 
 
 func _reconnect() -> void:
@@ -196,21 +240,19 @@ func _reconnect() -> void:
 		)
 	)
 	app.set_world(null)
-	for attempt in RECONNECT_ATTEMPTS:
-		await get_tree().create_timer(2.0).timeout
-		if _leaving:
-			return
-		var r := await lobby.reconnect_ticket(str(room_info.get("room_id", "")))
-		if not r["ok"]:
-			continue
-		in_match = false
-		_joined = false
-		_reconnecting = true
-		app.set_world(null)
-		_make_bridge()
-		_connect_online(r["room"])
+	await get_tree().create_timer(2.0).timeout
+	if _leaving:
 		return
-	_abort("NET_LOST")
+	# Same code and identity: the host puts us back into our slot with a
+	# full snapshot (or the relay says why not, e.g. the host left).
+	in_match = false
+	_joined = false
+	_reconnecting = true
+	app.set_world(null)
+	_make_bridge()
+	var err := _connect_guest()
+	if not err.is_empty():
+		_abort(err)
 
 
 func _on_load_requested(config: Dictionary) -> void:
@@ -223,13 +265,14 @@ func _on_load_requested(config: Dictionary) -> void:
 func _abort(reason: String) -> void:
 	if _leaving:
 		return
+	last_abort = reason
 	leave()
 	Session.quit_to_menu()
 	app.goto("multiplayer")
 	app.alert("MP_DISCONNECTED_TITLE", describe_error(reason))
 
 
-## Player-facing text for a reason key from the lobby service or game server.
+## Player-facing text for a reason key from the relay or the host.
 static func describe_error(reason: String) -> String:
 	var text := TranslationServer.translate(reason)
 	return text if text != reason else TranslationServer.translate("NET_GENERIC_ERROR")
@@ -244,12 +287,10 @@ func leave() -> void:
 	_leaving = true
 	if net:
 		net.leave()
-	if kind == Kind.ONLINE and not in_match and not room_info.is_empty():
-		lobby.leave_room(str(room_info.get("room_id", "")))
 	if Session.online == self:
 		Session.online = null
-	# Give the best-effort "leave room" request time to go out before freeing.
-	get_tree().create_timer(3.0).timeout.connect(queue_free)
+	# Let the relay's "leave" message go out before freeing the socket.
+	get_tree().create_timer(1.0).timeout.connect(queue_free)
 
 
 func is_lan() -> bool:

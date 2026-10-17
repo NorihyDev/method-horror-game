@@ -56,6 +56,7 @@ pointing/emulate_mouse_from_touch=true
 [method]
 
 online/lobby_url=""
+online/relay_url="https://method-horror-relay.norihyapp.workers.dev"
 
 [navigation]
 

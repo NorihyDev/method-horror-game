@@ -11,6 +11,14 @@ const AUTH_TIMEOUT := 5.0
 const RECONNECT_WINDOW := 60.0
 const LOAD_TIMEOUT := 60.0
 const BROADCAST_HZ := 15.0
+## Local player motion reports (seconds between).
+const MOTION_INTERVAL := 0.05
+## Online (relay) rooms: the room creator's device simulates for everyone, so
+## four players at most; lower rates keep a match inside the relay's free
+## daily quota (incoming WebSocket messages are billed 20 to 1 request).
+const RELAY_MAX_PLAYERS := 4
+const RELAY_BROADCAST_HZ := 10.0
+const RELAY_MOTION_INTERVAL := 0.08
 const TIME_SYNC_SECONDS := 2.0
 ## Fastest legitimate player speed (sprint) plus margin, meters/second.
 const MAX_PLAYER_SPEED := 6.5
@@ -130,3 +138,46 @@ class RateLimiter:
 			if str(key).begins_with("%d:" % peer):
 				_buckets.erase(key)
 		dropped.erase(peer)
+
+
+## Who a connecting player is. Dedicated servers trust only a signed ticket;
+## player-hosted rooms (LAN, relay) take the stated name and device id, which
+## only key reconnects (documented lower trust).
+static func identify(hello: Dictionary, dedicated: bool, secret: String, room_id: String) -> Dictionary:
+	if dedicated:
+		var v := verify_ticket(str(hello.get("ticket", "")), secret, room_id, int(Time.get_unix_time_from_system()))
+		if not v["ok"]:
+			return {"ok": false, "reason": v["reason"]}
+		var p: Dictionary = v["payload"]
+		var ticket_name := str(p.get("name", ""))
+		if NameValidator.validate(ticket_name) != NameValidator.Result.OK:
+			return {"ok": false, "reason": REJECT_NAME}
+		return {
+			"ok": true,
+			"uid": str(p["uid"]),
+			"name": NameValidator.normalize(ticket_name),
+			"color": int(p.get("color", 0)),
+			"owner": bool(p.get("own", false)),
+		}
+	var lan_name := str(hello.get("name", ""))
+	if NameValidator.validate(lan_name) != NameValidator.Result.OK:
+		return {"ok": false, "reason": REJECT_NAME}
+	var lan_id := str(hello.get("lan_id", ""))
+	if lan_id.length() < 8 or lan_id.length() > 64:
+		return {"ok": false, "reason": REJECT_MALFORMED}
+	return {
+		"ok": true,
+		"uid": "lan-" + SaveIO.sha256_text(lan_id).substr(0, 16),
+		"name": NameValidator.normalize(lan_name),
+		"color": int(hello.get("color", 0))
+	}
+
+
+## Compact per-tick player states: {pid: [position, yaw, flags]}.
+static func players_packet(players: Dictionary) -> Dictionary:
+	var out := {}
+	for pid in players:
+		var p: Dictionary = players[pid]
+		var flags := (1 if p.get("crouch", false) else 0) | (4 if p.get("flashlight", false) else 0)
+		out[int(pid)] = [MatchState.array_to_vec(p["pos"]), float(p["yaw"]), flags]
+	return out

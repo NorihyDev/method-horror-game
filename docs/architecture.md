@@ -114,7 +114,10 @@ freed when popped. Tween/timer callbacks guard `is_inside_tree()`.
 `Watcher` (`scripts/ai/watcher.gd`) is the shared enemy brain; an
 `EnemyProfile` (`scripts/ai/enemy_profile.gd`) chosen by the map's
 `enemy_profile` sets senses, speeds, sounds and the rig style, so the
-Watcher, the Sister and the Lineman share one tested state machine. Noise
+Watcher, the Sister, the Lineman, the Headmistress and Subject Zero share one
+tested state machine. Profiles can add a special rule (`freezes_when_watched`)
+and a map can swap a profile at runtime (`Watcher.set_profile`, used when the
+facility's power returns). Noise
 carries the player who made it (`emit_noise(..., source_pid)`); maps can mask
 noise (`MapBase.noise_mask`, used by the station's ghost trains) and present
 flags (`MapBase.on_flag`). Each map's rules name their power flag and the
@@ -137,7 +140,10 @@ game/scripts/network/
                        signed status + result reports to the lobby
   remote_avatar.gd     other players (interpolated; server-side physics proxy)
   revive_target.gd     focus target on a downed teammate
-services/lobby/        Node 24 lobby service (src/, test/, scripts/e2e-online.ts)
+  relay_peer.gd        MultiplayerPeer over the METHOD relay's secure WebSocket (online rooms)
+  relay_client.gd      creates relay rooms (HTTPS), builds their socket URLs, maps refusals
+services/relay/        Cloudflare Worker + one Durable Object per room (online relay)
+services/lobby/        Node 24 lobby service (self-hosted alternative; not used by the client)
 ```
 
 - The server runs the **same** `MatchController` as solo. `MatchController.net`

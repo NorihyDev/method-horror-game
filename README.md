@@ -5,15 +5,15 @@ Players investigate abandoned locations tied to METHOD — a vanished research
 organization whose experiments altered perception — and escape the
 supernatural threats those experiments left behind.
 
-> **Status: Milestone 4 — three playable maps, online economy.** *The
-> Abandoned House*, *The Black Ward* and *Last Train* are fully playable solo
-> (offline, unlocked in order) and in co-op. Online co-op (lobby service,
-> private 6-digit rooms, dedicated server, reconnect, verified wallet and
-> shop) and a LAN development mode work end to end **on one machine** —
-> verified by automated multi-process tests, including a lossy, high-latency
-> link. **No public server is deployed**, so internet play across networks is
-> unverified, and **no phone has run the game yet**. Every claim below is
-> labeled.
+> **Status: all five maps playable; release work in progress.** *The
+> Abandoned House*, *The Black Ward*, *Last Train*, *The Silent School* and
+> *METHOD Facility* are fully playable solo (offline, unlocked in order) and
+> in co-op. **Online co-op over the internet** runs through a deployed relay
+> (Cloudflare Worker + one Durable Object per room, free plan). The room
+> creator's device hosts the match; others join with a 6-digit code from any
+> network. It is verified with two Godot clients through the deployed relay
+> on one PC. **Two phones on different networks have not been tried yet**,
+> and **no phone has run the game yet**. Every claim below is labeled.
 
 ![Main menu](docs/screenshots/main_menu.jpg)
 
@@ -23,6 +23,8 @@ supernatural threats those experiments left behind.
 | ![Fuse panel](docs/screenshots/fuse_panel.jpg) | ![HUD with touch controls](docs/screenshots/touch_hud.jpg) |
 | ![The Sister in the Black Ward](docs/screenshots/ward_sister.jpg) | ![Observation room](docs/screenshots/ward_observation.jpg) |
 | ![The Lineman on the platform](docs/screenshots/station_lineman.jpg) | ![A ghost train passing](docs/screenshots/station_ghost_train.jpg) |
+| ![The Headmistress in the school corridor](docs/screenshots/school_headmistress.jpg) | ![Music-room chimes](docs/screenshots/school_chimes.jpg) |
+| ![Subject Zero in the facility](docs/screenshots/facility_subject.jpg) | ![The freight lift arrives](docs/screenshots/facility_lift.jpg) |
 
 *Screenshots are real renders of the current build (desktop, Mobile renderer).*
 
@@ -58,13 +60,12 @@ supernatural threats those experiments left behind.
 | Settings (graphics/audio/controls/gameplay/accessibility), EN/FR | Implemented, persistence tested |
 | Saves: versioned, atomic, checksummed, backup recovery, checkpoints | Implemented, tested |
 | Local coin economy + cosmetic shop (no real money) | Implemented, tested |
-| Verified online wallet in the shop (idempotent purchases) | Implemented; service tests + end-to-end through the real shop screen |
-| Lobby service: guest identity, private rooms, 6-digit codes, passwords, rate limits, tickets, verified wallet | Implemented, 16 service tests |
-| Online co-op: create/join by code, lobby, start barrier, shared state, reconnect, results credited by the server | Implemented; end-to-end test with real processes (lobby + dedicated server + 2 clients) incl. 300 ms RTT / 10% loss |
+| **Online co-op over the internet**: private rooms with 6-digit codes and optional passwords, 2–4 players, lobby with ready status, the creator picks the map and starts; synced players, doors, items, objectives, monster and results; reconnect; explicit host-departure handling | Implemented through the **deployed relay** (`services/relay`, Cloudflare Worker + Durable Objects). Verified: 20 protocol checks and a two-client Godot end-to-end run through the deployed relay (one PC). No coins online (host-decided results can't be verified) |
+| Self-hosted alternative: lobby service (guest identity, verified wallet, shop) + dedicated server | In the repo with tests; **not deployed, not used by the shipped client** |
 | In-match co-op: teammates, pings, downed/revive, spectating | Implemented; screenshot-verified, covered by integration tests |
 | LAN development mode (lower trust, no coins) | Implemented, tested in-process |
-| **Internet play across separate networks** | **Unverified** — needs a deployed host ([deployment.md](docs/deployment.md)) |
-| Maps 4–5 | **Planned**, shown as "Coming later" |
+| **Two phones on different networks** | **Not tried yet**: steps in [deployment.md](docs/deployment.md#testing-with-two-phones-on-different-networks) |
+| *The Silent School* (music box by ear, PA bell tune → chimes, The Headmistress: frozen while watched in light) and *METHOD Facility* (finale reusing every system; Subject Zero: blind in the dark, sighted once powered; freight-lift hold-out) | Implemented; full playthrough, enemy-rule, 300-seed solvability and co-op replication tests; screenshot-checked |
 | iOS | Architecture only; **no signed or device-tested build** |
 
 ## Setup
@@ -139,10 +140,12 @@ mirrored for left-handed play.
 
 ```bash
 ./tools/check.sh                                    # compile every script (fails on any error)
-./tools/godot.sh --headless --path game -- --test   # 93 unit + integration tests, exit code = result
+./tools/godot.sh --headless --path game -- --test   # unit + integration tests, exit code = result
 ./tools/godot.sh --headless --path game -- --test --filter=watcher
-cd services/lobby && npm ci && npm test && npm run typecheck   # lobby service
-GODOT_BIN=/path/to/godot npm run e2e     # online end to end: lobby + server + 2 clients
+(cd services/relay && npm ci && npm test && npm run typecheck)  # online relay
+(cd services/relay && npx wrangler dev --port 8787)             # local relay, then in another shell:
+(cd services/relay && GODOT_BIN=/path/to/godot npm run e2e)     # online end to end: relay + 2 Godot clients
+(cd services/lobby && npm ci && npm test && npm run typecheck)  # self-hosted lobby service
 ```
 
 Tests run in isolated `test_*` save files and never touch your profile. A
@@ -230,9 +233,9 @@ Key ideas (details in [docs/architecture.md](docs/architecture.md)):
    ⏳ internet verification (needs a deployed host).
 4. ✅ Verified online economy and shop, map progression, Maps 2 (*The Black
    Ward*) and 3 (*Last Train*).
-5. Animation/audio/UI refinement, accessibility testing, Android device
-   profiling, release signing.
-6. Maps 4 (*The Silent School*) and 5 (*METHOD Facility*).
+5. ⏳ ✅ benchmark tool, accessibility audit and fixes, debug APK with all
+   maps; ⏳ phone profiling, signed release (needs the owner's keystore).
+6. ✅ Maps 4 (*The Silent School*) and 5 (*METHOD Facility*).
 
 Exact current state and next steps: [docs/continuation.md](docs/continuation.md).
 

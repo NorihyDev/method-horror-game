@@ -11,8 +11,7 @@
   "scripts": {
     "start": "node src/main.ts",
     "test": "node --test --test-reporter=spec \"test/*.test.ts\"",
-    "typecheck": "tsc --noEmit",
-    "e2e": "node scripts/e2e-online.ts"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "24.3.0",

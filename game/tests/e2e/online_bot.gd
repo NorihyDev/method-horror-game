@@ -1,15 +1,19 @@
 extends Node
 ## End-to-end online bot (development builds only). Drives the real client
-## path — LobbyClient → OnlineFlow → lobby / loading / gameplay screens —
-## against a running lobby service and the dedicated server it spawns.
+## path — RelayClient → OnlineFlow → lobby / loading / gameplay / results
+## screens — through a running METHOD relay (local `wrangler dev` or the
+## deployed Worker). Two separate processes, owner and guest:
 ##
-## Started by services/lobby/scripts/e2e-online.ts:
-##   godot --headless --path game -- --bot --role=owner --lobby=http://127.0.0.1:PORT
-##   godot --headless --path game -- --bot --role=guest --code=123456 --lobby=...
-## Prints "BOT_EVENT <name> <data>" lines; exits 0 on success, 1 on failure.
+##   godot --headless --path game -- --bot --role=owner --relay=<url>
+##   godot --headless --path game -- --bot --role=guest --code=123456 --relay=<url>
+##
+## Started by services/relay/scripts/e2e-relay.ts. Prints "BOT_EVENT <name>
+## <data>" lines; exits 0 on success, 1 on failure.
 
 const PASSWORD := "e2e-pass"
 const STEP_TIMEOUT := 60.0
+## Second room (host departure test): the owner writes its code here.
+const ROOM2_FILE := "user://e2e_relay_room2.txt"
 
 var role := ""
 var app: App
@@ -54,29 +58,37 @@ func _wait(predicate: Callable, timeout: float = STEP_TIMEOUT) -> bool:
 	return false
 
 
-## A fresh flow with its own guest identity (bots never share a session file).
 func _new_flow() -> OnlineFlow:
 	flow = Session.ensure_online()
-	flow.lobby.session_path = "user://test_bot_%s_session.json" % role
-	flow.lobby.token = ""
-	flow.lobby.user = {}
-	flow.lobby.call("_load_session")
 	return flow
 
 
+## The current screen by its script ("Lobby", "Gameplay", "Results"...): node
+## names get auto-suffixed while a previous instance is still being freed.
 func _screen() -> String:
-	return str(app.current().name) if app.current() else ""
+	var screen := app.current()
+	if screen == null or screen.get_script() == null:
+		return ""
+	return (screen.get_script() as Script).resource_path.get_file().trim_suffix("_screen.gd").capitalize()
 
 
 func _in_gameplay() -> bool:
-	return flow != null and flow.in_match and _screen() == "Gameplay"
+	return flow != null and is_instance_valid(flow) and flow.in_match and _screen() == "Gameplay"
+
+
+## Frames this client sent to the relay per second over `seconds` of play.
+func _measure_rate(seconds: float) -> float:
+	var peer := flow.relay_peer
+	var before := peer.frames_sent
+	await get_tree().create_timer(seconds).timeout
+	return (peer.frames_sent - before) / seconds
 
 
 func _net() -> NetBridge:
-	return flow.net if flow else null
+	return flow.net if flow and is_instance_valid(flow) else null
 
 
-# --- Owner -------------------------------------------------------------------------------------
+# --- Owner (room creator, hosts the match) -------------------------------------------------------
 
 
 func _owner() -> bool:
@@ -87,8 +99,8 @@ func _owner() -> bool:
 	if not await _wait(func() -> bool: return _screen() == "Lobby"):
 		return _fail("never reached the lobby screen")
 	_event("code", flow.display_code())
-	if not await _wait(func() -> bool: return _net().my_pid > 0 and _is_owner()):
-		return _fail("not the room owner")
+	if not _is_owner():
+		return _fail("the creator does not own the room")
 	_event("owner")
 	if not await _wait(func() -> bool: return _members() == 2 and _all_ready(), 120.0):
 		return _fail("guest never joined and readied (members=%d)" % _members())
@@ -98,66 +110,60 @@ func _owner() -> bool:
 		return _fail("match did not begin (screen=%s)" % _screen())
 	_event("in_match", str(_net().my_pid))
 	var mc := _net().mc
-	if mc.state.variant.size() != 0:
-		return _fail("client received puzzle answers")
 	mc.request_interact("door_front", 0)
 	if not await _wait(func() -> bool: return mc.state.has_flag("exit_found")):
-		return _fail("server did not apply the owner's interaction")
+		return _fail("host did not apply its own interaction")
 	_event("interaction_applied")
-	# The guest drops and reconnects; watch it go away and come back.
+	# Bring the monster in now; the host simulates it and relays its state.
+	mc.set("_enemy_arrival_at", 0.0)
+	if not await _wait(func() -> bool: return not mc.enemies.is_empty(), 60.0):
+		return _fail("monster never spawned on the host")
+	_event("monster_spawned")
 	var guest := _other_pid()
+	var start := MatchState.array_to_vec(mc.state.player(guest)["pos"])
+	var moved := func() -> bool: return MatchState.array_to_vec(mc.state.player(guest)["pos"]).distance_to(start) > 0.8
+	if not await _wait(moved, 60.0):
+		return _fail("guest movement never reached the host")
+	_event("guest_movement_synced")
+	_event("host_frames_per_second", "%.1f" % await _measure_rate(10.0))
 	if not await _wait(func() -> bool: return bool(mc.state.player(guest).get("away", false)), 90.0):
 		return _fail("guest never dropped")
 	_event("teammate_away")
 	if not await _wait(func() -> bool: return not bool(mc.state.player(guest).get("away", true)), 90.0):
 		return _fail("guest never came back")
 	_event("teammate_back")
-	if not await _wait(func() -> bool: return _guest_left(mc, guest), 90.0):
-		return _fail("guest never left")
-	# Leave too; the server ends the match after the reconnect window and
-	# reports results to the lobby, which records them in the verified wallet.
-	var lobby := flow.lobby
-	var client := LobbyClient.new()
-	client.session_path = lobby.session_path
-	add_child(client)
-	client.token = lobby.token
+	# Finish the match: open the garage and let both players escape.
+	await get_tree().create_timer(2.0).timeout
+	mc.set_flag("garage_open")
+	mc.player_escaped(guest)
+	mc.player_escaped(_net().my_pid)
+	if not await _wait(func() -> bool: return mc.is_finished(), 30.0):
+		return _fail("match did not finish")
+	_event("match_finished")
+	await get_tree().create_timer(5.0).timeout
+	return await _owner_host_departure()
+
+
+## A second room: the guest joins, then the host leaves and the guest must be
+## told the room ended (not left hanging).
+func _owner_host_departure() -> bool:
 	Session.quit_to_menu()
-	var recorded := false
-	var deadline := Time.get_ticks_msec() + 120000
-	while Time.get_ticks_msec() < deadline and not recorded:
-		await get_tree().create_timer(2.0).timeout
-		var w := await client.wallet()
-		if int(w["status"]) == 200:
-			for entry in w["json"].get("ledger", []):
-				if str(entry.get("reason", "")) == "match":
-					recorded = true
-	if not recorded:
-		return _fail("match result never reached the verified wallet")
-	_event("result_recorded")
-	return await _check_online_shop(client)
-
-
-## The real shop screen with the online wallet, as the same guest (the shop's
-## own client reads the default session file, so hand it this bot's token).
-func _check_online_shop(client: LobbyClient) -> bool:
-	var shared := LobbyClient.new()
-	add_child(shared)
-	shared.token = client.token
-	shared.call("_save_session")
-	var shop: Screen = app.goto("shop")
-	shop.call("_switch", 1)
-	if not await _wait(func() -> bool: return bool(shop.get("_online_ready")), 30.0):
-		return _fail("shop never loaded the online wallet")
-	if Saves.online_balance != 0:
-		return _fail("unexpected online balance %d after a defeat" % Saves.online_balance)
-	_event("shop_online_wallet")
-	var item := Saves.catalog.get_item("flashlight_sodium")
-	shop.call("_buy_online", "flashlight_sodium", item)
-	if not await _wait(func() -> bool: return app.has_modal(), 30.0):
-		return _fail("no answer to the online purchase")
-	if Saves.online_owned.has("flashlight_sodium"):
-		return _fail("an unaffordable online purchase went through")
-	_event("shop_purchase_refused")
+	await get_tree().create_timer(1.5).timeout
+	_new_flow()
+	var err := await flow.create_online("house", "normal", 4, "")
+	if not err.is_empty():
+		return _fail("second create_online: " + err)
+	var f := FileAccess.open(ROOM2_FILE, FileAccess.WRITE)
+	f.store_string(flow.display_code())
+	f.close()
+	_event("room2", flow.display_code())
+	if not await _wait(func() -> bool: return _members() == 2, 120.0):
+		return _fail("guest never joined room 2")
+	_event("room2_guest_joined")
+	await get_tree().create_timer(2.0).timeout
+	Session.quit_to_menu()
+	_event("host_left")
+	await get_tree().create_timer(3.0).timeout
 	return true
 
 
@@ -166,7 +172,8 @@ func _is_owner() -> bool:
 
 
 func _members() -> int:
-	return (_net().room.get("members", []) as Array).size()
+	var net := _net()
+	return (net.room.get("members", []) as Array).size() if net else 0
 
 
 func _all_ready() -> bool:
@@ -183,59 +190,116 @@ func _other_pid() -> int:
 	return -1
 
 
-func _guest_left(mc: MatchController, guest: int) -> bool:
-	var p := mc.state.player(guest)
-	return bool(p.get("away", false)) or str(p.get("status", "")) == MatchState.STATUS_LEFT
-
-
 # --- Guest ---------------------------------------------------------------------------------------
 
 
 func _guest() -> bool:
 	var code := AppInfo.arg_value("--code", "")
-	_new_flow()
-	# A wrong password is refused before any connection is made.
-	var err := await flow.join_online(code, "not-the-password")
-	if err != "NET_PASSWORD_WRONG":
-		return _fail("wrong password gave '%s'" % err)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(ROOM2_FILE))
+	if not await _refused(code, "not-the-password", "NET_PASSWORD_WRONG"):
+		return false
 	_event("wrong_password_refused")
-	flow.leave()
-	# Unknown codes fail cleanly too.
-	_new_flow()
-	err = await flow.join_online("000000" if code != "000000" else "111111", PASSWORD)
-	if err != "NET_ROOM_NOT_FOUND":
-		return _fail("unknown code gave '%s'" % err)
+	if not await _refused("000000" if code != "000000" else "111111", PASSWORD, "NET_ROOM_NOT_FOUND"):
+		return false
 	_event("unknown_code_refused")
-	flow.leave()
+	return await _guest_match(code)
+
+
+func _guest_match(code: String) -> bool:
 	_new_flow()
-	err = await flow.join_online(code, PASSWORD)
+	var err := await flow.join_online(code, PASSWORD)
 	if not err.is_empty():
 		return _fail("join_online: " + err)
 	if not await _wait(func() -> bool: return _screen() == "Lobby"):
-		return _fail("never reached the lobby screen")
+		return _fail("never reached the lobby screen (last error %s)" % OnlineFlow.last_abort)
 	_event("joined", str(_net().my_pid))
 	_net().set_ready(true)
 	if not await _wait(_in_gameplay, 120.0):
 		return _fail("match did not begin (screen=%s)" % _screen())
 	_event("in_match", str(_net().my_pid))
-	if not await _wait(func() -> bool: return _net().mc.state.has_flag("exit_found")):
-		return _fail("owner's interaction never replicated")
+	var mc := _net().mc
+	if mc.state.variant.size() != 0:
+		return _fail("a guest received the puzzle answers")
+	if not await _wait(func() -> bool: return mc.state.has_flag("exit_found")):
+		return _fail("host's interaction never replicated")
 	_event("saw_interaction")
-	# Simulate a dropped connection; the flow must reconnect with a fresh
-	# ticket and receive a full snapshot before controlling the player again.
+	if not await _wait(func() -> bool: return not mc.enemies.is_empty(), 60.0):
+		return _fail("monster never replicated")
+	var puppet: Node3D = mc.enemies[0]
+	var p0 := puppet.global_position
+	_event("monster_replicated", str(p0.snapped(Vector3.ONE * 0.1)))
+	# Walk forward in small steps, like a player would.
+	var me := _net().local_player
+	var dir := -me.global_basis.z
+	dir.y = 0.0
+	for i in 40:
+		me.global_position += dir.normalized() * 0.05
+		await get_tree().physics_frame
+	_event("walked")
+	_event("guest_frames_per_second", "%.1f" % await _measure_rate(10.0))
+	if not await _wait(func() -> bool: return puppet.global_position.distance_to(p0) > 0.3, 60.0):
+		_event("monster_static", "the monster did not move in 60 s (may be idle)")
+	else:
+		_event("monster_moves_on_guest")
+	# Drop the connection: the flow rejoins the same room and slot and gets
+	# a full snapshot before control returns.
 	var pid := _net().my_pid
 	_net().close()
 	flow.call("_on_disconnected", "NET_LOST")
 	if not await _wait(func() -> bool: return _screen() == "Loading", 10.0):
 		return _fail("no reconnect screen")
 	if not await _wait(_in_gameplay, 90.0):
-		return _fail("did not rejoin the match (screen=%s)" % _screen())
+		return _fail("did not rejoin the match (screen=%s, error=%s)" % [_screen(), OnlineFlow.last_abort])
 	if _net().my_pid != pid:
 		return _fail("rejoined into another slot")
 	if not _net().mc.state.has_flag("exit_found"):
 		return _fail("reconnect snapshot lacked progress")
 	_event("reconnected_with_state")
-	await get_tree().create_timer(2.0).timeout
+	return await _guest_results()
+
+
+func _guest_results() -> bool:
+	# The host finishes the match: results must arrive here.
+	if not await _wait(func() -> bool: return _screen() == "Results", 60.0):
+		return _fail("never saw the results (screen=%s)" % _screen())
+	_event("match_completed_on_guest")
 	Session.quit_to_menu()
-	await get_tree().create_timer(1.0).timeout
+	return await _guest_host_departure()
+
+
+func _guest_host_departure() -> bool:
+	if not await _wait(func() -> bool: return FileAccess.file_exists(ROOM2_FILE), 90.0):
+		return _fail("owner never opened room 2")
+	await get_tree().create_timer(0.5).timeout
+	var code2 := FileAccess.get_file_as_string(ROOM2_FILE).strip_edges()
+	_new_flow()
+	var err := await flow.join_online(code2, "")
+	if not err.is_empty():
+		return _fail("join room 2: " + err)
+	if not await _wait(func() -> bool: return _screen() == "Lobby"):
+		return _fail("never reached room 2's lobby")
+	_event("room2_joined")
+	var left := func() -> bool: return _screen() == "Multiplayer" and app.has_modal()
+	if not await _wait(left, 60.0):
+		return _fail("host departure was not reported (screen=%s)" % _screen())
+	var why := OnlineFlow.last_abort
+	if why != "NET_HOST_LEFT":
+		return _fail("host departure reported as %s" % why)
+	_event("host_left_reported")
+	return true
+
+
+## Joins expecting the relay to refuse with `expected`.
+func _refused(code: String, password: String, expected: String) -> bool:
+	_new_flow()
+	var err := await flow.join_online(code, password)
+	if not err.is_empty():
+		return _fail("join_online(%s) returned %s immediately" % [code, err])
+	var back := func() -> bool: return _screen() == "Multiplayer" and app.has_modal()
+	if not await _wait(back, 30.0):
+		return _fail("no refusal for %s (screen=%s)" % [code, _screen()])
+	if OnlineFlow.last_abort != expected:
+		return _fail("expected %s, got %s" % [expected, OnlineFlow.last_abort])
+	app.close_all_modals()
+	await get_tree().create_timer(0.5).timeout
 	return true

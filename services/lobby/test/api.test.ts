@@ -94,7 +94,7 @@ test("rooms: create, join by code, password, full, started, reconnect, close", a
   const ownerTicket = verifyTicket(created.json.ticket as string, cfg.ticketSecret, roomId, clock);
   assert.equal(ownerTicket?.uid, owner.id);
   assert.equal(ownerTicket?.own, true, "the game server learns the room owner from the signed ticket");
-  assert.equal((await call("POST", "/v1/rooms", { map_id: "silent_school", difficulty_id: "normal" }, owner.token)).json.error, "MAP_UNAVAILABLE");
+  assert.equal((await call("POST", "/v1/rooms", { map_id: "no_such_map", difficulty_id: "normal" }, owner.token)).json.error, "MAP_UNAVAILABLE");
 
   const p2 = await guest("Second");
   assert.equal((await call("POST", "/v1/rooms/join", { code: "12a456" }, p2.token)).json.error, "CODE_FORMAT");

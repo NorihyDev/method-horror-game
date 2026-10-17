@@ -6,6 +6,16 @@ dates are ISO 8601.
 ## [Unreleased]
 
 ### Added
+- **Online co-op over the internet** through a relay on Cloudflare (Worker +
+  one Durable Object per room, free plan, secure WebSockets), deployed.
+  - The room creator's device hosts the match, and others join with a
+    6-digit code from any network: 2–4 players, optional password.
+  - The relay validates membership, roles, sizes and rates. Guests rejoin
+    their slot after a drop, and the room ends explicitly if its creator
+    leaves.
+  - Online matches award no coins.
+  - Verified with 20 protocol checks and two Godot clients through the
+    deployed relay.
 - Godot 4.7.2-stable project (Mobile renderer), METHOD theme, four focused
   autoload services, atomic checksummed saves with backups and migrations.
 - Procedural audio (74 sounds/loops) and texture (11 surfaces) generators with
@@ -54,6 +64,19 @@ dates are ISO 8601.
 - Map unlocks in order: offline per device, online verified by the lobby
   service, which also limits in-lobby map changes to the owner's unlocks.
 - The shop can use the verified online wallet with idempotent purchases.
+- *The Silent School*: classrooms, a staff-room PA and music-room chimes; a
+  music box to find by ear (the wing key lies beside it), a seeded bell tune
+  played over the PA and back on the chimes to open a tuned lock, bolt
+  cutters for the chained doors. The Headmistress cannot move while someone
+  looks at her in light.
+- *METHOD Facility*, the finale: card door, maglock release, power cells,
+  cell monitors + trial protocol keypad and a freight-lift hold-out. Subject
+  Zero hunts by sound in the dark and gains sight when the generator runs.
+  The story's letters are explained.
+- Enemy profile rules (frozen while watched, runtime profile swap), two rig
+  styles, 19 new procedural sounds with captions, new surfaces, school and
+  laboratory props, wing key and bolt cutters, repeatable consoles, a lift
+  style for the hold-out car.
 - Frame-time benchmark for device profiling (development builds): per-map
   frame times, GPU/CPU/script/physics cost, draw calls and memory, saved as
   JSON and printed to the log.
@@ -70,6 +93,9 @@ dates are ISO 8601.
   Lineman's breathing had none. The ward monitors' fast beeping is now
   captioned too.
 - Locked-map reasons no longer run past the map card.
+- METHOD files found in The Black Ward and Last Train were counted but could
+  not be read on the progress screen and had no text; every map's files are
+  now listed and written in EN and FR.
 - Multiplayer: a client could send Ready before its connection existed;
   server-side leaves, kicks and flood disconnects did not mark players away.
 - The house's basement cage gate and door materials were never applied.

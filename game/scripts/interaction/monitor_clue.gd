@@ -9,6 +9,10 @@ const NEAR_ENEMY := 9.0
 ## Closeness (0..1) from which the beeping counts as fast.
 const FAST_BEEP := 0.5
 
+## Screen caption and examine text: ward beds by default, facility cells.
+@export var unit_label := "MONITOR_UNIT_BED"
+@export var examine_key := "MONITOR_EXAMINE"
+
 var powered := false
 var _screen_mat: StandardMaterial3D
 var _label: Label3D
@@ -56,7 +60,7 @@ func set_powered(on: bool) -> void:
 func _refresh() -> void:
 	var digit := int(state.get("digit", -1))
 	_label.visible = powered and digit >= 0
-	_label.text = "BED %d\n♥ %d" % [int(state.get("bed", 0)), digit]
+	_label.text = "%s %d\n♥ %d" % [tr(unit_label), int(state.get("bed", 0)), digit]
 	_screen_mat.albedo_color = Color(0.02, 0.12, 0.06) if powered else Color(0.02, 0.04, 0.03)
 	_screen_mat.emission = _screen_mat.albedo_color
 	_screen_mat.emission_energy_multiplier = 1.5 if powered else 0.0
@@ -68,7 +72,7 @@ func client_intercept(_pid: int, _sub: int) -> bool:
 	if not powered:
 		match_ctrl.notified.emit(tr("MONITOR_DARK"))
 	else:
-		match_ctrl.notified.emit(tr("MONITOR_EXAMINE") % [int(state.get("bed", 0)), int(state.get("digit", -1))])
+		match_ctrl.notified.emit(tr(examine_key) % [int(state.get("bed", 0)), int(state.get("digit", -1))])
 	return true
 
 

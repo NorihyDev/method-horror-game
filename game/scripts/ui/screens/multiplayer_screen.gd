@@ -1,9 +1,10 @@
 extends Screen
-## Multiplayer entry: private online rooms (lobby service + dedicated server)
-## and the clearly separated LAN development mode. Every option either works
-## or explains why it is unavailable; nothing pretends to connect.
+## Multiplayer entry: private online rooms (over the internet, through the
+## METHOD relay; the room creator's device hosts the match) and the clearly
+## separated LAN development mode. Every option either works or explains why
+## it is unavailable; nothing pretends to connect.
 
-const PLAYER_COUNTS := [2, 3, 4, 5, 6]
+const PLAYER_COUNTS := [2, 3, 4]
 
 var _map_id := "house"
 var _diff_id := "normal"
@@ -46,7 +47,7 @@ func _online_column() -> Control:
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.size_flags_stretch_ratio = 1.3
 	v.add_child(UI.caption("MP_ONLINE"))
-	var unavailable := LobbyClient.availability_for(LobbyClient.configured_url())
+	var unavailable := "" if RelayClient.is_configured() else "MP_ONLINE_NOT_CONFIGURED"
 	if not unavailable.is_empty():
 		v.add_child(UI.disabled_button("MP_CREATE", unavailable, 360))
 		v.add_child(UI.disabled_button("MP_JOIN", unavailable, 360))
@@ -58,8 +59,9 @@ func _online_column() -> Control:
 	cv.add_child(UI.label("MP_CREATE", ThemeFactory.FONT_BODY + 2))
 	var maps: Array = []
 	var map_labels: Array = []
+	# The room creator hosts the match, so it offers what they have unlocked.
 	for m in Session.maps:
-		if m.is_playable() and not m.is_tutorial:
+		if m.is_playable() and not m.is_tutorial and Session.is_map_unlocked(String(m.id)):
 			maps.append(String(m.id))
 			map_labels.append(tr(m.title_key))
 	cv.add_child(
@@ -85,7 +87,7 @@ func _online_column() -> Control:
 			"MP_MAX_PLAYERS_TIP"
 		)
 	)
-	_create_password = _line_edit("MP_PASSWORD_OPTIONAL", 64, true)
+	_create_password = _line_edit("MP_PASSWORD_OPTIONAL", 32, true)
 	cv.add_child(UI.row("MP_PASSWORD", _create_password, "MP_PASSWORD_TIP"))
 	var create_btn := UI.button("MP_CREATE", _on_create, true, 280)
 	create_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -102,7 +104,7 @@ func _online_column() -> Control:
 	_code.text_changed.connect(_on_code_changed)
 	_code.text_submitted.connect(func(_t: String) -> void: _on_join())
 	jv.add_child(UI.row("MP_CODE", _code))
-	_join_password = _line_edit("MP_PASSWORD_IF_SET", 64, true)
+	_join_password = _line_edit("MP_PASSWORD_IF_SET", 32, true)
 	jv.add_child(UI.row("MP_PASSWORD", _join_password))
 	var join_btn := UI.button("MP_JOIN", _on_join, false, 280)
 	join_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -185,10 +187,10 @@ func _on_create() -> void:
 	if _busy:
 		return
 	var password := _create_password.text
-	if not password.is_empty() and (password.length() < 4 or password.length() > 64):
+	if not password.is_empty() and (password.length() < 4 or password.length() > 32 or not _printable(password)):
 		app.alert("MP_ERROR_TITLE", tr("NET_PASSWORD_INVALID"))
 		return
-	_set_busy(true, "MP_STATUS_SIGNING_IN")
+	_set_busy(true, "MP_STATUS_CREATING")
 	var flow := _flow()
 	var err := await flow.create_online(_map_id, _diff_id, _max_players, password)
 	_finish_attempt(flow, err)
@@ -201,10 +203,19 @@ func _on_join() -> void:
 	if code.length() != 6 or not code.is_valid_int():
 		app.alert("MP_ERROR_TITLE", tr("NET_CODE_FORMAT"))
 		return
-	_set_busy(true, "MP_STATUS_SIGNING_IN")
+	_set_busy(true, "MP_STATUS_JOINING")
 	var flow := _flow()
 	var err := await flow.join_online(code, _join_password.text)
 	_finish_attempt(flow, err)
+
+
+## Room passwords travel in the connection URL: printable ASCII only.
+static func _printable(text: String) -> bool:
+	for i in text.length():
+		var c := text.unicode_at(i)
+		if c < 32 or c > 126:
+			return false
+	return true
 
 
 func _on_lan_host() -> void:

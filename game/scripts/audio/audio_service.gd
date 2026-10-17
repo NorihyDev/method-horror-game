@@ -45,6 +45,23 @@ const CAPTIONS := {
 	"train_arrive": "CAP_TRAIN_ARRIVING",
 	"signal_bell": "CAP_ALARM_BELL",
 	"pa_chime": "CAP_PA",
+	"music_box_loop": "CAP_MUSIC_BOX",
+	"chime_1": "CAP_CHIME_1",
+	"chime_2": "CAP_CHIME_2",
+	"chime_3": "CAP_CHIME_3",
+	"chime_4": "CAP_CHIME_4",
+	"chime_wrong": "CAP_CHIME_WRONG",
+	"headmistress_breath_loop": "CAP_SLOW_BREATHING",
+	"headmistress_step": "CAP_HEELS",
+	"headmistress_chalk": "CAP_CHALK",
+	"headmistress_hush": "CAP_HUSH",
+	"headmistress_scream": "CAP_SCREAM",
+	"subject_breath_loop": "CAP_RASPING",
+	"subject_step": "CAP_CHAIN_STEPS",
+	"subject_growl": "CAP_GROWL",
+	"subject_screech": "CAP_SCREECH",
+	"lift_call": "CAP_LIFT_MOTOR",
+	"lift_arrive": "CAP_LIFT_ARRIVING",
 }
 
 ## Looping emitters are re-captioned at most this often while audible.

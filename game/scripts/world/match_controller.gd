@@ -273,6 +273,7 @@ func perceivable_players() -> Array[Dictionary]:
 					"flashlight": bool(p.get("flashlight", false)),
 					"crouch": bool(p.get("crouch", false)),
 					"lit": map.is_lit_at(pos) if map else false,
+					"yaw": float(p.get("yaw", 0.0)),
 					"node": node,
 				}
 			)
