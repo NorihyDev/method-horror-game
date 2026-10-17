@@ -875,5 +875,22 @@
 	"TAPE_STATION_1": "Annexe de transit 03. Sujet Hollis, ancien cheminot. Séance douze.",
 	"TAPE_STATION_2": "Il dit que la lampe lui montre la vérité des gens. Hors du faisceau, dit-il, il n’y a rien qui vaille d’être vu.",
 	"TAPE_STATION_3": "Il écoute toujours les trains. Quand l’un d’eux passe, il s’arrête et l’attend comme un chien son maître.",
-	"TAPE_STATION_4": "Si vous entendez ceci : restez hors de sa lumière, et quand viendra le dernier train — ne le ratez pas."
+	"TAPE_STATION_4": "Si vous entendez ceci : restez hors de sa lumière, et quand viendra le dernier train — ne le ratez pas.",
+
+	"MAP_LOCKED_BY": "Verrouillé — échappez-vous de : %s pour débloquer",
+	"MAP_LOCKED_TIP": "Chaque lieu se débloque quand vous vous êtes échappé du précédent sur cet appareil.",
+	"NET_MAP_LOCKED": "En ligne, ce lieu se débloque après vous être échappé du précédent lors d’une partie en ligne.",
+
+	"SHOP_WALLET_LOCAL": "Cet appareil",
+	"SHOP_WALLET_ONLINE": "En ligne (vérifié)",
+	"SHOP_ONLINE_NOTE": "Les pièces en ligne se gagnent en parties en ligne et sont conservées par le service METHOD. Elles sont distinctes des pièces de cet appareil. Tout ce que vous possédez dans l’un ou l’autre portefeuille peut être porté.",
+	"SHOP_ONLINE_LOADING": "Vérification du portefeuille en ligne…",
+	"SHOP_ONLINE_BUYING": "Achat en cours…",
+	"SHOP_ONLINE_UNREACHABLE": "Le portefeuille en ligne est injoignable pour le moment.",
+	"SHOP_OWNED_OTHER": "Possédé (autre portefeuille)",
+	"SHOP_BUY_ONLINE": "Acheter en ligne pour %d",
+	"SHOP_CONFIRM_BODY_ONLINE": "Acheter %s pour %d pièces en ligne ? Le service METHOD enregistre l’achat.",
+	"NET_INSUFFICIENT_FUNDS": "Pas assez de pièces en ligne.",
+	"NET_ALREADY_OWNED": "Vous possédez déjà cet objet en ligne.",
+	"NET_ITEM_UNKNOWN": "Cet objet n’est pas vendu en ligne."
 }

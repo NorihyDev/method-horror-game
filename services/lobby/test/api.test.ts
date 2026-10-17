@@ -193,6 +193,35 @@ test("verified rewards are idempotent and purchases cannot overspend", async () 
   assert.equal((await call("GET", "/v1/wallet", undefined, owner.token)).json.balance, 125);
 });
 
+test("online map progression is verified by the server", async () => {
+  const p = await guest("Climber");
+  assert.equal(
+    (await call("POST", "/v1/rooms", { map_id: "black_ward", difficulty_id: "normal" }, p.token)).json.error,
+    "MAP_LOCKED",
+    "the ward is locked until the house is escaped online",
+  );
+  assert.deepEqual((await call("GET", "/v1/wallet", undefined, p.token)).json.unlocked_maps, ["house"]);
+  const house = await call("POST", "/v1/rooms", { map_id: "house", difficulty_id: "story" }, p.token);
+  assert.deepEqual(allocator.allocated.at(-1)?.allowedMaps, ["house"], "the game server only allows unlocked maps");
+  // A defeat does not unlock anything; an escape does.
+  await serverCall("/v1/internal/match-result", {
+    room_id: house.json.room_id, match_id: "aaaa0000bbbb1111", map_id: "house", difficulty_id: "story",
+    players: [{ user_id: p.id, escaped: false, optional_completed: 0 }],
+  });
+  assert.equal(
+    (await call("POST", "/v1/rooms", { map_id: "black_ward", difficulty_id: "normal" }, p.token)).json.error,
+    "MAP_LOCKED",
+  );
+  const house2 = await call("POST", "/v1/rooms", { map_id: "house", difficulty_id: "story" }, p.token);
+  await serverCall("/v1/internal/match-result", {
+    room_id: house2.json.room_id, match_id: "cccc2222dddd3333", map_id: "house", difficulty_id: "story",
+    players: [{ user_id: p.id, escaped: true, optional_completed: 0 }],
+  });
+  const ward = await call("POST", "/v1/rooms", { map_id: "black_ward", difficulty_id: "normal" }, p.token);
+  assert.equal(ward.status, 201, JSON.stringify(ward.json));
+  assert.deepEqual(allocator.allocated.at(-1)?.allowedMaps, ["house", "black_ward"]);
+});
+
 test("guest creation is rate limited per network source", async () => {
   let limited = false;
   for (let i = 0; i < 15; i++) {

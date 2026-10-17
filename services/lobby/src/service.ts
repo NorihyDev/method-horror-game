@@ -8,7 +8,7 @@ import type { Allocator } from "./servers.ts";
 import {
   hashPassword, newId, newRoomCode, newToken, normalizeName, sha256Hex, signTicket, validateName, verifyPassword,
 } from "./security.ts";
-import { CATALOG, DIFFICULTIES, PLAYABLE_MAPS, computeReward } from "./catalog.ts";
+import { CATALOG, DIFFICULTIES, MAP_PREREQUISITE, PLAYABLE_MAPS, computeReward } from "./catalog.ts";
 
 export class ApiError extends Error {
   status: number;
@@ -127,6 +127,8 @@ export class LobbyService {
     const difficultyId = String(body.difficulty_id ?? "");
     if (!PLAYABLE_MAPS.has(mapId)) throw new ApiError(400, "MAP_UNAVAILABLE");
     if (!DIFFICULTIES.has(difficultyId)) throw new ApiError(400, "DIFFICULTY_INVALID");
+    const unlocked = this.unlockedMaps(user.id);
+    if (!unlocked.includes(mapId)) throw new ApiError(403, "MAP_LOCKED");
     const maxPlayers = clampInt(body.max_players, 1, 6);
     let passwordHash: string | null = null;
     if (body.password !== undefined && body.password !== null && body.password !== "") {
@@ -158,7 +160,7 @@ export class LobbyService {
     let alloc;
     try {
       alloc = await this.allocator.allocate(
-        { roomId: id, code, mapId, difficultyId, maxPlayers }, (roomId) => this.onServerExit(roomId),
+        { roomId: id, code, mapId, difficultyId, maxPlayers, allowedMaps: unlocked }, (roomId) => this.onServerExit(roomId),
       );
     } catch {
       this.db.prepare("UPDATE rooms SET state = 'closed' WHERE id = ?").run(id);
@@ -243,16 +245,29 @@ export class LobbyService {
     return stale.length;
   }
 
+  /** Online progression: maps whose prerequisite this user has escaped (verified). */
+  unlockedMaps(userId: string): string[] {
+    const done = new Set(
+      (this.db.prepare("SELECT map_id FROM completions WHERE user_id = ?").all(userId) as { map_id: string }[]).map(
+        (r) => r.map_id,
+      ),
+    );
+    return [...PLAYABLE_MAPS].filter((m) => {
+      const prereq = MAP_PREREQUISITE[m];
+      return prereq === undefined || done.has(prereq);
+    });
+  }
+
   // --- Verified wallet -----------------------------------------------------------------
 
-  wallet(user: User): { balance: number; owned: string[]; ledger: unknown[] } {
+  wallet(user: User): { balance: number; owned: string[]; ledger: unknown[]; unlocked_maps: string[] } {
     const balance = this.balance(user.id);
     const owned = (this.db.prepare("SELECT item_id FROM owned_items WHERE user_id = ?").all(user.id) as { item_id: string }[])
       .map((r) => r.item_id);
     const ledger = this.db.prepare(
       "SELECT delta, reason, created_at FROM ledger WHERE user_id = ? ORDER BY id DESC LIMIT 50",
     ).all(user.id);
-    return { balance, owned, ledger };
+    return { balance, owned, ledger, unlocked_maps: this.unlockedMaps(user.id) };
   }
 
   purchase(user: User, rawItem: unknown, rawKey: unknown): { balance: number; owned: string[] } {

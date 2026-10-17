@@ -17,6 +17,7 @@ rules_script = ExtResource("3_rules")
 max_players = 6
 is_tutorial = false
 estimated_minutes = 22
+unlocked_by = &"house"
 preview_color = Color(0.15, 0.2, 0.22, 1)
 briefing_keys = PackedStringArray("BRIEF_WARD_1", "BRIEF_WARD_2", "BRIEF_WARD_3")
 base_escape_reward = 120

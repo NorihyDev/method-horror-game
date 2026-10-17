@@ -327,3 +327,48 @@ func test_downed_revive_cancel_and_bleed_out() -> void:
 		snet.mc.damage_player(a_pid)
 	assert_true(await _wait_for(func() -> bool: return anet.mc.is_finished()), "A's client sees the end")
 	assert_eq(snet.mc.state.result, "defeat")
+
+
+## New maps over the network: the client builds the same level, its enemy
+## puppet uses the map's profile, and map-specific state (monitors powered by
+## the ward's power flag, the station's ghost train) reaches clients.
+func test_new_maps_replicate() -> void:
+	for map_id in ["black_ward", "last_train"]:
+		_start_server()
+		var snet: NetBridge = server["net"]
+		snet.server_set_options(map_id, "normal")
+		assert_eq(str(snet.room["map_id"]), map_id, "owner can pick %s" % map_id)
+		var a := _join("user-aaaaaaaa", "Ann")
+		clients.append(a)
+		assert_true(await _wait_for(func() -> bool: return _has_event(a, "joined")), "joined %s room" % map_id)
+		var anet: NetBridge = a["net"]
+		anet.request_start()
+		assert_true(await _wait_for(func() -> bool: return _has_event(a, "begun"), 900), "%s match began" % map_id)
+		assert_eq(String(anet.mc.map_def.id), map_id, "client built the same map")
+		# Force the enemy in now and check the client's puppet.
+		snet.mc.set("_enemy_arrival_at", 0.0)
+		assert_true(
+			await _wait_for(func() -> bool: return not anet.mc.enemies.is_empty(), 600), "%s enemy replicated" % map_id
+		)
+		if not anet.mc.enemies.is_empty():
+			var puppet: Watcher = anet.mc.enemies[0]
+			var expected := "sister" if map_id == "black_ward" else "lineman"
+			assert_eq(puppet.profile.id, expected, "client puppet uses the %s profile" % expected)
+		if map_id == "black_ward":
+			snet.mc.set_flag("ward_power")
+			assert_true(
+				await _wait_for(func() -> bool: return (anet.mc.entities["monitor_1"] as MonitorClue).powered),
+				"monitors light up on the client"
+			)
+			assert_true(
+				int(anet.mc.state.entities["monitor_1"].get("digit", -1)) >= 0, "monitor readings are public state"
+			)
+		else:
+			snet.mc.set_entity_state("ghost_train", {"start": snet.mc.state.elapsed, "dir": 1})
+			assert_true(
+				await _wait_for(
+					func() -> bool: return float(anet.mc.state.entities["ghost_train"].get("start", -1.0)) >= 0.0
+				),
+				"ghost train pass reaches the client"
+			)
+		await after_each()

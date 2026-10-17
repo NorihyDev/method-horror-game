@@ -19,6 +19,9 @@ enum Status { PLAYABLE, COMING_LATER }
 @export_range(1, 6) var max_players: int = 6
 @export var is_tutorial: bool = false
 @export var estimated_minutes: int = 20
+## Map that must be escaped first (offline: on this device; online: verified
+## by the lobby service). Empty = available from the start.
+@export var unlocked_by: StringName = &""
 ## Preview tint used by the procedural map card.
 @export var preview_color: Color = Color(0.2, 0.18, 0.17)
 ## Translation keys shown on the loading/briefing screen.

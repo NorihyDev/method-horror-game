@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { MAP_REWARDS, PLAYABLE_MAPS } from "../src/catalog.ts";
+import { MAP_PREREQUISITE, MAP_REWARDS, PLAYABLE_MAPS } from "../src/catalog.ts";
 
 // The verified wallet pays from this service's table; the game shows rewards
 // from its map resources. They must never disagree.
@@ -25,6 +25,8 @@ test("reward table and playable maps mirror the game's map resources", () => {
     assert.equal(table.first, Number(field(text, "first_completion_bonus")), `${id} first-completion bonus`);
     assert.equal(table.optional, Number(field(text, "optional_objective_reward")), `${id} optional reward`);
     assert.equal(table.collectible, Number(field(text, "collectible_reward")), `${id} collectible reward`);
+    const prereq = field(text, "unlocked_by")?.replace(/^&"|"$/g, "");
+    assert.equal(MAP_PREREQUISITE[id], prereq, `${id} unlock prerequisite`);
   }
   assert.deepEqual([...PLAYABLE_MAPS].sort(), [...playable].sort(), "online map list matches the game");
 });

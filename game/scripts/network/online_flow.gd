@@ -112,6 +112,7 @@ func host_lan() -> String:
 	kind = Kind.LAN_HOST
 	net.host_name = Saves.display_name()
 	net.host_color = Saves.avatar_color_index()
+	net.allowed_maps = Session.unlocked_map_ids()
 	var err := net.host(
 		NetProtocol.LAN_PORT,
 		{"room_id": "lan", "map_id": "house", "difficulty_id": "normal", "max_players": LAN_MAX_PLAYERS - 1},

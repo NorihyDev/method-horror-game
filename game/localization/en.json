@@ -875,5 +875,22 @@
 	"TAPE_STATION_1": "Transit Annex 03. Subject Hollis, former lineman. Session twelve.",
 	"TAPE_STATION_2": "He says the lamp shows him the truth of people. Outside the beam, he says, there is nothing worth seeing.",
 	"TAPE_STATION_3": "He still listens for trains. When one passes, he stops and waits for it like a dog for its master.",
-	"TAPE_STATION_4": "If you are hearing this: stay out of his light, and when the last train comes — do not miss it."
+	"TAPE_STATION_4": "If you are hearing this: stay out of his light, and when the last train comes — do not miss it.",
+
+	"MAP_LOCKED_BY": "Locked — escape %s to unlock",
+	"MAP_LOCKED_TIP": "Each location opens once you escape the previous one on this device.",
+	"NET_MAP_LOCKED": "Online, this location opens after you escape the previous one in an online match.",
+
+	"SHOP_WALLET_LOCAL": "This device",
+	"SHOP_WALLET_ONLINE": "Online (verified)",
+	"SHOP_ONLINE_NOTE": "Online coins are earned in online matches and kept by the METHOD service. They are separate from this device's coins. Anything you own in either wallet can be worn.",
+	"SHOP_ONLINE_LOADING": "Checking your online wallet…",
+	"SHOP_ONLINE_BUYING": "Buying…",
+	"SHOP_ONLINE_UNREACHABLE": "The online wallet can't be reached right now.",
+	"SHOP_OWNED_OTHER": "Owned (other wallet)",
+	"SHOP_BUY_ONLINE": "Buy online for %d",
+	"SHOP_CONFIRM_BODY_ONLINE": "Buy %s for %d online coins? The METHOD service records the purchase.",
+	"NET_INSUFFICIENT_FUNDS": "Not enough online coins.",
+	"NET_ALREADY_OWNED": "You already own this online.",
+	"NET_ITEM_UNKNOWN": "That item isn't sold online."
 }

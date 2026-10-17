@@ -41,6 +41,9 @@ var local_player: PlayerController
 var ticket_secret := ""
 ## Seconds a disconnected player's slot is kept during a match.
 var reconnect_window := NetProtocol.RECONNECT_WINDOW
+## Maps the room may switch to (the owner's unlocks; set by the lobby for
+## online rooms, by local progress for LAN). Empty = every playable map.
+var allowed_maps: PackedStringArray = []
 var expected_room_id := ""
 ## Display name / color of a LAN host's own player.
 var host_name := ""
@@ -373,6 +376,7 @@ func _publish_room() -> void:
 		)
 	room["members"] = members
 	room["owner_pid"] = _owner_pid
+	room["allowed_maps"] = allowed_maps
 	room["phase"] = _phase
 	room_updated.emit(room)
 	_rpc_all("_s_room", [room])
@@ -400,6 +404,8 @@ func server_set_options(map_id: Variant, difficulty_id: Variant) -> void:
 		return
 	var def := Session.map_def(map_id)
 	if def == null or not def.is_playable() or def.is_tutorial:
+		return
+	if not allowed_maps.is_empty() and not allowed_maps.has(map_id):
 		return
 	if Session.difficulty(difficulty_id) == null or not def.supported_difficulties.has(StringName(difficulty_id)):
 		return

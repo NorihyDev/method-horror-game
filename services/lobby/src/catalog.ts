@@ -27,6 +27,12 @@ export const DIFFICULTY_MULTIPLIER: Record<string, number> = {
 };
 
 export const PLAYABLE_MAPS = new Set(Object.keys(MAP_REWARDS));
+
+/** Map that must be escaped (online, verified) before a room can use this one. */
+export const MAP_PREREQUISITE: Record<string, string> = {
+  black_ward: "house",
+  last_train: "black_ward",
+};
 export const DIFFICULTIES = new Set(Object.keys(DIFFICULTY_MULTIPLIER));
 
 export interface PlayerOutcome {

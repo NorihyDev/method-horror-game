@@ -17,6 +17,7 @@ rules_script = ExtResource("3_rules")
 max_players = 6
 is_tutorial = false
 estimated_minutes = 24
+unlocked_by = &"black_ward"
 preview_color = Color(0.12, 0.13, 0.18, 1)
 briefing_keys = PackedStringArray("BRIEF_TRAIN_1", "BRIEF_TRAIN_2", "BRIEF_TRAIN_3")
 base_escape_reward = 140
