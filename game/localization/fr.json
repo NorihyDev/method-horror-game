@@ -892,5 +892,12 @@
 	"SHOP_CONFIRM_BODY_ONLINE": "Acheter %s pour %d pièces en ligne ? Le service METHOD enregistre l’achat.",
 	"NET_INSUFFICIENT_FUNDS": "Pas assez de pièces en ligne.",
 	"NET_ALREADY_OWNED": "Vous possédez déjà cet objet en ligne.",
-	"NET_ITEM_UNKNOWN": "Cet objet n’est pas vendu en ligne."
+	"NET_ITEM_UNKNOWN": "Cet objet n’est pas vendu en ligne.",
+
+	"SET_RUN_BENCH": "Lancer le test de performance",
+	"SET_BENCH_NOTE": "Version de développement : parcourt chaque lieu jouable avec les réglages actuels pendant environ une minute et enregistre les temps d’image pour le profilage.",
+	"SET_BENCH_CONFIRM": "Le test prend environ une minute par lieu et revient au menu principal. Le lancer maintenant ?",
+	"BENCH_RUNNING": "Test de performance en cours…",
+	"BENCH_DONE": "Résultats du test de performance",
+	"BENCH_SAVED": "Rapport complet enregistré dans : %s"
 }

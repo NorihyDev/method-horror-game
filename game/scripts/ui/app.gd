@@ -20,6 +20,7 @@ const SCREEN_SCRIPTS := {
 	"profile": "res://scripts/ui/screens/profile_screen.gd",
 	"credits": "res://scripts/ui/screens/credits_screen.gd",
 	"touch_layout": "res://scripts/ui/screens/touch_layout_screen.gd",
+	"benchmark": "res://scripts/ui/screens/benchmark_screen.gd",
 }
 
 var world_root: Node3D
@@ -92,6 +93,9 @@ func _start() -> void:
 		return
 	if AppInfo.has_arg("--smoke"):
 		_run_smoke()
+		return
+	if AppInfo.has_arg("--bench"):
+		_run_bench()
 		return
 	if AppInfo.has_arg("--bot"):
 		var bot: Node = load("res://tests/e2e/online_bot.gd").new()
@@ -389,6 +393,21 @@ func safe_margins() -> Vector4:
 		maxf(0.0, screen.x - safe.end.x) * k.x,
 		maxf(0.0, screen.y - safe.end.y) * k.y
 	)
+
+
+## `--bench`: frame-time benchmark over every playable map, printed and saved
+## (needs a display; development builds only).
+func _run_bench() -> void:
+	if not Benchmark.allowed():
+		printerr("--bench is available in development builds only.")
+		get_tree().quit(1)
+		return
+	fade_in(0.01)
+	var bench := Benchmark.new()
+	bench.app = self
+	add_child(bench)
+	await bench.run()
+	get_tree().quit(0)
 
 
 ## Startup smoke check usable in exported builds (CI): builds the first map,

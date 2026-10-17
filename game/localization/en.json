@@ -892,5 +892,12 @@
 	"SHOP_CONFIRM_BODY_ONLINE": "Buy %s for %d online coins? The METHOD service records the purchase.",
 	"NET_INSUFFICIENT_FUNDS": "Not enough online coins.",
 	"NET_ALREADY_OWNED": "You already own this online.",
-	"NET_ITEM_UNKNOWN": "That item isn't sold online."
+	"NET_ITEM_UNKNOWN": "That item isn't sold online.",
+
+	"SET_RUN_BENCH": "Run performance benchmark",
+	"SET_BENCH_NOTE": "Development build: walks through every playable location at the current settings for about a minute and records frame times for profiling.",
+	"SET_BENCH_CONFIRM": "The benchmark takes about a minute per location and returns to the main menu. Run it now?",
+	"BENCH_RUNNING": "Benchmark running…",
+	"BENCH_DONE": "Benchmark results",
+	"BENCH_SAVED": "Full report saved to: %s"
 }

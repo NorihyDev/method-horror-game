@@ -49,9 +49,54 @@ in this file once picked.
 
 ## How to measure
 
+### Built-in benchmark (development builds)
+
+*Settings → Graphics → Run benchmark* (debug builds, from the main menu), or
+`godot --path game -- --bench` on desktop. For each playable map it builds the
+level at the current graphics settings, walks the patrol route with the enemy
+present for 20 s (power off for the first half, on for the second) and
+records:
+
+- frame time as the player gets it (p50/p95/p99, % of frames under 30 FPS):
+  this includes the frame cap and vsync;
+- the engine's per-frame cost, which shows headroom regardless of the cap:
+  GPU time and CPU render time (`viewport_get_measured_render_time_*`),
+  script time and physics time;
+- draw calls, primitives, video memory and static memory.
+
+The full report (device, GPU, OS, renderer, settings snapshot, per-map
+numbers) is saved to `user://bench/bench_<time>.json`. On Android that is
+`/data/data/com.method.horror/files/bench/` (pull with
+`adb shell run-as com.method.horror cat files/bench/<file>`), and the summary
+is also printed to logcat with the `BENCH` prefix.
+
+### Other tools
+
 - Desktop: run with `--print-fps` or the Godot profiler/monitors; F3 shows the
   dev inspector with FPS in debug builds.
 - Android: `adb shell dumpsys gfxinfo com.method.horror`, Android GPU Inspector,
   Godot's remote debugger (one-click deploy) for script/physics times.
 - Record frame-time percentiles (p50/p95/p99), memory, load time, APK size,
   draw calls and temperature in a table here per device and build.
+
+## Measurements
+
+### Desktop reference (not a phone)
+
+2026-10-17, laptop with an RTX 3050 Laptop GPU, Windows 11, Godot 4.7.2,
+Mobile renderer, 1280×720, *High* preset, 60 FPS cap. Useful only to compare
+maps and spot regressions; it says nothing about phone performance.
+
+| Map | Frame p95 | GPU avg (p95) | CPU render | Scripts | Physics | Draw calls | Primitives | VRAM |
+|---|---|---|---|---|---|---|---|---|
+| The Abandoned House | 16.7 ms (cap) | 2.56 ms (4.31) | 0.68 ms | 2.17 ms | 0.66 ms | 183 | 60 k | 114 MB |
+| The Black Ward | 16.7 ms (cap) | 2.35 ms (4.48) | 0.72 ms | 2.34 ms | 0.54 ms | 200 | 70 k | 118 MB |
+| Last Train | 16.7 ms (cap) | 2.30 ms (5.48) | 0.49 ms | 1.84 ms | 0.57 ms | 196 | 44 k | 120 MB |
+
+All three maps stay within the draw-call (≤ 250), triangle (≤ 300 k) and
+script-time (≤ 4 ms) budgets above on this run.
+
+### Phones
+
+None yet. Run the benchmark on each test phone at *Medium* and *Low* and add a
+row per device and build.

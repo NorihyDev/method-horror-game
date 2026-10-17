@@ -10,7 +10,7 @@ Exact state and next steps. Updated 2026-10-17.
 | 2. Solo vertical slice (*The Abandoned House*) | Done; desktop-verified; **phone hardware testing pending** |
 | 3. Multiplayer | Done and verified on one machine (in-process tests + multi-process end-to-end on an impaired link, also on GitHub's Linux CI). **Internet verification pending**: needs a deployed host ([deployment.md](deployment.md)) |
 | 4. Online economy + Maps 2 and 3 | Done: *The Black Ward*, *Last Train*, enemy profiles, map unlocks (offline + verified online), online shop |
-| 5. Refinement, accessibility, Android profiling, signing | Next |
+| 5. Refinement, accessibility, Android profiling, signing | In progress: benchmark tool done (desktop baseline in [performance.md](performance.md)) |
 | 6. Maps 4 and 5 | Later |
 
 Branches: `main` (milestones 1–3 core), `network/multiplayer` (milestone 3,
@@ -20,8 +20,10 @@ go-ahead.
 
 ## Verified (2026-10-17, Windows 11, Godot 4.7.2, Node 24.18)
 
-- `tools/check.sh`: 139 scripts compile. `tools/lint.sh`: clean.
-- `--test`: 93/93. `--smoke`: OK.
+- `tools/check.sh`: 142 scripts compile. `tools/lint.sh`: clean.
+- `--test`: 95/95. `--smoke`: OK.
+- `--bench` (desktop, 1280×720, High): all maps well inside the draw-call,
+  triangle and script budgets; see [performance.md](performance.md).
 - `services/lobby`: 18/18 tests, typecheck clean.
 - `npm run e2e`: passed repeatedly at the default impairment and at 300 ms
   RTT ±80 ms / 10% loss, including the online shop.
@@ -42,8 +44,8 @@ go-ahead.
 ## Milestone 5 plan
 
 1. **Android device pass:** install the debug APK on a real phone; run the
-   manual QA checklist ([testing.md](testing.md)); profile frame time on all
-   three maps; tune the Mobile preset (shadows, lights per room, particle
+   manual QA checklist ([testing.md](testing.md)); run *Settings → Graphics →
+   Run benchmark* at Medium and Low and record the result; tune the Mobile preset (shadows, lights per room, particle
    counts) to the 30 FPS baseline.
 2. **Accessibility:** screen-reader-friendly focus order audit, colour-blind
    check of every state that uses colour, caption coverage of every cue

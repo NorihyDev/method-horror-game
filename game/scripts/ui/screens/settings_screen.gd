@@ -89,6 +89,20 @@ func _render() -> void:
 	if cat == Settings.CAT_GAMEPLAY:
 		_content.add_child(UI.spacer(8))
 		_content.add_child(UI.para("SET_MP_NOTE", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT))
+	if cat == Settings.CAT_GRAPHICS and Benchmark.allowed() and not _in_game:
+		_content.add_child(UI.spacer(8))
+		_content.add_child(UI.para("SET_BENCH_NOTE", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT))
+		var bench := UI.button(
+			"SET_RUN_BENCH",
+			func() -> void:
+				app.confirm(
+					"SET_RUN_BENCH", "SET_BENCH_CONFIRM", "SET_RUN_BENCH", func() -> void: app.reset_to("benchmark")
+				),
+			false,
+			300
+		)
+		bench.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		_content.add_child(bench)
 	_content.add_child(UI.spacer(12))
 	var reset := UI.button(
 		"SET_RESET_CATEGORY",

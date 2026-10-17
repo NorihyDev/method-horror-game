@@ -54,6 +54,9 @@ dates are ISO 8601.
 - Map unlocks in order: offline per device, online verified by the lobby
   service, which also limits in-lobby map changes to the owner's unlocks.
 - The shop can use the verified online wallet with idempotent purchases.
+- Frame-time benchmark for device profiling (development builds): per-map
+  frame times, GPU/CPU/script/physics cost, draw calls and memory, saved as
+  JSON and printed to the log.
 
 ### Fixed
 - Multiplayer: a client could send Ready before its connection existed;
