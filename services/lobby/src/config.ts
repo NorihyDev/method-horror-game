@@ -8,6 +8,8 @@ export interface Config {
   ticketSecret: string;
   serverSecret: string;
   publicGameHost: string;
+  /** Added to a server's bind port to form the port clients dial (NAT/container mapping). */
+  publicGamePortOffset: number;
   protocolVersion: number;
   ticketTtlSeconds: number;
   sessionTtlDays: number;
@@ -17,6 +19,8 @@ export interface Config {
   gamePath: string;
   serverPortMin: number;
   serverPortMax: number;
+  /** Seconds a dropped player keeps their slot in a running match (5–300). */
+  serverReconnectWindow: number;
   lobbyUrlForServers: string;
   trustProxy: boolean;
   production: boolean;
@@ -47,15 +51,17 @@ export function loadConfig(overrides: Partial<Config> = {}): Config {
     ticketSecret: secret("METHOD_TICKET_SECRET", production),
     serverSecret: secret("METHOD_SERVER_SECRET", production),
     publicGameHost: process.env.PUBLIC_GAME_HOST ?? "127.0.0.1",
+    publicGamePortOffset: int("PUBLIC_GAME_PORT_OFFSET", 0),
     protocolVersion: int("METHOD_PROTOCOL_VERSION", 1),
     ticketTtlSeconds: int("TICKET_TTL_SECONDS", 300),
     sessionTtlDays: int("SESSION_TTL_DAYS", 30),
     roomIdleMinutes: int("ROOM_IDLE_MINUTES", 15),
     spawnServers: (process.env.SPAWN_LOCAL_SERVERS ?? "0") === "1",
     godotBin: process.env.GODOT_BIN ?? "godot",
-    gamePath: process.env.GAME_PATH ?? "../../game",
+    gamePath: process.env.GAME_PATH ?? "../../game", // "" = exported server binary
     serverPortMin: int("SERVER_PORT_MIN", 24600),
     serverPortMax: int("SERVER_PORT_MAX", 24699),
+    serverReconnectWindow: int("SERVER_RECONNECT_WINDOW", 60),
     lobbyUrlForServers: process.env.LOBBY_URL_FOR_SERVERS ?? "http://127.0.0.1:8787",
     trustProxy: (process.env.TRUST_PROXY ?? "0") === "1",
     production,

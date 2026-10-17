@@ -51,6 +51,55 @@ jobs:
         if: always()
         run: pkill -x godot || true
 
+  lobby:
+    name: Lobby service tests & typecheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: services/lobby
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: services/lobby/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  online-e2e:
+    name: Online end-to-end (lobby + dedicated server + 2 clients)
+    needs: [godot, lobby]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Cache Godot download
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cache/godot-dl
+          key: godot-${{ hashFiles('tools/godot-version.txt', 'tools/ci/install_godot.sh') }}
+      - name: Install pinned Godot (SHA-512 verified)
+        run: ./tools/ci/install_godot.sh
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: services/lobby/package-lock.json
+      - name: Install lobby dependencies
+        working-directory: services/lobby
+        run: npm ci
+      - name: Import project
+        run: timeout 600 godot --headless --path game --import
+      - name: Create, join, play, reconnect and record results across processes
+        working-directory: services/lobby
+        run: GODOT_BIN="$(command -v godot)" timeout 600 npm run e2e
+      - name: Clean up stray Godot processes
+        if: always()
+        run: pkill -x godot || true
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-24.04

@@ -38,6 +38,9 @@ export interface SpawnerOptions {
   serverSecret: string;
   lobbyUrl: string;
   maxServers?: number;
+  reconnectWindow?: number;
+  /** Clients dial bindPort + publicPortOffset (port forwarding / container mapping). */
+  publicPortOffset?: number;
 }
 
 export class LocalSpawner implements Allocator {
@@ -63,10 +66,12 @@ export class LocalSpawner implements Allocator {
       }
     }
     if (port < 0) throw new Error("NO_CAPACITY");
+    // An exported dedicated-server binary embeds the game: no --path then.
     const args = [
-      "--headless", "--path", resolve(this.opts.gamePath), "--",
+      "--headless", ...(this.opts.gamePath ? ["--path", resolve(this.opts.gamePath)] : []), "--",
       "--server", `--port=${port}`, `--room=${launch.roomId}`, `--code=${launch.code}`,
       `--map=${launch.mapId}`, `--difficulty=${launch.difficultyId}`, `--max-players=${launch.maxPlayers}`,
+      `--reconnect-window=${this.opts.reconnectWindow ?? 60}`,
     ];
     const child = spawn(this.opts.godotBin, args, {
       env: {
@@ -86,7 +91,7 @@ export class LocalSpawner implements Allocator {
       onExit(launch.roomId);
     });
     this.procs.set(launch.roomId, { port, child });
-    return { host: this.opts.publicHost, port };
+    return { host: this.opts.publicHost, port: port + (this.opts.publicPortOffset ?? 0) };
   }
 
   release(roomId: string): void {

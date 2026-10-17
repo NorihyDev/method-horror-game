@@ -73,7 +73,7 @@ func _ready() -> void:
 
 
 func _start() -> void:
-	for dev_arg in ["--test", "--autoshot", "--uishots"]:
+	for dev_arg in ["--test", "--autoshot", "--uishots", "--bot"]:
 		if AppInfo.has_arg(dev_arg) and not ResourceLoader.exists("res://tests/test_runner.gd"):
 			printerr("%s is a development option; tests/tools are not included in exported builds." % dev_arg)
 			get_tree().quit(1)
@@ -92,6 +92,10 @@ func _start() -> void:
 		return
 	if AppInfo.has_arg("--smoke"):
 		_run_smoke()
+		return
+	if AppInfo.has_arg("--bot"):
+		var bot: Node = load("res://tests/e2e/online_bot.gd").new()
+		add_child(bot)
 		return
 	if AppInfo.is_dedicated_server():
 		Session.start_dedicated_server()

@@ -20,6 +20,8 @@ const allocator: Allocator = cfg.spawnServers
       ticketSecret: cfg.ticketSecret,
       serverSecret: cfg.serverSecret,
       lobbyUrl: cfg.lobbyUrlForServers,
+      reconnectWindow: cfg.serverReconnectWindow,
+      publicPortOffset: cfg.publicGamePortOffset,
     })
   : new FixedAllocator(cfg.publicGameHost, cfg.serverPortMin);
 const service = new LobbyService(db, cfg, allocator);
