@@ -32,7 +32,7 @@ func build() -> void:
 	col.add_child(body)
 	# Maps
 	var maps_col := UI.vbox(10)
-	maps_col.custom_minimum_size.x = 520
+	maps_col.custom_minimum_size.x = 420
 	maps_col.add_child(UI.caption("SOLO_MAP"))
 	var list := UI.vbox(8)
 	for m in Session.maps:
@@ -42,14 +42,18 @@ func build() -> void:
 		list.add_child(b)
 	maps_col.add_child(UI.scroll(list))
 	body.add_child(maps_col)
-	# Details + difficulty
+	# Details + difficulty scroll; the start button stays pinned below them.
+	var side := UI.vbox(12)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(side)
 	var right := UI.vbox(12)
-	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_child(right)
+	side.add_child(UI.scroll(right))
 	_map_desc = UI.para("", ThemeFactory.FONT_BODY, ThemeFactory.TEXT_DIM)
 	right.add_child(_map_desc)
 	right.add_child(UI.caption("SOLO_DIFFICULTY"))
-	var diffs := UI.hbox(8)
+	var diffs := HFlowContainer.new()
+	diffs.add_theme_constant_override("h_separation", 8)
+	diffs.add_theme_constant_override("v_separation", 8)
 	for d in Session.difficulties:
 		var id := String(d.id)
 		var b := UI.button(d.title_key, func() -> void: _select_diff(id), false, 130)
@@ -59,17 +63,16 @@ func build() -> void:
 	right.add_child(diffs)
 	_diff_desc = UI.para("", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM)
 	right.add_child(_diff_desc)
-	right.add_child(UI.spacer(8, true))
 	_start = UI.button("SOLO_START", _on_start, true, 320)
 	_start.size_flags_horizontal = Control.SIZE_SHRINK_END
-	right.add_child(_start)
+	side.add_child(_start)
 	_select_map(_map_id)
 	_select_diff(_diff_id)
 
 
 func _map_card(m: MapDefinition) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(500, 92)
+	b.custom_minimum_size = Vector2(400, 92)
 	b.focus_mode = Control.FOCUS_ALL
 	b.toggle_mode = true
 	var h := UI.hbox(14)

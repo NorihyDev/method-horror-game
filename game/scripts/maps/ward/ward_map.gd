@@ -270,7 +270,8 @@ func _props() -> void:
 	PropFactory.counter(b, Vector3(20.68, 0, 18.4), -90, 2.0, true)
 	PropFactory.fridge(b, Vector3(20.6, 0, 16.6), -90)
 	b.room = "obscorr"
-	FacilityProps.waiting_chairs(b, Vector3(26.0, 0, 13.55), 180, 3)
+	# Against the north wall: in front of the rooms they blocked observation room B.
+	FacilityProps.waiting_chairs(b, Vector3(26.5, 0, 11.4), 0, 3)
 	FacilityProps.wheelchair(b, Vector3(29.0, 0, 11.8), -30)
 	b.room = "obs"
 	for x in [22.5, 25.5, 28.5]:
@@ -600,7 +601,7 @@ func _spawns() -> void:
 		"sp_obs_a_desk": Vector3(22.8, 0.78, 17.9),
 		"sp_obs_b_desk": Vector3(25.8, 0.78, 17.9),
 		"sp_obs_c_desk": Vector3(28.2, 0.78, 17.9),
-		"sp_obscorr_bench": Vector3(25.6, 0.5, 13.55),
+		"sp_obscorr_bench": Vector3(26.1, 0.5, 11.4),
 		"bt_reception": Vector3(13.4, 0.77, 6.0),
 		"bt_triage": Vector3(21.6, 0.94, 5.9),
 		"bt_maint": Vector3(29.2, 0.93, 3.9),

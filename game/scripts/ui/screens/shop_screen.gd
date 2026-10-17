@@ -62,13 +62,16 @@ func build() -> void:
 	col.add_child(body)
 	_list = UI.vbox(6)
 	var scroll := UI.scroll(_list)
-	scroll.custom_minimum_size.x = 520
+	scroll.custom_minimum_size.x = 440
 	body.add_child(scroll)
 	var preview := UI.panel(20)
 	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(preview)
+	# Details scroll on short screens; the buy/equip button stays visible.
+	var frame := UI.vbox(12)
+	preview.add_child(frame)
 	var pv := UI.vbox(12)
-	preview.add_child(pv)
+	frame.add_child(UI.scroll(pv))
 	pv.add_child(UI.caption("SHOP_PREVIEW"))
 	var stage := Control.new()
 	stage.custom_minimum_size = Vector2(300, 160)
@@ -86,7 +89,7 @@ func build() -> void:
 	_preview_desc = UI.para("", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM)
 	pv.add_child(_preview_desc)
 	_action = UI.button("", _on_action, true, 260)
-	pv.add_child(_action)
+	frame.add_child(_action)
 	_switch(Source.LOCAL)
 
 

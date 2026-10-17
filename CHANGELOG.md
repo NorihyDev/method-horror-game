@@ -84,6 +84,16 @@ dates are ISO 8601.
   names and focus on every menu screen, and caption coverage of every cue.
 
 ### Fixed
+- A crate stood in the house's garage doorway, so a player could not enter the
+  garage, and through it the utility room, the stairwell and the basement.
+  The waiting chairs in The Black Ward's observation corridor blocked
+  observation room B's door. Both moved; a new test walks every map with the
+  player's own collision shape.
+- The lobby's Ready / Start buttons could be cut off at the bottom of the
+  screen, and the Multiplayer, Solo and Shop screens had buttons off screen
+  at larger interface scales. Their main buttons are now pinned on screen,
+  and columns scroll or wrap on narrow screens. Create room and Join with
+  code are tabs.
 - Faint informational text (notes, locked-map reasons, hints) and red status
   text now meet WCAG AA contrast; disabled controls keep the dim tone.
 - Settings sliders, toggles and map cards had no screen-reader name; sliders

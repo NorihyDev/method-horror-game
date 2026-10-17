@@ -16,6 +16,14 @@ var _lan_address: LineEdit
 var _status: Label
 var _actions: Array[Button] = []
 var _busy := false
+## Create and Join are tabs: one compact panel at a time fits any screen.
+var _create_panel: Control
+var _join_panel: Control
+var _tab_create: Button
+var _tab_join: Button
+## The active tab's main button, pinned under the scrolling content.
+var _main_action: Button
+var _create_mode := true
 
 
 func build() -> void:
@@ -33,30 +41,49 @@ func build() -> void:
 	top.add_child(t)
 	col.add_child(top)
 	col.add_child(UI.accent_bar())
-	var body := UI.hbox(32)
+	# The two columns sit side by side when they fit and wrap underneath each
+	# other on narrow windows or large interface scales.
+	var body := HFlowContainer.new()
+	body.add_theme_constant_override("h_separation", 32)
+	body.add_theme_constant_override("v_separation", 24)
 	var scroll := UI.scroll(body)
 	col.add_child(scroll)
 	body.add_child(_online_column())
 	body.add_child(_lan_column())
+	var footer := UI.hbox(12)
 	_status = UI.label("", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM)
-	col.add_child(_status)
+	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_status.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	footer.add_child(_status)
+	if _main_action:
+		footer.add_child(_main_action)
+	col.add_child(footer)
 
 
 func _online_column() -> Control:
 	var v := UI.vbox(10)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.size_flags_stretch_ratio = 1.3
+	v.custom_minimum_size.x = 540
 	v.add_child(UI.caption("MP_ONLINE"))
 	var unavailable := "" if RelayClient.is_configured() else "MP_ONLINE_NOT_CONFIGURED"
 	if not unavailable.is_empty():
 		v.add_child(UI.disabled_button("MP_CREATE", unavailable, 360))
 		v.add_child(UI.disabled_button("MP_JOIN", unavailable, 360))
 		return v
+	var tabs := UI.hbox(8)
+	_tab_create = UI.button("MP_CREATE", func() -> void: _show_tab(true), false, 200)
+	_tab_join = UI.button("MP_JOIN", func() -> void: _show_tab(false), false, 200)
+	for b: Button in [_tab_create, _tab_join]:
+		b.toggle_mode = true
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tabs.add_child(b)
+	v.add_child(tabs)
 	# Create
 	var create := UI.panel(18)
+	_create_panel = create
 	var cv := UI.vbox(10)
 	create.add_child(cv)
-	cv.add_child(UI.label("MP_CREATE", ThemeFactory.FONT_BODY + 2))
 	var maps: Array = []
 	var map_labels: Array = []
 	# The room creator hosts the match, so it offers what they have unlocked.
@@ -89,16 +116,12 @@ func _online_column() -> Control:
 	)
 	_create_password = _line_edit("MP_PASSWORD_OPTIONAL", 32, true)
 	cv.add_child(UI.row("MP_PASSWORD", _create_password, "MP_PASSWORD_TIP"))
-	var create_btn := UI.button("MP_CREATE", _on_create, true, 280)
-	create_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
-	cv.add_child(create_btn)
-	_actions.append(create_btn)
 	v.add_child(create)
 	# Join
 	var join := UI.panel(18)
+	_join_panel = join
 	var jv := UI.vbox(10)
 	join.add_child(jv)
-	jv.add_child(UI.label("MP_JOIN", ThemeFactory.FONT_BODY + 2))
 	_code = _line_edit("MP_CODE_PLACEHOLDER", 6)
 	_code.add_theme_font_size_override("font_size", ThemeFactory.FONT_H2)
 	_code.text_changed.connect(_on_code_changed)
@@ -106,18 +129,34 @@ func _online_column() -> Control:
 	jv.add_child(UI.row("MP_CODE", _code))
 	_join_password = _line_edit("MP_PASSWORD_IF_SET", 32, true)
 	jv.add_child(UI.row("MP_PASSWORD", _join_password))
-	var join_btn := UI.button("MP_JOIN", _on_join, false, 280)
-	join_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
-	jv.add_child(join_btn)
-	_actions.append(join_btn)
 	v.add_child(join)
 	v.add_child(UI.para("MP_GUEST_NOTE", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT))
+	_main_action = UI.button("MP_CREATE", _on_main_action, true, 280)
+	_actions.append(_main_action)
+	_show_tab(true)
 	return v
+
+
+func _on_main_action() -> void:
+	if _create_mode:
+		_on_create()
+	else:
+		_on_join()
+
+
+func _show_tab(create: bool) -> void:
+	_create_mode = create
+	_create_panel.visible = create
+	_join_panel.visible = not create
+	_tab_create.set_pressed_no_signal(create)
+	_tab_join.set_pressed_no_signal(not create)
+	_main_action.text = "MP_CREATE" if create else "MP_JOIN"
 
 
 func _lan_column() -> Control:
 	var v := UI.vbox(10)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.custom_minimum_size.x = 420
 	v.add_child(UI.caption("MP_LAN"))
 	var p := UI.panel(18)
 	var pv := UI.vbox(10)

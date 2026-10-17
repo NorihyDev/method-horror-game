@@ -11,10 +11,15 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(_out)
 	app = Session.app
 	app.fade_in(0.01)
+	Settings.set_value("ui_scale", float(AppInfo.arg_value("--ui-scale", str(Settings.f("ui_scale")))), false)
 	if not Saves.has_name():
 		Saves.set_display_name("Night Owl")
 	Saves.apply_local_reward("uishots-demo", 260, "demo")
 	await _wait(10)
+	if AppInfo.has_arg("--uishots-lobby"):
+		await _lobby_shots()
+		get_tree().quit(0)
+		return
 	if AppInfo.has_arg("--uishots-mp"):
 		await _multiplayer_shots()
 		get_tree().quit(0)
@@ -149,6 +154,42 @@ func _multiplayer_shots() -> void:
 	Session.finish_match(result)
 	await _wait(30)
 	await _shot("mp_06_results_online")
+
+
+## Multiplayer entry and lobby layouts (owner and guest view) at the current
+## window size and interface scale, for layout checks across resolutions.
+## Usage: godot --path game --resolution WxH -- --uishots=<dir> --uishots-lobby [--ui-scale=1.3]
+func _lobby_shots() -> void:
+	var scale := float(AppInfo.arg_value("--ui-scale", "1.0"))
+	Settings.set_value("ui_scale", scale, false)
+	app.reset_to("main_menu")
+	await _wait(20)
+	app.goto("multiplayer")
+	await _wait(15)
+	await _shot("lobby_01_multiplayer")
+	var flow := Session.ensure_online()
+	if not flow.host_lan().is_empty():
+		push_error("LAN host failed")
+		return
+	await _wait(20)
+	await _shot("lobby_02_owner")
+	# The same screen as a guest sees it (Ready instead of Start), with a full room.
+	var net := flow.net
+	var room := net.room.duplicate(true)
+	var members: Array = room.get("members", [])
+	for i in 3:
+		var m: Dictionary = (members[0] as Dictionary).duplicate()
+		m["pid"] = i + 2
+		m["name"] = ["Mara", "Jonas", "Ilse"][i]
+		m["ready"] = i == 0
+		m["owner"] = false
+		members.append(m)
+	room["members"] = members
+	net.my_pid = 3
+	app.current().call("_refresh", room)
+	await _wait(10)
+	await _shot("lobby_03_guest")
+	net.my_pid = 1
 
 
 func _screen(screen_name: String, file: String, frames: int = 12) -> void:

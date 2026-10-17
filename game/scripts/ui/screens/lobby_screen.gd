@@ -47,18 +47,24 @@ func on_enter(p: Dictionary) -> void:
 	top.add_child(trust)
 	col.add_child(top)
 	col.add_child(UI.accent_bar())
+	# Columns scroll; the ready/start bar below them is always on screen,
+	# whatever the window size or interface scale.
 	var body := UI.hbox(32)
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	col.add_child(body)
-	body.add_child(_left_column())
+	var left := UI.scroll(_left_column())
+	left.size_flags_stretch_ratio = 1.0
+	body.add_child(left)
 	body.add_child(_right_column())
+	col.add_child(UI.rule())
+	col.add_child(_footer())
 	_net.room_updated.connect(_refresh)
 	_refresh(_net.room)
 
 
 func _left_column() -> Control:
 	var v := UI.vbox(12)
-	v.custom_minimum_size.x = 440
+	v.custom_minimum_size.x = 360
 	if flow.is_lan():
 		v.add_child(UI.caption("LOBBY_LAN_ADDRESS"))
 		if _net.is_server():
@@ -112,17 +118,22 @@ func _right_column() -> Control:
 	v.add_child(head)
 	_members_box = UI.vbox(6)
 	v.add_child(UI.scroll(_members_box))
-	_start_why = UI.para("", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM)
-	v.add_child(_start_why)
+	return v
+
+
+## Start-condition text and the ready / start buttons: pinned under the columns.
+func _footer() -> Control:
 	var actions := UI.hbox(12)
-	actions.alignment = BoxContainer.ALIGNMENT_END
+	_start_why = UI.para("", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM)
+	_start_why.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_start_why.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	actions.add_child(_start_why)
 	_ready_btn = UI.button("LOBBY_READY", _toggle_ready, false, 220)
 	_ready_btn.toggle_mode = true
 	actions.add_child(_ready_btn)
 	_start_btn = UI.button("LOBBY_START", func() -> void: _net.request_start(), true, 260)
 	actions.add_child(_start_btn)
-	v.add_child(actions)
-	return v
+	return actions
 
 
 func _lan_addresses() -> PackedStringArray:

@@ -215,3 +215,53 @@ func test_looping_emitters_caption_while_audible() -> void:
 	root.queue_free()
 	AudioService._caption_cooldowns.clear()
 	await frames(1)
+
+
+## At the largest interface scale every button is either fully on screen or
+## inside a scroll area (the lobby's ready/start bar must never be cut off).
+func test_controls_stay_reachable_at_large_interface_scale() -> void:
+	var app: App = Session.app
+	var before := Settings.f("ui_scale")
+	var window := get_tree().root.size
+	get_tree().root.size = Vector2i(1280, 720)  # a landscape phone/desktop shape
+	Settings.set_value("ui_scale", 1.3, false)
+	await frames(2)
+	for screen_name in SCREENS:
+		var screen := app.reset_to(screen_name)
+		await frames(4)
+		if screen_name == "settings":
+			for tab in SETTINGS_TABS:
+				screen.set("_tab", tab)
+				screen.call("_render")
+				await frames(3)
+				_audit_fit(screen, "settings tab %d" % tab)
+		else:
+			_audit_fit(screen, screen_name)
+	var flow := Session.ensure_online()
+	assert_eq(flow.host_lan(), "", "LAN lobby opens")
+	await frames(6)
+	_audit_fit(app.current(), "lobby (owner)")
+	flow.leave()
+	Settings.set_value("ui_scale", before, false)
+	get_tree().root.size = window
+	await _clear(app)
+
+
+func _audit_fit(root: Node, where: String) -> void:
+	var view := root.get_viewport().get_visible_rect().grow(1.0)
+	var controls: Array[Control] = []
+	_collect(root, controls)
+	for c in controls:
+		var r := c.get_global_rect()
+		var scrolled := false
+		var p := c.get_parent()
+		while p:
+			if p is ScrollContainer:
+				scrolled = true
+				break
+			p = p.get_parent()
+		var label := "%s: %s '%s' at %s (view %s)" % [where, c.get_class(), _name_of(c), r, view.size]
+		if scrolled:
+			assert_true(r.position.x >= view.position.x and r.end.x <= view.end.x, label + " is cut off sideways")
+		else:
+			assert_true(view.encloses(r), label + " is off screen")

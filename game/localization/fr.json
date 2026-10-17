@@ -610,7 +610,7 @@
 	"MP_MAX_PLAYERS": "Joueurs",
 	"MP_MAX_PLAYERS_TIP": "Jusqu’à 4 joueurs. L’appareil du créateur fait tourner la partie pour tout le monde : gardez-le chargé et bien connecté.",
 	"MP_PASSWORD": "Mot de passe du salon",
-	"MP_PASSWORD_OPTIONAL": "Facultatif (4 à 64 caractères)",
+	"MP_PASSWORD_OPTIONAL": "Facultatif (4 à 32 caractères)",
 	"MP_PASSWORD_IF_SET": "Seulement si le salon en a un",
 	"MP_PASSWORD_TIP": "Un mot de passe distinct protège le salon même si quelqu’un devine le code.",
 	"MP_CODE": "Code du salon",

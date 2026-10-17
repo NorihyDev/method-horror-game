@@ -268,7 +268,8 @@ func _props() -> void:
 	PropFactory.workbench(b, Vector3(23.55, 0, 5.0), -90)
 	PropFactory.crate(b, Vector3(22.6, 0, 8.6), Vector3(0.8, 0.6, 0.8), 10)
 	PropFactory.crate(b, Vector3(22.7, 0.6, 8.5), Vector3(0.6, 0.5, 0.6), -8)
-	PropFactory.crate(b, Vector3(15.4, 0, 8.8), Vector3(0.9, 0.7, 0.7), 4)
+	# Kept clear of the hallway and utility doors (it used to block both).
+	PropFactory.crate(b, Vector3(21.6, 0, 9.4), Vector3(0.9, 0.7, 0.7), 4)
 	# Utility
 	b.room = "utility"
 	PropFactory.washer(b, Vector3(17.2, 0, 17.55), 180)

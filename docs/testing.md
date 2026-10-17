@@ -19,7 +19,7 @@ autoloads exist, uses isolated `test_*` save/settings files, prints one line per
 test and exits `0` (pass), `1` (failures) or `2` (240 s watchdog — a hang is a
 failure). `--filter=<substring>` selects files.
 
-### Coverage (114 Godot tests + 7 relay + 18 lobby tests + relay checks + 1 end-to-end run)
+### Coverage (116 Godot tests + 7 relay + 18 lobby tests + relay checks + 1 end-to-end run)
 
 | File | What it proves |
 |---|---|
@@ -42,6 +42,7 @@ failure). `--filter=<substring>` selects files.
 | `integration/test_school_playthrough.gd` | Full Silent School escape: chained doors, the music box seeded beside the wing key (and silenced), wing door, PA refused without power, main breaker, PA tune queued for the speakers and replayable, a plain scale refused on the chimes, the right tune releases the tuned office lock, bolt cutters cut the chain, escape; the Headmistress is held only when watched in light (torch beam or lit room), holds still even while hunting, and moves the moment the gaze leaves |
 | `integration/test_facility_playthrough.gd` | Full METHOD Facility escape: dead lift, card door, maglock release, lift refused without power, two cells start the generator, monitors + protocol give the code (wrong code first), lift called, hold-out, ride up; the shaft gate holds until arrival; Subject Zero ignores a lit player while blind and sees once the power returns |
 | `unit/test_objectives_and_solvability.gd` (Maps 4–5) | 300 seeds each solvable and deterministic; the school tune uses each bar once and is never a plain scale; the facility code equals the cell readings in protocol order; validators flag items placed behind their own locks |
+| `integration/test_map_reachability.gd` | Every map, every door open: with the player's own collision capsule on a 0.25 m grid (step height, fit between cells), a flood fill from the spawn reaches arm's length and line of sight of every item spot, interactable and patrol point. It found the two blocking props fixed on 2026-10-17 |
 | `integration/test_accessibility.gd` | Every text colour reaches WCAG 2.2 AA (4.5:1) on every surface, button text in every state too; every menu screen, every settings tab and the confirm dialog: each interactive control is at least 48 px (base resolution), has an accessible name for screen readers and can take keyboard/controller focus; every enemy cue has a caption in EN and FR; looping sounds (humming, trains, motors) caption while audible and not when far or stopped |
 | `unit/test_benchmark.gd` | Benchmark cost percentiles and the per-map summary line, including maps that report an error |
 | `integration/test_watcher.gd` | Never spawns near/in sight of players; hears loud noise and investigates; ignores inaudible noise; sees and chases a lit player in front; no vision through walls; telegraphed attack damages exactly once; checks the locker it saw you enter |
