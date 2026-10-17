@@ -769,6 +769,8 @@
 	"NOTE_ROSTER_B": "Observation wing, monitors only — do NOT open the cells.\n\nTonight's round: Bed %d, Bed %d, Bed %d, Bed %d.\n\nSecurity door code changes nightly: the last reading on each monitor, in round order.",
 	"NOTE_SEDATION_T": "Sedation log",
 	"NOTE_SEDATION_B": "Subject 11 (Sr. Agnes) — refused sedation again. Says the drugs make the ward 'too loud to think'.\n\nShe hums to cover the noise. When she stops humming, she is listening.\n\nWe moved the night staff to the observation wing.",
+	"NOTE_MORGUE_T": "Mortuary register (last page)",
+	"NOTE_MORGUE_B": "Drawers 1 to 12: occupied.\nDrawer 3: occupied. Occupied. Occupied.\n\nNight porter's note: drawer 3 was open again at the 2 a.m. round. The sheet was folded on the slab, neatly, the way the nurses fold them. There are wet footprints from the drawers to the ward door and none coming back.\n\nI have locked the morgue from the ward side. Whatever is in here is not leaving through me.",
 	"NOTE_ISOLATION_T": "Observation log — Subject 11",
 	"NOTE_ISOLATION_B": "Week 9 of auditory isolation. Bandages stay on.\n\nShe located a dropped pen across the room in under four seconds. She did not react to the flashlight test at all.\n\nI.V.: 'She no longer needs eyes. She needs us to be quiet.'",
 	"TAPE_WARD_1": "Annex 02, interview eleven. Sister, can you hear me from there?",

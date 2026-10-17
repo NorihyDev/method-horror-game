@@ -11,7 +11,7 @@ const FILE_IDS: PackedStringArray = [
 	"file_reception", "file_triage", "file_maint", "file_ward", "file_pharmacy", "file_obs"
 ]
 const BATTERY_SPAWNS: PackedStringArray = [
-	"bt_reception", "bt_triage", "bt_maint", "bt_ward", "bt_corridor", "bt_staff", "bt_pharmacy", "bt_obs"
+	"bt_reception", "bt_triage", "bt_maint", "bt_ward", "bt_corridor", "bt_staff", "bt_pharmacy", "bt_obs", "bt_morgue"
 ]
 const FILES_NEEDED := 3
 const BEDS := 4
@@ -76,6 +76,11 @@ func _solvability() -> void:
 		"sp_ward_cabinet",
 		"sp_bay_shelf",
 		"sp_corridor_trolley",
+		"sp_morgue_slab",
+		"sp_morgue_tray",
+		"sp_morgue_counter",
+		"sp_cold_shelf",
+		"sp_cold_crate",
 	]:
 		add_spawn(sp, "admissions")
 	for sp in ["sp_staff_table", "sp_staff_counter", "sp_pharmacy_shelf", "sp_pharmacy_fridge", "sp_gen_shelf"]:
@@ -93,13 +98,23 @@ func _solvability() -> void:
 			"sp_triage_cabinet",
 			"sp_maint_bench",
 			"sp_corridor_trolley",
-			"sp_bay_shelf"
+			"sp_bay_shelf",
+			"sp_morgue_slab",
+			"sp_cold_shelf",
 		]
 	)
 	add_slot(
 		"security_card",
 		"security_card",
-		["sp_staff_table", "sp_triage_bed", "sp_pharmacy_shelf", "sp_ward_bed_a", "sp_maint_shelf", "sp_staff_counter"]
+		[
+			"sp_staff_table",
+			"sp_triage_bed",
+			"sp_pharmacy_shelf",
+			"sp_ward_bed_a",
+			"sp_maint_shelf",
+			"sp_staff_counter",
+			"sp_morgue_tray",
+		]
 	)
 	add_slot(
 		"starter_relay",
@@ -110,7 +125,9 @@ func _solvability() -> void:
 			"sp_ward_bed_b",
 			"sp_pharmacy_fridge",
 			"sp_obs_b_desk",
-			"sp_reception_chairs"
+			"sp_reception_chairs",
+			"sp_cold_crate",
+			"sp_morgue_counter",
 		]
 	)
 

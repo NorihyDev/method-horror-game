@@ -9,6 +9,7 @@ extends MapBase
 ##   Staff corridor x13-16 z11-24 (staff card) | Security x16-21 z11-16 (keypad)
 ##   Staff room x16-21 z16-24 | Observation corridor x21-30 z11-14 (security card)
 ##   Observation rooms A/B/C x21-30 z14-19 | Cells x21-30 z19-24 (behind glass)
+##   Morgue x0-8 z24-31 (off the ward, one way in) | Cold store x8-13 z24-31
 
 const WardRules = preload("res://scripts/maps/ward/ward_rules.gd")
 const H := 3.0
@@ -63,6 +64,8 @@ func _rooms() -> void:
 	add_room("obs_b", AABB(Vector3(24, 0, 14), Vector3(3, H, 5)), "carpet")
 	add_room("obs_c", AABB(Vector3(27, 0, 14), Vector3(3, H, 5)), "carpet")
 	add_room("cells", AABB(Vector3(21, 0, 19), Vector3(9, H, 5)), "concrete")
+	add_room("morgue", AABB(Vector3(0, 0, 24), Vector3(8, H, 7)), "concrete")
+	add_room("coldstore", AABB(Vector3(8, 0, 24), Vector3(5, H, 7)), "concrete")
 
 
 func _shell() -> void:
@@ -74,8 +77,13 @@ func _shell() -> void:
 	b.wall_x(0, 16, 22, 0, H, "exterior", "ward_paint", [_win(18.2, 19.8)])
 	b.wall_x(0, 22, 30, 0, H, "exterior", "blocks", [_win(25.0, 27.0)])
 	# South (z=24).
-	b.wall_x(24, 0, 8, 0, H, "ward_paint", "exterior", [_win(2.0, 4.0), _win(5.0, 7.0)])
-	b.wall_x(24, 8, 13, 0, H, "tile_wall", "exterior")
+	b.wall_x(24, 0, 8, 0, H, "ward_paint", "tile_wall", [_win(2.0, 4.0), _doorway(5.4, 6.6)])
+	b.wall_x(24, 8, 13, 0, H, "tile_wall", "tile_wall")
+	# The morgue below the ward: its own outer walls.
+	b.wall_x(31, 0, 13, 0, H, "tile_wall", "exterior")
+	b.wall_z(0, 24, 31, 0, H, "exterior", "tile_wall")
+	b.wall_z(13, 24, 31, 0, H, "tile_wall", "exterior")
+	b.wall_z(8, 24, 31, 0, H, "tile_wall", "tile_wall", [_doorway(26.0, 27.2)])
 	b.wall_x(24, 13, 16, 0, H, "ward_tile", "exterior")
 	b.wall_x(24, 16, 21, 0, H, "ward_paint", "exterior")
 	b.wall_x(24, 21, 30, 0, H, "tile_wall", "exterior")
@@ -150,6 +158,8 @@ func _floors_and_ceilings() -> void:
 		["obscorr", 21, 11, 30, 14, "linoleum", "ceiling_panel"],
 		["obs", 21, 14, 30, 19, "carpet", "ceiling_panel"],
 		["cells", 21, 19, 30, 24, "tile", "ceiling"],
+		["morgue", 0, 24, 8, 31, "tile", "ceiling_panel"],
+		["coldstore", 8, 24, 13, 31, "concrete_floor", "concrete"],
 	]
 	for f in floors:
 		b.room = f[0]
@@ -179,8 +189,9 @@ func _outside() -> void:
 	var b := builder
 	b.room = "outside"
 	b.floor_rect(-6, -14, 36, 0, 0.0, "ground", 0.3)
-	b.floor_rect(-6, 24, 36, 30, 0.0, "ground", 0.3)
-	b.floor_rect(-6, 0, 0, 24, 0.0, "ground", 0.3)
+	b.floor_rect(-6, 31, 36, 37, 0.0, "ground", 0.3)
+	b.floor_rect(13, 24, 36, 31, 0.0, "ground", 0.3)
+	b.floor_rect(-6, 0, 0, 31, 0.0, "ground", 0.3)
 	b.floor_rect(30, 0, 36, 24, 0.0, "ground", 0.3)
 	# Invisible fence around the ambulance apron.
 	for wall in [
@@ -277,18 +288,14 @@ func _props() -> void:
 	for x in [22.5, 25.5, 28.5]:
 		PropFactory.table(b, Vector3(x, 0, 17.9), 0, 1.4, 0.6, "painted_wood")
 		PropFactory.chair(b, Vector3(x, 0, 17.0), 0)
+	_morgue_props(b)
 	b.room = "cells"
 	for x in [22.5, 25.5, 28.5]:
 		FacilityProps.hospital_bed(b, Vector3(x, 0, 22.5), 90)
 	PropFactory.debris(b, Vector3(25.5, 0, 21), 3.5, 8)
 	# Boarded south windows and the METHOD stencil over the observation glass.
 	b.room = "shell"
-	for w in [
-		[Vector3(3.0, 1.55, 24), true],
-		[Vector3(6.0, 1.55, 24), true],
-		[Vector3(0, 1.55, 15), false],
-		[Vector3(0, 1.55, 20), false]
-	]:
+	for w in [[Vector3(3.0, 1.55, 24), true], [Vector3(0, 1.55, 15), false], [Vector3(0, 1.55, 20), false]]:
 		var p: Vector3 = w[0]
 		var axis_x: bool = w[1]
 		var inward := Vector3(0, 0, -0.02) if axis_x else Vector3(0.02, 0, 0)
@@ -310,6 +317,45 @@ func _props() -> void:
 	sign_label.position = Vector3(8.1, 2.5, 4.0)
 	sign_label.rotation.y = PI / 2
 	lights_root.add_child(sign_label)
+
+
+func _morgue_props(b: GeoBuilder) -> void:
+	b.room = "morgue"
+	# A wall of body drawers along the far wall, one hanging open.
+	for col in 4:
+		for row in 3:
+			var c := Vector3(1.4 + col * 1.6, 0.45 + row * 0.75, 30.7)
+			var open := col == 2 and row == 0
+			b.box(c, Vector3(1.4, 0.68, 0.5), "metal", true)
+			b.box(c + Vector3(0, 0, -0.27 - (0.9 if open else 0.0)), Vector3(1.32, 0.6, 0.04), "metal_dark", false)
+			b.box(c + Vector3(0.45, 0.12, -0.31 - (0.9 if open else 0.0)), Vector3(0.18, 0.04, 0.05), "metal", false)
+	PropFactory.part(b, Vector3(4.6, 0, 29.75), 0, Vector3(0, 0.38, 0), Vector3(1.2, 0.05, 1.4), "metal", true)
+	PropFactory.part(b, Vector3(4.6, 0, 29.75), 0, Vector3(0, 0.44, 0.1), Vector3(0.5, 0.1, 1.1), "fabric")
+	# The examination slab, a covered shape on a gurney, a steel sink.
+	var slab := Vector3(3.2, 0, 27.0)
+	PropFactory.part(b, slab, 90, Vector3(0, 0.88, 0), Vector3(0.8, 0.08, 2.1), "metal", true)
+	PropFactory.part(b, slab, 90, Vector3(0, 0.43, 0), Vector3(0.25, 0.86, 0.25), "metal_dark")
+	PropFactory.part(b, slab, 90, Vector3(0, 0.95, 0.65), Vector3(0.45, 0.07, 0.6), "fabric")
+	FacilityProps.gurney(b, Vector3(6.8, 0, 27.6), 0)
+	PropFactory.part(b, Vector3(6.8, 0, 27.6), 0, Vector3(0, 0.98, -0.15), Vector3(0.48, 0.2, 1.3), "fabric")
+	PropFactory.part(b, Vector3(6.8, 0, 27.6), 0, Vector3(0, 1.02, 0.7), Vector3(0.3, 0.16, 0.25), "fabric")
+	PropFactory.counter(b, Vector3(0.42, 0, 26.6), 90, 1.6, true)
+	FacilityProps.iv_stand(b, Vector3(1.6, 0, 28.8))
+	PropFactory.debris(b, Vector3(4, 0, 27.5), 2.0, 6)
+	b.room = "coldstore"
+	PropFactory.shelf(b, Vector3(12.6, 0, 26.5), -90, 1.8, 2.0, 0.45, "metal_dark")
+	PropFactory.shelf(b, Vector3(10.5, 0, 30.6), 180, 1.8, 2.0, 0.45, "metal_dark")
+	PropFactory.crate(b, Vector3(9.0, 0, 30.2), Vector3(0.8, 0.6, 0.7), 6, "metal_dark")
+	FacilityProps.gurney(b, Vector3(10.4, 0, 27.0), 90)
+	PropFactory.part(b, Vector3(10.4, 0, 27.0), 90, Vector3(0, 0.98, 0), Vector3(0.5, 0.22, 1.6), "fabric_blue")
+	var tag := Label3D.new()
+	tag.text = "MORGUE — AUTHORISED STAFF ONLY\nNO VISITING AFTER LIGHTS-OUT"
+	tag.font_size = 30
+	tag.pixel_size = 0.0022
+	tag.modulate = Color(0.62, 0.12, 0.09)
+	tag.shaded = true
+	tag.position = Vector3(6.0, 2.55, 24.1)
+	lights_root.add_child(tag)
 
 
 # --- Lighting --------------------------------------------------------------------------------
@@ -337,6 +383,8 @@ func _lighting() -> void:
 		["obs_a", Vector3(22.5, H, 16.5)],
 		["obs_b", Vector3(25.5, H, 16.5)],
 		["obs_c", Vector3(28.5, H, 16.5)],
+		["morgue", Vector3(4, H, 27.5)],
+		["coldstore", Vector3(10.5, H, 27.5)],
 	]
 	for lp in strips:
 		var top: Vector3 = lp[1]
@@ -352,6 +400,8 @@ func _lighting() -> void:
 	add_lamp(Vector3(22.5, 2.6, 7.6), "maint", 0.6, Color(0.9, 0.12, 0.08), false, false, 5.0)
 	add_lamp(Vector3(14.5, 2.6, 17.5), "staffcorr", 0.5, Color(0.9, 0.12, 0.08), false, false, 5.0)
 	add_lamp(Vector3(27.5, 2.6, 11.4), "obscorr", 0.5, Color(0.9, 0.12, 0.08), false, false, 5.0)
+	# The cold store's fridge light never went off.
+	add_lamp(Vector3(12.5, 2.6, 28.5), "coldstore", 0.6, Color(0.5, 0.75, 1.0), false, false, 5.5)
 	# The cells keep their own sickly night light, visible through the glass.
 	add_lamp(Vector3(25.5, 2.7, 21.5), "cells", 0.8, Color(0.55, 0.7, 1.0), false, false, 6.5)
 	add_moonlight(Vector3(11.75, 2.2, -1.5), Vector3(11.75, 0, 2.5), 1.3)
@@ -365,6 +415,7 @@ func _lighting() -> void:
 	lights_root.add_child(apron)
 	add_dust(AABB(Vector3(0, 0, 0), Vector3(30, H, 11)), 90)
 	add_dust(AABB(Vector3(0, 0, 11), Vector3(30, H, 13)), 70)
+	add_dust(AABB(Vector3(0, 0, 24), Vector3(13, H, 7)), 30)
 	apply_graphics_settings()
 
 
@@ -385,6 +436,7 @@ func _entities() -> void:
 		{"card_reader": true, "unlock_flag": "staff_open"}
 	)
 	_door("door_obs", Vector3(22.0, 0, 11), 0, 1.4, "item:security_card", "DOOR_SECURITY_ONLY", {"card_reader": true})
+	_door("door_morgue", Vector3(5.4, 0, 24), 0, 1.2, "", "DOOR_LOCKED", {"material": "metal_dark"})
 	_door("door_generator", Vector3(13, 0, 12.6), -90, 1.2)
 	_door("door_pharmacy", Vector3(13, 0, 20.0), -90, 1.2)
 	_door("door_security", Vector3(16, 0, 12.2), -90, 1.2, "external", "DOOR_KEYPAD_LOCKED", {"material": "metal_dark"})
@@ -443,6 +495,7 @@ func _entities() -> void:
 	_note("note_schematic", Vector3(29.88, 1.5, 6.0), "NOTE_SCHEMATIC_T", "NOTE_SCHEMATIC_B", "wall", -90)
 	_note("note_roster", Vector3(16.12, 1.5, 22.5), "NOTE_ROSTER_T", "NOTE_ROSTER_B", "wall", 90)
 	_note("note_sedation", Vector3(10.0, 0.94, 17.3), "NOTE_SEDATION_T", "NOTE_SEDATION_B", "paper", 15)
+	_note("note_morgue", Vector3(0.5, 0.94, 26.2), "NOTE_MORGUE_T", "NOTE_MORGUE_B", "clipboard", 80)
 	_note("note_isolation", Vector3(22.3, 0.78, 17.8), "NOTE_ISOLATION_T", "NOTE_ISOLATION_B", "clipboard", -5)
 	var tape := TapeRecorder.new()
 	tape.entity_id = "tape_obs"
@@ -469,6 +522,7 @@ func _entities() -> void:
 	_hide("hide_staff", Vector3(13.45, 0, 23.2), 90, "locker")
 	_hide("hide_pharmacy", Vector3(12.55, 0, 18.4), -90, "locker")
 	_hide("hide_obscorr", Vector3(29.55, 0, 13.3), -90, "locker")
+	_hide("hide_coldstore", Vector3(8.45, 0, 29.6), 90, "locker")
 
 	_switch("switch_reception", "reception", Vector3(13.3, 1.3, 7.91), 180)
 	_switch("switch_staffroom", "staffroom", Vector3(16.09, 1.3, 21.0), 90)
@@ -570,6 +624,8 @@ func _spawns() -> void:
 		Vector3(10.5, 0, 20),
 		Vector3(18.5, 0, 18.5),
 		Vector3(25.5, 0, 12.5),
+		Vector3(4, 0, 26),
+		Vector3(10.5, 0, 29),
 	]
 	prowl_points = [
 		Vector3(-1.5, 0, 4),
@@ -578,7 +634,7 @@ func _spawns() -> void:
 		Vector3(31.5, 0, 18),
 		Vector3(15, 0, -1.5),
 		Vector3(24, 0, -1.5),
-		Vector3(6, 0, 25.5),
+		Vector3(6, 0, 32.5),
 		Vector3(18, 0, 25.5),
 	]
 	var spawns := {
@@ -610,6 +666,12 @@ func _spawns() -> void:
 		"bt_staff": Vector3(18.9, 0.78, 21.2),
 		"bt_pharmacy": Vector3(9.9, 0.93, 17.4),
 		"bt_obs": Vector3(28.9, 0.78, 17.8),
+		"sp_morgue_slab": Vector3(3.2, 0.93, 26.5),
+		"sp_morgue_tray": Vector3(4.6, 0.41, 29.4),
+		"sp_morgue_counter": Vector3(0.42, 0.93, 27.1),
+		"sp_cold_shelf": Vector3(12.55, 1.05, 26.5),
+		"sp_cold_crate": Vector3(9.0, 0.61, 30.2),
+		"bt_morgue": Vector3(10.5, 1.05, 30.6),
 	}
 	for id in spawns:
 		add_spawn_point(id, Transform3D(Basis.IDENTITY, spawns[id]))

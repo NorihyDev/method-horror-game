@@ -48,6 +48,10 @@ func _process(delta: float) -> void:
 	var heart := clampf(1.0 - (nearest - 3.0) / 9.0, 0.0, 1.0) if nearest < INF else 0.0
 	_fade(_heartbeat, heart, delta, -8.0)
 	_heartbeat.pitch_scale = lerpf(1.0, 1.6, heart)
+	var fx := Session.app.post_fx if Session.app else null
+	if fx:
+		fx.threat = move_toward(fx.threat, maxf(heart, 0.7 if chasing_me else 0.0), delta * 1.5)
+		fx.beat_rate = lerpf(1.1, 2.4, maxf(heart, 0.7 if chasing_me else 0.0))
 	_fade(_breath, clampf((0.4 - player.stamina) / 0.4, 0.0, 1.0), delta, -6.0)
 	if _timer > 0.0:
 		return
@@ -84,5 +88,7 @@ func _fade(p: AudioStreamPlayer, k: float, delta: float, max_db: float) -> void:
 
 
 func stop() -> void:
+	if Session.app and Session.app.post_fx:
+		Session.app.post_fx.threat = 0.0
 	_heartbeat.stop()
 	_breath.stop()

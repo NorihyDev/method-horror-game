@@ -15,6 +15,8 @@ uniform float slats = 0.0;
 uniform float flash = 0.0;
 uniform float fade_black = 0.0;
 uniform float tear = 0.0;
+uniform float threat = 0.0;
+uniform float beat_rate = 1.2;
 uniform float aspect = 1.777;
 
 float hash(vec2 p) {
@@ -27,7 +29,10 @@ void fragment() {
 	vec2 uv = UV;
 	vec2 c = (uv - 0.5) * vec2(aspect, 1.0);
 	float d = length(c);
-	float vig = smoothstep(0.6, 1.35, d) * vignette;
+	// Threat: the edges close in and throb with the heartbeat, tinted red.
+	float beat = pow(0.5 + 0.5 * sin(TIME * 6.2831 * beat_rate), 4.0);
+	float closing = threat * (0.35 + 0.25 * beat);
+	float vig = smoothstep(0.6 - 0.3 * closing, 1.35 - 0.4 * closing, d) * max(vignette, closing * 1.4);
 	float n = hash(uv * vec2(1920.0, 1080.0) + fract(TIME * 13.17) * 100.0);
 	float g = (n - 0.5) * grain;
 	float dmg = smoothstep(0.35, 1.0, d) * damage;
@@ -35,7 +40,7 @@ void fragment() {
 	float band = abs(fract(uv.y * 9.0) - 0.5) * 2.0;
 	float slat = slats * (1.0 - smoothstep(0.18, 0.32, 1.0 - band));
 	slat = max(slat, slats * smoothstep(0.32, 0.5, abs(uv.x - 0.5)));
-	vec3 col = mix(vec3(0.0), vec3(0.45, 0.02, 0.02), clamp(dmg * 1.4, 0.0, 1.0));
+	vec3 col = mix(vec3(0.0), vec3(0.45, 0.02, 0.02), clamp(dmg * 1.4 + closing * beat * 0.5, 0.0, 1.0));
 	float a = clamp(vig + dmg + slat * 0.94 + fade_black, 0.0, 1.0);
 	col = mix(col, vec3(0.92, 0.88, 0.8), flash);
 	a = max(a, flash * 0.7);
@@ -57,6 +62,9 @@ var damage := 0.0
 var slats := 0.0
 var flash := 0.0
 var tear := 0.0
+## 0..1: how close the threat is (IntensityController sets it).
+var threat := 0.0
+var beat_rate := 1.2
 var _mat: ShaderMaterial
 var _active := false
 
@@ -80,6 +88,7 @@ func set_active(on: bool) -> void:
 	slats = 0.0
 	flash = 0.0
 	tear = 0.0
+	threat = 0.0
 	visible = on
 
 
@@ -107,5 +116,8 @@ func _process(delta: float) -> void:
 	_mat.set_shader_parameter("slats", slats)
 	_mat.set_shader_parameter("flash", flash)
 	_mat.set_shader_parameter("tear", tear)
+	var pulse := 0.0 if Settings.b("reduced_flashing") else threat
+	_mat.set_shader_parameter("threat", pulse)
+	_mat.set_shader_parameter("beat_rate", beat_rate)
 	flash = move_toward(flash, 0.0, delta * 2.5)
 	tear = move_toward(tear, 0.0, delta * 1.6)

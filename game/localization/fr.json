@@ -769,6 +769,8 @@
 	"NOTE_ROSTER_B": "Aile d’observation, moniteurs uniquement — n’ouvrez PAS les cellules.\n\nRonde de cette nuit : lit %d, lit %d, lit %d, lit %d.\n\nLe code de la porte de sécurité change chaque nuit : la dernière valeur de chaque moniteur, dans l’ordre de la ronde.",
 	"NOTE_SEDATION_T": "Registre de sédation",
 	"NOTE_SEDATION_B": "Sujet 11 (Sr Agnès) — a encore refusé la sédation. Dit que les produits rendent l’aile « trop bruyante pour penser ».\n\nElle fredonne pour couvrir le bruit. Quand elle s’arrête, elle écoute.\n\nNous avons déplacé l’équipe de nuit dans l’aile d’observation.",
+	"NOTE_MORGUE_T": "Registre de la morgue (dernière page)",
+	"NOTE_MORGUE_B": "Tiroirs 1 à 12 : occupés.\nTiroir 3 : occupé. Occupé. Occupé.\n\nNote du veilleur de nuit : le tiroir 3 était de nouveau ouvert à la ronde de 2 h. Le drap était plié sur la table, proprement, comme le font les infirmières. Il y a des traces de pas mouillées des tiroirs jusqu'à la porte du service, et aucune dans l'autre sens.\n\nJ'ai fermé la morgue côté service. Ce qui est ici ne sortira pas en passant par moi.",
 	"NOTE_ISOLATION_T": "Journal d’observation — Sujet 11",
 	"NOTE_ISOLATION_B": "Semaine 9 d’isolement auditif. Les bandages restent en place.\n\nElle a localisé un stylo tombé de l’autre côté de la pièce en moins de quatre secondes. Aucune réaction au test de la lampe.\n\nI.V. : « Elle n’a plus besoin d’yeux. Elle a besoin que nous nous taisions. »",
 	"TAPE_WARD_1": "Annexe 02, entretien onze. Ma sœur, vous m’entendez d’ici ?",
