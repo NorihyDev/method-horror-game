@@ -395,7 +395,8 @@ func safe_margins() -> Vector4:
 	)
 
 
-## `--bench`: frame-time benchmark over every playable map, printed and saved
+## `--bench [--preset=medium]`: frame-time benchmark over every playable map,
+## printed and saved
 ## (needs a display; development builds only).
 func _run_bench() -> void:
 	if not Benchmark.allowed():
@@ -403,6 +404,10 @@ func _run_bench() -> void:
 		get_tree().quit(1)
 		return
 	fade_in(0.01)
+	# Optional `--preset=low|medium|high` for this run only (not saved).
+	var preset := AppInfo.arg_value("--preset", "")
+	if not preset.is_empty():
+		Settings.set_value("quality_preset", preset, false)
 	var bench := Benchmark.new()
 	bench.app = self
 	add_child(bench)
