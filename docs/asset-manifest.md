@@ -1,7 +1,7 @@
 # Asset Manifest
 
-Every shipped asset, where it comes from and its status. No third-party art,
-audio, music, fonts or models are included.
+Every shipped asset, where it comes from and its status. The only third-party
+art is the CC0 MakeHuman content inside the Punky character model.
 
 | Asset | Path | Source | Author | License | Status |
 |---|---|---|---|---|---|
@@ -14,14 +14,15 @@ audio, music, fonts or models are included.
 | Viewmodel (hand + flashlight) | `scripts/player/viewmodel.gd` | Procedural | METHOD | Proprietary | Placeholder |
 | Item models | `scripts/interaction/item_visuals.gd` | Procedural | METHOD | Proprietary | Placeholder |
 | UI font | engine default (bundled with Godot, see THIRD_PARTY_NOTICES) + `SystemFont` serif/monospace requests | Godot / player's OS | — | Engine license; OS fonts are not redistributed | Final candidate |
+| Teammate character "Punky" (mesh, rig, 6 animation clips, textures) | `game/assets/characters/punky/` | Blender 5.2 + MPFB 2 scripts in `tools/characters/punky/` (see `docs/characters.md`); MakeHuman base mesh, skin, eyes, brows, lashes, hair, clothes and shoes; face texture projected from a photo used with the person's consent | METHOD; MakeHuman community assets | MakeHuman assets CC0 1.0; face likeness used with consent (photo not in repo) | First version |
 | Writing (notes, tapes, files, UI) | `game/localization/*.json` | Original | METHOD | Proprietary | Draft |
 
 ## Quality limits (be honest in store copy)
 
 - Audio is synthesized: footsteps and doors are stylized, not recorded foley;
   the tape "voice" is deliberately unintelligible (subtitles carry the text).
-- Geometry is box-based; characters are articulated primitives, not sculpted
-  models. Silhouette and lighting carry the mood.
+- Geometry is box-based; enemies are articulated primitives, not sculpted
+  models. Co-op teammates use the Punky model. Silhouette and lighting carry the mood.
 
 ## Regenerating
 

@@ -243,7 +243,7 @@ Exact current state and next steps: [docs/continuation.md](docs/continuation.md)
 
 [Game design](docs/game-design.md) · [Architecture](docs/architecture.md) ·
 [Networking](docs/networking.md) · [Security & threat model](docs/security.md) ·
-[Economy](docs/economy.md) · [Performance budgets](docs/performance.md) ·
+[Economy](docs/economy.md) · [Characters](docs/characters.md) · [Performance budgets](docs/performance.md) ·
 [Testing & QA](docs/testing.md) · [Releases & exports](docs/releases.md) ·
 [Deployment](docs/deployment.md) · [Asset manifest](docs/asset-manifest.md) ·
 [Asset replacement](docs/asset-replacement.md) · [Decisions](docs/decisions.md) ·

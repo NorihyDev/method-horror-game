@@ -6,6 +6,12 @@ dates are ISO 8601.
 ## [Unreleased]
 
 ### Added
+- **Punky**, a realistic, rigged teammate model with idle, walk, run, crouch,
+  crouch-walk and downed-crawl animations. Co-op teammates now appear as him
+  instead of capsules.
+  - Built from scripts with Blender + MPFB (CC0 MakeHuman assets), with a face
+    projected from a consenting person's photo. The photo is not in the repo.
+  - About 23.7k triangles. See docs/characters.md.
 - **Online co-op over the internet** through a relay on Cloudflare (Worker +
   one Durable Object per room, free plan, secure WebSockets), deployed.
   - The room creator's device hosts the match, and others join with a

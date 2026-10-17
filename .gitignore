@@ -47,3 +47,10 @@ __pycache__/
 Thumbs.db
 .vscode/
 .idea/
+
+# Character sources: the face photo stays private, work files stay local
+tools/characters/**/face_src.*
+tools/characters/**/face_flat.png
+tools/characters/**/face_mask.png
+*.blend
+*.blend1
