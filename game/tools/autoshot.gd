@@ -4,6 +4,7 @@ extends Node
 ## Usage: godot --path game -- --autoshot=<absolute dir> [--map=house] [--power]
 ##   [--teammate[=<clip>]] puts a co-op teammate (Punky) in front of the camera.
 ##   [--phantom] shows the scare director's figure down the view (when there is room).
+##   [--at=x,y,z,yaw,pitch] takes one shot from there instead of the map's list.
 
 const SHOTS := {
 	"house":
@@ -133,7 +134,11 @@ func _ready() -> void:
 		mate.player_id = 2
 		mate.display_name = "Punky"
 		map.add_child(mate)
-	for shot in SHOTS.get(map_id, []):
+	var shots: Array = SHOTS.get(map_id, [])
+	if AppInfo.has_arg("--at"):
+		var f := AppInfo.arg_value("--at").split_floats(",")
+		shots = [["at", Vector3(f[0], f[1], f[2]), f[3], f[4], AppInfo.has_arg("--power")]]
+	for shot in shots:
 		map.set_power(bool(shot[4]))
 		if shot.size() > 5:
 			_prepare(str(shot[5]), match_ctrl)

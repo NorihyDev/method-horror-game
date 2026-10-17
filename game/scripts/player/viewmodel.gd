@@ -47,6 +47,7 @@ func _ready() -> void:
 	# Aim the beam slightly inward so it converges on the reticle.
 	flashlight.rotation = Vector3(deg_to_rad(2.5), deg_to_rad(4.0), 0)
 	_rig.add_child(flashlight)
+	BeamCone.attach(flashlight, true, 0.2)
 
 
 func _build_mesh() -> void:

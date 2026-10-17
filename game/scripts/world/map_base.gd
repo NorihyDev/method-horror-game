@@ -235,6 +235,19 @@ func _apply_particles() -> void:
 func finalize() -> void:
 	builder.commit()
 	nav_region.bake_navigation_mesh(false)
+	_dress.call_deferred()
+
+
+## Decals go in once the level's colliders are in the physics world.
+func _dress() -> void:
+	if not is_inside_tree():
+		await tree_entered
+	for i in 2:
+		await get_tree().physics_frame
+	if not is_inside_tree():
+		return
+	var id := String(definition.id) if definition else String(name)
+	DecalScatter.scatter(self, hash(id), id == "tutorial")
 
 
 ## Re-bakes navigation (e.g. after a locked door opens). Runs on a thread.

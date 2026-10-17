@@ -18,6 +18,8 @@ const BATTERY_SPAWNS: PackedStringArray = [
 	"bt_basement",
 	"bt_foyer",
 	"bt_dining",
+	"bt_pantry",
+	"bt_nursery",
 ]
 const FILES_NEEDED := 3
 
@@ -83,7 +85,12 @@ func _solvability() -> void:
 		"sp_garage_shelf",
 		"sp_garage_crate",
 		"sp_utility_shelf",
-		"sp_utility_washer"
+		"sp_utility_washer",
+		"sp_pantry_shelf",
+		"sp_pantry_freezer",
+		"sp_bath_cabinet",
+		"sp_nursery_crib",
+		"sp_nursery_shelf",
 	]:
 		add_spawn(sp, "ground")
 	for sp in ["sp_study_desk", "sp_study_shelf"]:
@@ -102,21 +109,41 @@ func _solvability() -> void:
 			"sp_dining_cabinet",
 			"sp_foyer_stand",
 			"sp_garage_shelf",
-			"sp_hall_table"
+			"sp_hall_table",
+			"sp_nursery_crib",
+			"sp_pantry_freezer",
 		]
 	)
 	add_slot(
 		"fuse_1",
 		"fuse",
-		["sp_dining_table", "sp_living_sofa", "sp_kitchen_counter", "sp_hall_table", "sp_utility_washer"]
+		[
+			"sp_dining_table",
+			"sp_living_sofa",
+			"sp_kitchen_counter",
+			"sp_hall_table",
+			"sp_utility_washer",
+			"sp_bath_cabinet",
+			"sp_nursery_shelf",
+		]
 	)
 	add_slot(
-		"fuse_2", "fuse", ["sp_study_desk", "sp_study_shelf", "sp_garage_crate", "sp_kitchen_table", "sp_living_shelf"]
+		"fuse_2",
+		"fuse",
+		["sp_study_desk", "sp_study_shelf", "sp_garage_crate", "sp_kitchen_table", "sp_living_shelf", "sp_pantry_shelf"]
 	)
 	add_slot(
 		"fuse_3",
 		"fuse",
-		["sp_garage_shelf", "sp_utility_shelf", "sp_foyer_stand", "sp_dining_cabinet", "sp_kitchen_drawer"]
+		[
+			"sp_garage_shelf",
+			"sp_utility_shelf",
+			"sp_foyer_stand",
+			"sp_dining_cabinet",
+			"sp_kitchen_drawer",
+			"sp_nursery_crib",
+			"sp_pantry_freezer",
+		]
 	)
 	add_slot(
 		"drive_belt",

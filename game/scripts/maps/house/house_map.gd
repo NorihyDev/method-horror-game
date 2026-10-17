@@ -7,6 +7,8 @@ extends MapBase
 ##   Living   x0-6   z10-18 | Foyer x6-10 z10-18 | Study x10-14 z10-18 (locked)
 ##   Utility  x14-21 z10-18 (fuse panel) | Stairwell x21-24 z10-18 (maglock)
 ##   Basement x12-24 z18-28 (cage x12-16 z24-28, keypad)
+##   West wing x-6-0: Pantry z0-7 (off the kitchen) | Bathroom z7-10 | Nursery
+##   z10-18 (off the living room) — a loop back round to the hallway.
 
 const H := 2.9
 const BY := -3.2
@@ -27,6 +29,7 @@ func build_level() -> void:
 	_floors_and_ceilings()
 	_stairs()
 	_basement()
+	_west_wing()
 	_outside()
 	_props()
 	_lighting()
@@ -49,6 +52,9 @@ func _rooms() -> void:
 	add_room("utility", AABB(Vector3(14, 0, 10), Vector3(7, H, 8)), "concrete")
 	add_room("stairwell", AABB(Vector3(21, BY, 10), Vector3(3, H - BY, 8)), "metal")
 	add_room("basement", AABB(Vector3(12, BY, 18), Vector3(12, H, 10)), "concrete")
+	add_room("pantry", AABB(Vector3(-6, 0, 0), Vector3(6, H, 7)), "concrete")
+	add_room("bathroom", AABB(Vector3(-6, 0, 7), Vector3(6, H, 3)), "concrete")
+	add_room("nursery", AABB(Vector3(-6, 0, 10), Vector3(6, H, 8)), "carpet")
 
 
 func _shell() -> void:
@@ -63,10 +69,16 @@ func _shell() -> void:
 	b.wall_x(18, 6, 10, 0, H, "wallpaper", "exterior", [_doorway(7.4, 8.6)])
 	b.wall_x(18, 10, 14, 0, H, "dark_wood", "exterior", [_win(11.2, 12.8)])
 	b.wall_x(18, 14, 21, 0, H, "plaster", "exterior", [_win(16.0, 17.5)])
-	# West (x=0)
-	b.wall_z(0, 0, 7, 0, H, "exterior", "tile_wall")
-	b.wall_z(0, 7, 10, 0, H, "exterior", "wallpaper")
-	b.wall_z(0, 10, 18, 0, H, "exterior", "wallpaper_red", [_win(13.2, 14.8)])
+	# West wing outer walls (x=-6, and its ends at z=0 / z=18).
+	b.wall_z(-6, 0, 7, 0, H, "exterior", "plaster", [_win(1.8, 3.2)])
+	b.wall_z(-6, 7, 10, 0, H, "exterior", "tile_wall")
+	b.wall_z(-6, 10, 18, 0, H, "exterior", "wallpaper_green", [_win(11.6, 13.2)])
+	b.wall_x(0, -6, 0, 0, H, "exterior", "plaster")
+	b.wall_x(18, -6, 0, 0, H, "wallpaper_green", "exterior")
+	# x=0: the house's old west wall, now opening into the wing.
+	b.wall_z(0, 0, 7, 0, H, "plaster", "tile_wall", [_doorway(2.9, 4.1)])
+	b.wall_z(0, 7, 10, 0, H, "tile_wall", "wallpaper")
+	b.wall_z(0, 10, 18, 0, H, "wallpaper_green", "wallpaper_red", [_doorway(13.4, 14.6)])
 	# East (x=24)
 	b.wall_z(24, 0, 10, 0, H, "blocks", "exterior")
 	b.wall_z(24, 10, 18, BY, H - BY, "plaster", "exterior")
@@ -145,6 +157,58 @@ func _basement() -> void:
 	PropFactory.pipe_run(b, Vector3(17.0, -0.6, 19.0), Vector3(17.0, -0.6, 27.6), 0.05)
 
 
+func _west_wing() -> void:
+	var b := builder
+	b.room = "interior"
+	b.wall_x(7, -6, 0, 0, H, "plaster", "tile_wall", [_doorway(-3.6, -2.4)])
+	b.wall_x(10, -6, 0, 0, H, "tile_wall", "wallpaper_green", [{"from": -3.6, "to": -2.4, "top": 2.3}])
+	for f in [["pantry", 0, 7, "linoleum"], ["bathroom", 7, 10, "tile"], ["nursery", 10, 18, "carpet"]]:
+		b.room = f[0]
+		b.floor_rect(-6, f[1], 0, f[2], 0.0, f[3])
+		b.ceiling_rect(-6, f[1], 0, f[2], H, "ceiling")
+	# Pantry: shelves of tins, a chest freezer, sacks.
+	b.room = "pantry"
+	PropFactory.shelf(b, Vector3(-5.75, 0, 4.6), 90, 1.8, 2.0)
+	PropFactory.shelf(b, Vector3(-3.2, 0, 0.25), 0, 1.6, 2.0)
+	PropFactory.part(b, Vector3(-1.2, 0, 0.5), 0, Vector3(0, 0.45, 0), Vector3(1.3, 0.9, 0.7), "painted_wood", true)
+	PropFactory.part(b, Vector3(-1.2, 0, 0.5), 0, Vector3(0, 0.92, 0), Vector3(1.32, 0.04, 0.72), "metal")
+	PropFactory.crate(b, Vector3(-5.2, 0, 6.3), Vector3(0.7, 0.5, 0.6), 15)
+	PropFactory.crate(b, Vector3(-4.4, 0, 6.4), Vector3(0.6, 0.4, 0.5), -10, "fabric")
+	PropFactory.debris(b, Vector3(-3, 0, 4), 1.6, 6)
+	# Bathroom: tub, toilet, sink cabinet and a cracked mirror.
+	b.room = "bathroom"
+	PropFactory.part(b, Vector3(-5.1, 0, 7.5), 0, Vector3(0, 0.28, 0), Vector3(1.6, 0.56, 0.75), "tile", true)
+	PropFactory.part(b, Vector3(-5.1, 0, 7.5), 0, Vector3(0, 0.5, 0), Vector3(1.4, 0.1, 0.55), "metal_dark")
+	PropFactory.part(b, Vector3(-0.5, 0, 7.45), 0, Vector3(0, 0.22, 0), Vector3(0.4, 0.44, 0.55), "tile", true)
+	PropFactory.part(b, Vector3(-0.5, 0, 7.45), 0, Vector3(0, 0.62, -0.2), Vector3(0.45, 0.4, 0.18), "tile")
+	PropFactory.cabinet(b, Vector3(-1.4, 0, 9.65), 180, 0.8, 0.8, 0.45, "painted_wood")
+	PropFactory.picture(b, Vector3(-1.4, 1.55, 9.9), 180, 0.6, 0.7, 7.0)
+	# Nursery: crib, rocking chair, toy shelf, a rug.
+	b.room = "nursery"
+	var crib := Vector3(-3.4, 0, 17.3)
+	PropFactory.part(b, crib, 0, Vector3(0, 0.35, 0), Vector3(1.3, 0.06, 0.7), "painted_wood", true)
+	for i in 12:
+		var x := -0.62 + i * 0.113
+		for z in [-0.33, 0.33]:
+			PropFactory.part(b, crib, 0, Vector3(x, 0.6, z), Vector3(0.025, 0.5, 0.025), "painted_wood")
+	for z in [-0.33, 0.33]:
+		PropFactory.part(b, crib, 0, Vector3(0, 0.86, z), Vector3(1.3, 0.04, 0.05), "painted_wood")
+	PropFactory.part(b, crib, 0, Vector3(0, 0.42, 0), Vector3(1.2, 0.08, 0.6), "fabric_blue")
+	PropFactory.armchair(b, Vector3(-1.3, 0, 16.6), 225)
+	PropFactory.shelf(b, Vector3(-0.25, 0, 11.6), -90, 1.4, 1.6)
+	PropFactory.rug(b, Vector3(-3, 0, 14), Vector2(2.6, 2.0))
+	PropFactory.debris(b, Vector3(-3.5, 0, 12.5), 1.4, 5)
+	var words := Label3D.new()
+	words.text = "SHE IS NOT\nHIS MOTHER"
+	words.font_size = 40
+	words.pixel_size = 0.0024
+	words.modulate = Color(0.38, 0.05, 0.04)
+	words.shaded = true
+	words.position = Vector3(-3.4, 1.75, 17.91)
+	words.rotation.y = PI
+	lights_root.add_child(words)
+
+
 func _fence_x(z: float, x0: float, x1: float) -> void:
 	var b := builder
 	var h := 2.4
@@ -186,9 +250,9 @@ func _fence_z(x: float, z0: float, z1: float) -> void:
 func _outside() -> void:
 	var b := builder
 	b.room = "outside"
-	b.floor_rect(-6, -16, 30, 0, 0.0, "ground", 0.3)
-	b.floor_rect(-6, 18, 30, 30, 0.0, "ground", 0.3)
-	b.floor_rect(-6, 0, 0, 18, 0.0, "ground", 0.3)
+	b.floor_rect(-12, -16, 30, 0, 0.0, "ground", 0.3)
+	b.floor_rect(-12, 18, 30, 30, 0.0, "ground", 0.3)
+	b.floor_rect(-12, 0, -6, 18, 0.0, "ground", 0.3)
 	b.floor_rect(24, 0, 30, 18, 0.0, "ground", 0.3)
 	# Invisible boundary around the driveway.
 	for wall in [
@@ -238,7 +302,7 @@ func _props() -> void:
 	PropFactory.clock(b, Vector3(13.6, 0, 8.0), -90)
 	PropFactory.picture(b, Vector3(8.5, 1.6, 9.9), 180, 0.6, 0.8, -6.0)
 	PropFactory.picture(b, Vector3(1.0, 1.7, 7.1), 0, 0.5, 0.6, 3.0)
-	PropFactory.radiator(b, Vector3(0.2, 0, 8.5), 90, 1.0)
+	PropFactory.radiator(b, Vector3(5.2, 0, 9.8), 180, 1.0)
 	# Living
 	b.room = "living"
 	PropFactory.fireplace(b, Vector3(0.28, 0, 11.6), 90)
@@ -296,7 +360,8 @@ func _props() -> void:
 		[Vector3(3, 1.5, 18), true],
 		[Vector3(12, 1.5, 18), true],
 		[Vector3(16.75, 1.5, 18), true],
-		[Vector3(0, 1.5, 14), false]
+		[Vector3(-6, 1.5, 2.5), false],
+		[Vector3(-6, 1.5, 12.4), false]
 	]:
 		var p: Vector3 = w[0]
 		var axis_x: bool = w[1]
@@ -342,6 +407,9 @@ func _lighting() -> void:
 		["basement", Vector3(16, -0.3, 21)],
 		["basement", Vector3(21, -0.3, 25)],
 		["basement", Vector3(14, -0.3, 26)],
+		["pantry", Vector3(-3, H, 3.5)],
+		["bathroom", Vector3(-2.2, H, 8.5)],
+		["nursery", Vector3(-3, H, 14)],
 	]
 	for lp in lamp_points:
 		var top: Vector3 = lp[1]
@@ -358,7 +426,10 @@ func _lighting() -> void:
 	add_moonlight(Vector3(4, 2.2, -1.5), Vector3(4, 0, 2.5))
 	add_moonlight(Vector3(3, 2.2, 19.5), Vector3(3, 0, 15.5))
 	add_moonlight(Vector3(12, 2.2, 19.5), Vector3(12, 0, 15.5), 1.2)
-	add_moonlight(Vector3(-1.5, 2.2, 14), Vector3(2.5, 0, 14), 1.2)
+	add_moonlight(Vector3(-7.5, 2.2, 12.4), Vector3(-3.5, 0, 12.4), 1.2)
+	add_moonlight(Vector3(-7.5, 2.2, 2.5), Vector3(-3.5, 0, 2.5), 1.0)
+	# A child's night light that never needed the mains.
+	add_lamp(Vector3(-0.4, 0.35, 15.6), "nursery", 0.35, Color(0.95, 0.35, 0.3), false, false, 3.0)
 	var outside := OmniLight3D.new()
 	outside.light_color = Color(0.5, 0.6, 0.85)
 	outside.light_energy = 1.4
@@ -367,6 +438,7 @@ func _lighting() -> void:
 	lights_root.add_child(outside)
 	add_dust(AABB(Vector3(0, 0, 0), Vector3(14, H, 10)), 80)
 	add_dust(AABB(Vector3(12, BY, 18), Vector3(12, 2.9, 10)), 50)
+	add_dust(AABB(Vector3(-6, 0, 0), Vector3(6, H, 18)), 40)
 	apply_graphics_settings()
 
 
@@ -384,6 +456,9 @@ func _entities() -> void:
 	_door(
 		"door_front", Vector3(7.4, 0, 18), 0, 1.2, "chained", "DOOR_CHAINED", {"try_flag": "exit_found", "swing": -1.0}
 	)
+	_door("door_pantry", Vector3(0, 0, 2.9), -90, 1.2)
+	_door("door_nursery", Vector3(0, 0, 13.4), -90, 1.2, "", "DOOR_LOCKED", {"material": "painted_wood"})
+	_door("door_bathroom", Vector3(-3.6, 0, 7), 0, 1.2)
 	_door("cage_gate", Vector3(13.6, BY, 24), 0, 1.2, "external", "CAGE_LOCKED", {"style": "cage", "height": 2.3})
 
 	var panel := FusePanel.new()
@@ -421,6 +496,7 @@ func _entities() -> void:
 	_note("note_diary", Vector3(10.8, 0.77, 2.8), "NOTE_DIARY_T", "NOTE_DIARY_B", "paper", 20)
 	_note("note_keypad", Vector3(17.0, BY + 0.77, 20.1), "NOTE_KEYPAD_T", "NOTE_KEYPAD_B", "clipboard", 0)
 	_note("note_study", Vector3(11.8, 0.77, 11.8), "NOTE_STUDY_T", "NOTE_STUDY_B", "paper", -10)
+	_note("note_nursery", Vector3(-1.4, 0.84, 9.6), "NOTE_NURSERY_T", "NOTE_NURSERY_B", "paper", 170)
 	_note("note_garage", Vector3(23.2, 0.93, 5.6), "NOTE_GARAGE_T", "NOTE_GARAGE_B", "clipboard", -90)
 	var tape := TapeRecorder.new()
 	tape.entity_id = "tape_study"
@@ -447,6 +523,8 @@ func _entities() -> void:
 	_hide("hide_study", Vector3(10.7, 0, 17.55), 180, "wardrobe")
 	_hide("hide_utility", Vector3(20.4, 0, 17.55), 180, "locker")
 	_hide("hide_basement", Vector3(23.55, BY, 23.6), -90, "locker")
+	_hide("hide_nursery", Vector3(-5.5, 0, 15.4), 90, "wardrobe")
+	_hide("hide_pantry_back", Vector3(-5.55, 0, 1.2), 90, "locker")
 
 	# Light switches next to doorways.
 	_switch("switch_kitchen", "kitchen", Vector3(2.3, 1.3, 6.91), 180)
@@ -557,10 +635,13 @@ func _spawns() -> void:
 		Vector3(16, BY, 21),
 		Vector3(21, BY, 21.5),
 		Vector3(20, BY, 26),
+		Vector3(-3, 0, 3.5),
+		Vector3(-3, 0, 8.5),
+		Vector3(-3, 0, 14),
 	]
 	prowl_points = [
-		Vector3(-1.5, 0, 4),
-		Vector3(-1.5, 0, 14),
+		Vector3(-7.5, 0, 4),
+		Vector3(-7.5, 0, 14),
 		Vector3(4, 0, 19.5),
 		Vector3(12, 0, 19.5),
 		Vector3(18, 0, 19.5),
@@ -597,6 +678,13 @@ func _spawns() -> void:
 		"bt_basement": Vector3(17.6, BY + 0.77, 19.8),
 		"bt_foyer": Vector3(9.6, 0.87, 16.0),
 		"bt_dining": Vector3(10.7, 0.77, 4.6),
+		"sp_pantry_shelf": Vector3(-5.7, 1.06, 4.6),
+		"sp_pantry_freezer": Vector3(-1.2, 0.96, 0.5),
+		"sp_bath_cabinet": Vector3(-1.4, 0.84, 9.65),
+		"sp_nursery_crib": Vector3(-3.4, 0.47, 17.3),
+		"sp_nursery_shelf": Vector3(-0.3, 0.86, 11.6),
+		"bt_pantry": Vector3(-3.2, 1.06, 0.3),
+		"bt_nursery": Vector3(-1.3, 0.5, 16.6),
 	}
 	for id in spawns:
 		add_spawn_point(id, Transform3D(Basis.IDENTITY, spawns[id]))

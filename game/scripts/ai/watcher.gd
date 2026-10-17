@@ -50,6 +50,8 @@ var _vocal_cooldown := 0.0
 var _keys_timer := 12.0
 var _lamp_timer := 0.0
 var _last_scare := -1000.0
+## Match time it entered the building (rage grows from here).
+var _arrived_at := -1.0
 var _visited: Array[Vector3] = []
 var _noise_memory: Array[Dictionary] = []
 ## pid -> {"spot": HidingSpot, "time": float} for players it saw hide.
@@ -72,6 +74,7 @@ func setup(p_match: MatchController, p_map: MapBase) -> void:
 	match_ctrl = p_match
 	map = p_map
 	_diff = match_ctrl.difficulty
+	_arrived_at = match_ctrl.state.elapsed
 	if profile == null:
 		var profile_id := String(map.definition.enemy_profile) if map and map.definition else "watcher"
 		profile = EnemyProfile.for_id(profile_id)
@@ -135,10 +138,17 @@ func _build() -> void:
 
 ## Noise event: `radius` already includes difficulty scaling. `source_pid`
 ## is the player who made it (0 = the world: machines, the enemy itself).
+## How angry it has grown (difficulty rage, >= 1).
+func rage() -> float:
+	if _diff == null or match_ctrl == null or _arrived_at < 0.0:
+		return 1.0
+	return _diff.rage((match_ctrl.state.elapsed - _arrived_at) / 60.0)
+
+
 func hear(pos: Vector3, radius: float, kind: String, source_pid: int = 0) -> void:
 	if not _authority() or profile == null:
 		return
-	radius *= profile.hearing
+	radius *= profile.hearing * rage()
 	var d := global_position.distance_to(pos)
 	if d > radius:
 		return
@@ -240,7 +250,7 @@ func _sense() -> void:
 		elif target["lit"]:
 			light = profile.light_lit
 		var crouch := profile.crouch_sight if target["crouch"] else 1.0
-		var sight_range := profile.base_sight * _diff.enemy_sight * phase_mult * light * crouch
+		var sight_range := profile.base_sight * _diff.enemy_sight * phase_mult * light * crouch * rage()
 		var can_see := false
 		if d <= profile.touch_radius:
 			can_see = _clear_line(eye, chest)
@@ -553,7 +563,10 @@ func _follow(speed: float, delta: float) -> void:
 		return
 	_face(global_position + dir, delta * 6.0)
 	var phase_mult := 1.12 if match_ctrl.state.phase == MatchState.Phase.FINAL else 1.0
-	_move(dir.normalized(), speed * _diff.enemy_speed * phase_mult, delta)
+	# Rage speeds up its prowling fully but its chase only partly, so a
+	# sprinting player can still get away.
+	var angry := rage() if speed < profile.run else lerpf(1.0, rage(), 0.4)
+	_move(dir.normalized(), speed * _diff.enemy_speed * phase_mult * angry, delta)
 	_open_doors_ahead(dir.normalized())
 	_check_stuck(delta)
 

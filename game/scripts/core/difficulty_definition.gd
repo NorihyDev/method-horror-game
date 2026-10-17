@@ -22,6 +22,11 @@ extends Resource
 @export_range(0.3, 1.5) var attack_windup: float = 0.65
 ## Seconds before the enemy starts hunting after the match begins.
 @export_range(0.0, 300.0) var grace_period: float = 50.0
+## Rage: per minute since it arrived, the enemy's senses and patrol speed
+## grow by this fraction (its chase speed by 40 % of it)...
+@export_range(0.0, 0.1) var rage_per_minute: float = 0.0
+## ...up to this much. Taking your time gets more dangerous.
+@export_range(0.0, 0.5) var rage_cap: float = 0.0
 
 @export_group("Player")
 ## Hits a player can take before being downed (multiplayer) or killed (solo).
@@ -46,6 +51,11 @@ extends Resource
 
 
 ## Per-player-count scaling used by cooperative matches.
+## Rage multiplier (>= 1) after `minutes` with the enemy in the building.
+func rage(minutes: float) -> float:
+	return 1.0 + minf(rage_cap, rage_per_minute * maxf(0.0, minutes))
+
+
 func scaled_hearing(player_count: int) -> float:
 	return enemy_hearing * (1.0 + 0.08 * maxf(0, player_count - 1))
 

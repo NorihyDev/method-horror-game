@@ -51,6 +51,7 @@ func _ready() -> void:
 	_light.light_energy = 2.2
 	_light.shadow_enabled = false
 	_body.add_child(_light)
+	BeamCone.attach(_light, false, 0.09)
 	_label = Label3D.new()
 	_label.text = display_name
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
