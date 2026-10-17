@@ -16,7 +16,7 @@ model is in [security.md](security.md).
 | Impaired links (latency, jitter, loss) | End-to-end tested on loopback through a lossy UDP relay (see *Verification*) |
 | LAN development mode | Implemented; in-process test |
 | **Internet play across separate networks** | **Not verified.** Needs a public host; see [deployment.md](deployment.md) |
-| 5–6 players | Locked in the UI until sync/performance checks pass; protocol allows 6 |
+| 5–6 players | Online rooms allow 6: six-client sync tested in-process (join, start barrier, movement, shared state; server broadcast ≈0.03 ms/tick on the dev PC). Performance with 5–6 players on phones not measured. LAN rooms stay at 4 |
 | DTLS on gameplay traffic | Supported by the server (`METHOD_DTLS_KEY/CERT`), not enabled by default |
 
 ## Components
@@ -49,7 +49,7 @@ kicks, starts). The owner's phone never runs the server.
 1. **Guest identity.** `POST /v1/guest` with the display name → opaque bearer
    token (only its SHA-256 is stored server-side). Kept in the app's user
    directory; reinstalling loses it (the UI says so).
-2. **Create** `POST /v1/rooms` (map, difficulty, 2–4 players, optional
+2. **Create** `POST /v1/rooms` (map, difficulty, 2–6 players, optional
    password) or **join** `POST /v1/rooms/join` (code + password). The lobby
    allocates a server and returns `{room_id, code, server{host, port}, ticket}`.
 3. **Connect.** The client opens ENet to the server and, inside Godot's

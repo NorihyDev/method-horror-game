@@ -139,7 +139,7 @@ mirrored for left-handed play.
 
 ```bash
 ./tools/check.sh                                    # compile every script (fails on any error)
-./tools/godot.sh --headless --path game -- --test   # 92 unit + integration tests, exit code = result
+./tools/godot.sh --headless --path game -- --test   # 93 unit + integration tests, exit code = result
 ./tools/godot.sh --headless --path game -- --test --filter=watcher
 cd services/lobby && npm ci && npm test && npm run typecheck   # lobby service
 GODOT_BIN=/path/to/godot npm run e2e     # online end to end: lobby + server + 2 clients
@@ -216,7 +216,8 @@ Key ideas (details in [docs/architecture.md](docs/architecture.md)):
 - Offline coins are local and tamperable by design (see [docs/economy.md](docs/economy.md)).
 - Online services are not deployed; internet play is unverified. Gameplay
   traffic is unencrypted (DTLS is supported server-side but not yet used by
-  the client). Co-op is capped at 4 players until 5–6 are validated.
+  the client). Six-player sync is tested in-process; performance with 5–6
+  players on phones is not measured yet.
 - No cloud save or account linking (not promised). The online guest identity
   lives on the device and is lost on reinstall.
 

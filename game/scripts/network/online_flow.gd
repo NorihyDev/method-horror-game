@@ -12,7 +12,8 @@ enum Kind { ONLINE, LAN_HOST, LAN_CLIENT }
 const CONNECT_RETRIES := 8
 const RETRY_SECONDS := 1.5
 const RECONNECT_ATTEMPTS := 5
-## Validated player count; 5–6 stay locked until sync/performance checks pass.
+## LAN hosts also run the match on their own device, so LAN rooms stay at 4
+## (online rooms, on a dedicated server, allow 6).
 const LAN_MAX_PLAYERS := 4
 
 var app: App

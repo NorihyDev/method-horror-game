@@ -3,7 +3,7 @@ extends Screen
 ## and the clearly separated LAN development mode. Every option either works
 ## or explains why it is unavailable; nothing pretends to connect.
 
-const PLAYER_COUNTS := [2, 3, 4]
+const PLAYER_COUNTS := [2, 3, 4, 5, 6]
 
 var _map_id := "house"
 var _diff_id := "normal"

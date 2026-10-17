@@ -608,7 +608,7 @@
 
 	"MP_INSECURE_SERVICE": "Salons en ligne désactivés : le service de lobby configuré n’utilise pas HTTPS.",
 	"MP_MAX_PLAYERS": "Joueurs",
-	"MP_MAX_PLAYERS_TIP": "Jusqu’à 4 joueurs. Cinq et six restent verrouillés tant que les tests de synchronisation et de performance ne sont pas validés.",
+	"MP_MAX_PLAYERS_TIP": "Jusqu’à 6 joueurs. La synchronisation à six est testée ; les performances à 5–6 joueurs sur téléphone ne sont pas encore mesurées. Les salons de test LAN acceptent 4 joueurs.",
 	"MP_PASSWORD": "Mot de passe du salon",
 	"MP_PASSWORD_OPTIONAL": "Facultatif (4 à 64 caractères)",
 	"MP_PASSWORD_IF_SET": "Seulement si le salon en a un",

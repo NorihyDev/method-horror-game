@@ -21,7 +21,7 @@ go-ahead.
 ## Verified (2026-10-17, Windows 11, Godot 4.7.2, Node 24.18)
 
 - `tools/check.sh`: 139 scripts compile. `tools/lint.sh`: clean.
-- `--test`: 92/92. `--smoke`: OK.
+- `--test`: 93/93. `--smoke`: OK.
 - `services/lobby`: 18/18 tests, typecheck clean.
 - `npm run e2e`: passed repeatedly at the default impairment and at 300 ms
   RTT ±80 ms / 10% loss, including the online shop.
@@ -33,8 +33,8 @@ go-ahead.
    checklist in [deployment.md](deployment.md)).
 2. No phone has run the game: touch controls, performance and thermals are
    unmeasured.
-3. DTLS on the client; 5–6 players; local-player reconciliation beyond
-   "reject and correct".
+3. DTLS on the client; 5–6 player performance on phones; local-player
+   reconciliation beyond "reject and correct".
 4. The repository's dependency graph is off, so the dependency-review CI job
    fails until it is enabled (Settings → Code security → Dependency graph).
 5. Online, METHOD files (collectibles) are not part of the verified wallet.

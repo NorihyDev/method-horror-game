@@ -608,7 +608,7 @@
 
 	"MP_INSECURE_SERVICE": "Online rooms are disabled: the configured lobby service does not use HTTPS.",
 	"MP_MAX_PLAYERS": "Players",
-	"MP_MAX_PLAYERS_TIP": "Up to 4 players. Five and six are locked until synchronization and performance checks pass.",
+	"MP_MAX_PLAYERS_TIP": "Up to 6 players. Six-player synchronization is tested; performance with 5–6 players on phones has not been measured yet. LAN test rooms hold 4.",
 	"MP_PASSWORD": "Room password",
 	"MP_PASSWORD_OPTIONAL": "Optional (4–64 characters)",
 	"MP_PASSWORD_IF_SET": "Only if the room has one",
