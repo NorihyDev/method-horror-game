@@ -43,6 +43,7 @@ const SURFACES := {
 	"ballast": ["ballast", Color(1, 1, 1), 0.6, 1.0, 0.0, 1.0, 0.4, 0.0],
 	"rust": ["rust", Color(1, 1, 1), 0.5, 0.85, 0.35, 0.8, 0.3, 0.0],
 	"rail": ["metal", Color(0.55, 0.52, 0.5), 1.0, 0.35, 0.85, 0.3, 0.2, 0.0],
+	"safety_yellow": ["concrete", Color(0.95, 0.75, 0.15), 0.5, 0.8, 0.0, 0.5, 0.3, 0.3],
 }
 
 static var _cache: Dictionary = {}
