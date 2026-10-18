@@ -14,13 +14,13 @@ signal released(button: String)
 ## where the thumb rests, RUN and DUCK one short reach away, LIGHT and BAG
 ## above, so the middle of the right half stays free for looking around.
 const BUTTONS := {
-	"interact": [Vector2(128, 140), 66.0, "TOUCH_USE"],
-	"sprint": [Vector2(225, 258), 44.0, "TOUCH_RUN"],
-	"crouch": [Vector2(302, 92), 46.0, "TOUCH_CROUCH"],
-	"flashlight": [Vector2(70, 332), 40.0, "TOUCH_LIGHT"],
-	"inventory": [Vector2(70, 472), 38.0, "TOUCH_BAG"],
+	"interact": [Vector2(132, 150), 66.0, "TOUCH_USE"],
+	"sprint": [Vector2(240, 268), 46.0, "TOUCH_RUN"],
+	"crouch": [Vector2(292, 128), 46.0, "TOUCH_CROUCH"],
+	"flashlight": [Vector2(84, 318), 42.0, "TOUCH_LIGHT"],
+	"inventory": [Vector2(76, 446), 40.0, "TOUCH_BAG"],
 	"pause": [Vector2(52, 46), 30.0, "TOUCH_PAUSE"],
-	"ping": [Vector2(192, 472), 34.0, "TOUCH_PING"],
+	"ping": [Vector2(196, 400), 36.0, "TOUCH_PING"],
 }
 const TOP_ANCHORED: Array[String] = ["pause"]
 const JOY_RADIUS := 86.0
@@ -239,6 +239,16 @@ func _draw() -> void:
 	if _joy_finger >= 0:
 		knob = base + (_joy_pos - base).limit_length(r)
 	draw_circle(knob, r * 0.42, Color(ThemeFactory.TEXT, 0.35 * alpha))
+	# Direction arrows round the ring: this is for moving.
+	if _joy_finger < 0:
+		var tip_col := Color(ThemeFactory.TEXT, 0.5 * alpha)
+		for k in 4:
+			var d := Vector2.from_angle(k * PI / 2.0)
+			var tip := base + d * r * 0.8
+			var side := d.orthogonal() * r * 0.09
+			draw_colored_polygon(
+				PackedVector2Array([tip, tip - d * r * 0.13 + side, tip - d * r * 0.13 - side]), tip_col
+			)
 	# Auto-run: an outer ring shows where pushing past starts running.
 	var run_r := r * AUTO_RUN_AT
 	var run_col := (
@@ -257,30 +267,34 @@ func _draw() -> void:
 			16,
 			Color(ThemeFactory.TEXT, 0.9)
 		)
-	# Buttons
+	# Buttons: a dark disc, an icon, and a small label under it.
 	for b in enabled_buttons:
 		var c := button_center(b)
 		var br := button_radius(b)
 		var held := is_held(b)
-		var fill := Color(ThemeFactory.CRIMSON, 0.55 * alpha) if held else Color(0, 0, 0, 0.35 * alpha)
+		var fill := Color(ThemeFactory.CRIMSON, 0.6 * alpha + 0.1) if held else Color(0.03, 0.03, 0.035, 0.42 * alpha)
+		var ring := Color(ThemeFactory.TEXT, 0.55 * alpha)
 		if b == "interact" and highlight_interact and not held:
-			fill = Color(ThemeFactory.CRIMSON, 0.4 * alpha + 0.2)
+			# Something usable is in front of you: the USE button glows.
+			var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 220.0)
+			fill = Color(ThemeFactory.CRIMSON, (0.35 + 0.2 * pulse) * alpha + 0.15)
+			ring = Color(ThemeFactory.CRIMSON.lightened(0.4), 0.9)
 		draw_circle(c, br, fill)
-		draw_arc(c, br, 0, TAU, 36, Color(ThemeFactory.TEXT, 0.6 * alpha), 2.0, true)
+		draw_arc(c, br, 0, TAU, 40, ring, 2.5 if held else 2.0, true)
+		var ink := Color(ThemeFactory.TEXT, minf(1.0, alpha + 0.35))
+		var small := b == "pause"
+		var icon_s := br * (0.5 if small else (0.36 if b == "interact" else 0.46))
+		TouchIcons.draw(self, b, c + Vector2(0, 0 if small else -br * 0.14), icon_s, ink)
+		if small:
+			continue
 		var label := tr(str(BUTTONS[b][2]))
-		var fs := int(clampf(br * 0.36, 13, 22))
+		var fs := int(clampf(br * 0.22, 10, 15))
 		var w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_CENTER, -1, fs).x
 		draw_string(
-			font,
-			c + Vector2(-w * 0.5, fs * 0.35),
-			label,
-			HORIZONTAL_ALIGNMENT_CENTER,
-			-1,
-			fs,
-			Color(ThemeFactory.TEXT, minf(1.0, alpha + 0.3))
+			font, c + Vector2(-w * 0.5, br * 0.7), label, HORIZONTAL_ALIGNMENT_CENTER, -1, fs, Color(ink, ink.a * 0.85)
 		)
 
 
 func _process(_delta: float) -> void:
-	if editing:
+	if editing or highlight_interact:
 		queue_redraw()

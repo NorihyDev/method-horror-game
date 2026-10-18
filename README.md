@@ -133,7 +133,10 @@ Difficulty rules are explicit in-game and in [docs/game-design.md](docs/game-des
 | Ping (co-op) | Q | RB | PING |
 | Dev objective inspector | F3 (debug builds only) | — | — |
 
-Keyboard keys are rebindable. On touch, the buttons sit in an arc around the
+Keyboard keys are rebindable. On touch, every button has an icon (a hand for
+USE, a runner, a crouching figure, a flashlight, a backpack, a pin for PING)
+with a short label, and USE glows when something usable is in front of you.
+The buttons sit in an arc around the
 right thumb, measured from the screen corner so wide phones keep them in
 reach. Use has aim assist: anything usable near the centre of the view
 counts. The buttons can be moved, resized, faded and mirrored for
