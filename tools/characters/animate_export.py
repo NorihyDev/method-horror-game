@@ -1,9 +1,10 @@
-"""Animates Punky procedurally and exports a game-ready GLB.
+"""Animates a character procedurally and exports a game-ready GLB.
 
-blender -b punky_face.blend --python animate_export.py -- <dir> <out.glb>
+blender -b <work>/face.blend --python animate_export.py -- <character_dir> <work_dir> <out.glb>
 Poses are written as armature-space bone directions (he faces -Y, +Z up),
 solved parent-first; legs use two-bone IK so planted feet stay on the floor.
 """
+import json
 import math
 import os
 import sys
@@ -11,7 +12,11 @@ import bpy
 from mathutils import Matrix, Vector
 
 ARGS = sys.argv[sys.argv.index("--") + 1 :]
-D, OUT = ARGS[0], ARGS[1]
+CHAR_DIR, D, OUT = ARGS[0], ARGS[1], ARGS[2]
+CFG = json.load(open(os.path.join(CHAR_DIR, "character.json"), encoding="utf-8"))
+NAME = CFG["name"]
+HAIR = CFG["hair"].split("/")[0]
+CLOTHES = [c.split("/")[0] for c in CFG["clothes"]]
 FPS = 30
 scene = bpy.context.scene
 scene.render.fps = FPS
@@ -255,7 +260,10 @@ for pb in pbs:
     pb.location = (0, 0, 0)
 
 # Game mesh: bake the shape keys and the clothing masks in, then lighten.
-DECIMATE = {"body": 0.5, "culturalibre_hair_06": 0.35, "shoes03": 0.5}
+DECIMATE = {"body": 0.5, HAIR: float(CFG.get("hair_decimate", 0.35))}
+DECIMATE.update(CFG.get("decimate", {}))
+## Materials are named by role (the game alpha-cuts hair, brows, lashes, eyes).
+ROLES = {"body": "skin", HAIR: "hair", "high-poly": "eyes"}
 for o in meshes:
     bpy.ops.object.select_all(action="DESELECT")
     o.select_set(True)
@@ -275,7 +283,12 @@ for o in meshes:
     for i, mat in enumerate(o.data.materials):
         imgs = [n.image for n in mat.node_tree.nodes if n.type == "TEX_IMAGE" and n.image]
         diffuse = next((im for im in imgs if "normal" not in im.name and "_ao" not in im.name), None)
-        new = bpy.data.materials.new("Punky_" + key)
+        role = ROLES.get(key, key)
+        if key.startswith("eyebrow"):
+            role = "eyebrows"
+        elif key.startswith("eyelashes"):
+            role = "eyelashes"
+        new = bpy.data.materials.new(NAME + "_" + role)
         new.use_nodes = True
         nt = new.node_tree
         bsdf = nt.nodes["Principled BSDF"]
@@ -286,7 +299,7 @@ for o in meshes:
             tex = nt.nodes.new("ShaderNodeTexImage")
             tex.image = diffuse
             nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-            if key in ("culturalibre_hair_06", "eyebrow006", "eyelashes01"):
+            if role in ("hair", "eyebrows", "eyelashes"):
                 nt.links.new(tex.outputs["Alpha"], bsdf.inputs["Alpha"])
                 new.surface_render_method = "BLENDED"
         o.data.materials[i] = new
@@ -311,4 +324,4 @@ bpy.ops.export_scene.gltf(
     export_yup=True,
 )
 print("EXPORTED", OUT, os.path.getsize(OUT))
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(D, "punky_game.blend"))
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(D, "game.blend"))

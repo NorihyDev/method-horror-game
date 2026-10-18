@@ -2,7 +2,7 @@ extends Node
 ## Development tool: renders reference screenshots of a map from fixed camera
 ## positions. Requires a real display/GPU (not --headless).
 ## Usage: godot --path game -- --autoshot=<absolute dir> [--map=house] [--power]
-##   [--teammate[=<clip>]] puts a co-op teammate (Punky) in front of the camera.
+##   [--teammate[=<clip>]] [--character=<id>] puts a co-op teammate in front of the camera.
 ##   [--phantom] shows the scare director's figure down the view (when there is room).
 ##   [--at=x,y,z,yaw,pitch] takes one shot from there instead of the map's list.
 
@@ -132,7 +132,8 @@ func _ready() -> void:
 	if AppInfo.has_arg("--teammate"):
 		mate = RemoteAvatar.new()
 		mate.player_id = 2
-		mate.display_name = "Punky"
+		mate.character = AppInfo.arg_value("--character", CharacterCatalog.DEFAULT)
+		mate.display_name = CharacterCatalog.display_name(mate.character)
 		map.add_child(mate)
 	var shots: Array = SHOTS.get(map_id, [])
 	if AppInfo.has_arg("--at"):

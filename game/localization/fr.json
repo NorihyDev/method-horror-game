@@ -508,6 +508,8 @@
 	"PROFILE_TITLE": "Profil",
 	"PROFILE_EDIT_NAME": "Changer le nom et la couleur",
 	"PROFILE_BADGES": "Insignes et styles",
+	"PROFILE_CHARACTER": "Personnage",
+	"PROFILE_CHARACTER_BODY": "Ce que tes coéquipiers voient de toi en coop. Tu joues toujours à la première personne.",
 	"PROFILE_IDENTITY": "Identité",
 	"PROFILE_IDENTITY_BODY": "Votre profil existe uniquement sur cet appareil. Il n'y a ni compte ni sauvegarde en ligne dans cette version : désinstaller le jeu ou effacer ses données supprime votre progression, vos pièces et vos cosmétiques.",
 	"PROFILE_LOCAL_ID": "Identifiant du profil de l'appareil : %s…",

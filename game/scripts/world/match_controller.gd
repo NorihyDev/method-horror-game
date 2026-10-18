@@ -171,9 +171,10 @@ func request_use_item(item: String) -> void:
 		net.call("send_use_item", item)
 
 
-func add_player_record(pid: int, display_name: String) -> void:
+func add_player_record(pid: int, display_name: String, character: String = "") -> void:
 	if not state.players.has(pid):
 		state.add_player(pid, display_name)
+	state.players[pid]["char"] = CharacterCatalog.sanitize(character)
 	_inventories[pid] = _make_inventory(state.players[pid]["inventory"])
 
 

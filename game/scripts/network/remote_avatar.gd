@@ -7,6 +7,8 @@ extends CharacterBody3D
 var player_id := 0
 var display_name := ""
 var color := Color(0.5, 0.5, 0.55)
+## CharacterCatalog id this player chose (untrusted; sanitized on use).
+var character := ""
 var status := MatchState.STATUS_ALIVE
 
 var _target_pos := Vector3.ZERO
@@ -39,7 +41,7 @@ func _ready() -> void:
 	add_child(cs)
 	_body = Node3D.new()
 	add_child(_body)
-	_model = TeammateModel.create()
+	_model = TeammateModel.create(character)
 	if _model:
 		_body.add_child(_model)
 	else:

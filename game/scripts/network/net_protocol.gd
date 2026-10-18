@@ -158,6 +158,7 @@ static func identify(hello: Dictionary, dedicated: bool, secret: String, room_id
 			"name": NameValidator.normalize(ticket_name),
 			"color": int(p.get("color", 0)),
 			"owner": bool(p.get("own", false)),
+			"char": CharacterCatalog.sanitize(p.get("char", "")),
 		}
 	var lan_name := str(hello.get("name", ""))
 	if NameValidator.validate(lan_name) != NameValidator.Result.OK:
@@ -169,7 +170,8 @@ static func identify(hello: Dictionary, dedicated: bool, secret: String, room_id
 		"ok": true,
 		"uid": "lan-" + SaveIO.sha256_text(lan_id).substr(0, 16),
 		"name": NameValidator.normalize(lan_name),
-		"color": int(hello.get("color", 0))
+		"color": int(hello.get("color", 0)),
+		"char": CharacterCatalog.sanitize(hello.get("char", "")),
 	}
 
 

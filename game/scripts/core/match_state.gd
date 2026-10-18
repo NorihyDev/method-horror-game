@@ -48,6 +48,7 @@ func add_player(player_id: int, display_name: String) -> Dictionary:
 		"downed_at": -1.0,
 		"caught": 0,
 		"away": false,
+		"char": CharacterCatalog.DEFAULT,
 	}
 	players[player_id] = record
 	return record
@@ -161,6 +162,7 @@ static func from_snapshot(data: Dictionary) -> MatchState:
 		record["downed_at"] = float(p.get("downed_at", -1.0))
 		record["caught"] = int(p.get("caught", 0))
 		record["away"] = bool(p.get("away", false))
+		record["char"] = CharacterCatalog.sanitize(p.get("char", ""))
 	return s
 
 

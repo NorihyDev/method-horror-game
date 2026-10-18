@@ -1,26 +1,30 @@
-"""Projects Punky's photo onto the MPFB head and bakes it into one skin texture.
+"""Projects a character's front photo onto the MPFB head and bakes it into one
+skin texture. Landmarks and tone samples come from character.json ("photo").
 
-blender -b punky_base.blend --python face_bake.py -- <dir>
-Photo landmarks (pixels in face_src.png, 565x382), measured by hand:
-  his right eye (image left) (250,147), his left eye (308,148), mouth (280,210),
-  chin (280,243), cheeks x 223 / 335.
+blender -b <work>/base.blend --python face_bake.py -- <character_dir> <work_dir>
+The photo is <work_dir>/face_src.png and never goes in the repository.
 """
+import json
 import os
 import sys
 import bpy
 import numpy as np
 from mathutils import Vector
 
-D = sys.argv[sys.argv.index("--") + 1]
+CHAR_DIR, D = sys.argv[sys.argv.index("--") + 1 :][:2]
+CFG = json.load(open(os.path.join(CHAR_DIR, "character.json"), encoding="utf-8"))
+NAME = CFG["name"]
+PH_CFG = CFG["photo"]
 PHOTO = os.path.join(D, "face_src.png")
-PW, PH = 565.0, 382.0
-P_EYE_R = np.array([250.0, 147.0])
-P_EYE_L = np.array([308.0, 148.0])
-P_MOUTH = np.array([280.0, 210.0])
-P_CHIN_Y = 243.0
+_probe = bpy.data.images.load(PHOTO)
+PW, PH = float(_probe.size[0]), float(_probe.size[1])
+P_EYE_R = np.array(PH_CFG["eye_r"], dtype=float)
+P_EYE_L = np.array(PH_CFG["eye_l"], dtype=float)
+P_MOUTH = np.array(PH_CFG["mouth"], dtype=float)
+P_CHIN_Y = float(PH_CFG["chin_y"])
 TEX = 2048
 
-body = bpy.data.objects["Punky.body"]
+body = bpy.data.objects[NAME + ".body"]
 mesh = body.data
 
 
@@ -83,13 +87,13 @@ for loop in mesh.loops:
 # Mask image in photo space: a feathered face oval from the brows to the chin.
 mask = np.zeros((int(PH), int(PW)), dtype=np.float32)
 yy, xx = np.mgrid[0 : int(PH), 0 : int(PW)]
-cx, cy = 279.0, 192.0
-rx, ry = 55.0, 58.0
+cx, cy, rx, ry = PH_CFG["mask"]
 d = np.sqrt(((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2)
 mask = np.clip((1.0 - d) / 0.22, 0.0, 1.0)
-mask[yy > P_CHIN_Y + 2] *= np.clip(1.0 - (yy[yy > P_CHIN_Y + 2] - P_CHIN_Y - 2) / 6.0, 0.0, 1.0)
+fall = max(6.0, ry * 0.1)
+mask[yy > P_CHIN_Y + 2] *= np.clip(1.0 - (yy[yy > P_CHIN_Y + 2] - P_CHIN_Y - 2) / fall, 0.0, 1.0)
 # Saved to disk and reloaded: an in-memory generated image comes back blank when baking.
-tmp_img = bpy.data.images.new("punky_face_mask_tmp", int(PW), int(PH), alpha=False)
+tmp_img = bpy.data.images.new("face_mask_tmp", int(PW), int(PH), alpha=False)
 rgba = np.dstack([mask, mask, mask, np.ones_like(mask)])[::-1].astype(np.float32)
 tmp_img.pixels.foreach_set(rgba.ravel())
 tmp_img.filepath_raw = os.path.join(D, "face_mask.png")
@@ -110,19 +114,26 @@ def blur(a, r):
         out = np.apply_along_axis(lambda m: np.convolve(m, k, mode="same"), 0, out)
         out = np.apply_along_axis(lambda m: np.convolve(m, k, mode="same"), 1, out)
     return out
-cheeks = np.concatenate([pp[175:200, 236:252, :3].reshape(-1, 3), pp[175:200, 308:324, :3].reshape(-1, 3)])
-# His cheeks are lit by a bright studio light: aim a little deeper for the body.
-neck = pp[255:280, 260:300, :3].reshape(-1, 3).mean(axis=0)
-# The studio light bleaches his face; his neck shows his real tone.
-target = (cheeks.mean(axis=0) * 0.35 + neck * 0.65) * 0.92
-skin_path = None
-for img in bpy.data.images:
-    if "diffuse" in img.name.lower() and "dark" in img.name.lower() or "young_darkskinned" in img.name:
-        skin_path = img.filepath
+def sample(region):
+    y0, y1, x0, x1 = region
+    return pp[y0:y1, x0:x1, :3].reshape(-1, 3)
+
+
+cheeks = np.concatenate([sample(r) for r in PH_CFG["cheeks"]]).mean(axis=0)
+# A bright studio light can bleach the face; a neck sample shows the real tone.
+target = cheeks
+if "neck" in PH_CFG:
+    w = float(PH_CFG.get("neck_weight", 0.65))
+    target = cheeks * (1.0 - w) + sample(PH_CFG["neck"]).mean(axis=0) * w
+target = target * float(PH_CFG.get("tone_scale", 1.0))
+# The body's own skin texture: the diffuse image from the skin asset's folder.
+skin_dir = CFG["skin"].split("/")[0]
 skin_img = None
 for img in bpy.data.images:
-    if img.filepath and "young_darkskinned_male_diffuse" in img.filepath:
+    path = img.filepath.replace("\\", "/")
+    if skin_img is None and "/" + skin_dir + "/" in path and "diffuse" in path.lower():
         skin_img = img
+assert skin_img, "skin texture not found for " + skin_dir
 sp = np.array(skin_img.pixels[:], dtype=np.float32).reshape(skin_img.size[1], skin_img.size[0], 4)
 source = sp[..., :3].reshape(-1, 3)
 source = source[source.sum(axis=1) > 0.05].mean(axis=0)
@@ -130,11 +141,12 @@ tint = np.clip(target / source, 0.4, 3.0)
 # De-light the photo: remove the studio light's broad gradient and keep the
 # facial detail, re-lit at the even body tone (target).
 lum = pp[..., :3].mean(axis=-1)
-low = blur(lum, 22) + 1e-3
+low = blur(lum, int(PH_CFG.get("delight_radius", 22))) + 1e-3
 flat = pp[..., :3] / low[..., None] * target.mean()
-flat = flat * (target / flat[175:200, 236:324].reshape(-1, 3).mean(axis=0))
+y0, y1, x0, x1 = PH_CFG["tone_band"]
+flat = flat * (target / flat[y0:y1, x0:x1].reshape(-1, 3).mean(axis=0))
 pp_out = np.dstack([np.clip(flat, 0, 1), pp[..., 3:]])[::-1].astype(np.float32)
-photo_img = bpy.data.images.new("punky_photo_flat", int(PW), int(PH), alpha=True)
+photo_img = bpy.data.images.new("photo_flat", int(PW), int(PH), alpha=True)
 photo_img.pixels.foreach_set(pp_out.ravel())
 photo_img.filepath_raw = os.path.join(D, "face_flat.png")
 photo_img.file_format = "PNG"
@@ -143,7 +155,7 @@ photo_img = bpy.data.images.load(os.path.join(D, "face_flat.png"))
 print("TONE photo", target, "skin", source, "tint", tint)
 
 # Bake material: tinted skin (main UV) mixed with the photo (photo UV) by mask x facing.
-bake_mat = bpy.data.materials.new("punky_bake")
+bake_mat = bpy.data.materials.new("skin_bake")
 bake_mat.use_nodes = True
 nt = bake_mat.node_tree
 nt.nodes.clear()
@@ -179,7 +191,7 @@ fade = N("ShaderNodeMath")
 fade.operation = "MULTIPLY"
 mix = N("ShaderNodeMix")
 mix.data_type = "RGBA"
-target_img = bpy.data.images.new("punky_skin_baked", TEX, TEX, alpha=False)
+target_img = bpy.data.images.new(NAME.lower() + "_skin_baked", TEX, TEX, alpha=False)
 t_target = N("ShaderNodeTexImage")
 t_target.image = target_img
 L = nt.links.new
@@ -212,13 +224,13 @@ scene.render.engine = "CYCLES"
 scene.cycles.samples = 4
 scene.cycles.device = "CPU"
 bpy.ops.object.bake(type="EMIT", margin=8, use_clear=True)
-target_img.filepath_raw = os.path.join(D, "punky_skin.png")
+target_img.filepath_raw = os.path.join(D, NAME.lower() + "_skin.png")
 target_img.file_format = "PNG"
 target_img.save()
 print("BAKED", target_img.filepath_raw)
 
 # Final skin: the baked texture on a plain principled material (game-ready).
-skin = bpy.data.materials.new("Punky_Skin")
+skin = bpy.data.materials.new(NAME + "_Skin")
 skin.use_nodes = True
 bsdf = skin.node_tree.nodes["Principled BSDF"]
 tex = skin.node_tree.nodes.new("ShaderNodeTexImage")
@@ -229,18 +241,17 @@ mesh.materials.clear()
 mesh.materials.append(skin)
 mesh.uv_layers.remove(mesh.uv_layers["photo"])
 
-# Hair already uses the darkened texture (build_punky.py); keep its cards alpha-blended.
-hair = bpy.data.objects["Punky.culturalibre_hair_06"]
+# Hair cards stay alpha-blended and a little rough.
+hair = bpy.data.objects[NAME + "." + CFG["hair"].split("/")[0]]
 for m in hair.data.materials:
     m.surface_render_method = "BLENDED" if hasattr(m, "surface_render_method") else m.surface_render_method
     for node in m.node_tree.nodes:
         if node.type == "BSDF_PRINCIPLED":
             node.inputs["Roughness"].default_value = 0.6
 
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(D, "punky_face.blend"))
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(D, "face.blend"))
 scene.render.engine = "BLENDER_EEVEE"
 scene.view_settings.exposure = -1.0
-scene.view_settings.look = "AgX - Medium High Contrast" if "AgX - Medium High Contrast" in [i.name for i in type(scene.view_settings).bl_rna.properties["look"].enum_items] else scene.view_settings.look
 cam = scene.camera
 top = max(c.z for c in CO)
 print("HEIGHT", round(top, 3))

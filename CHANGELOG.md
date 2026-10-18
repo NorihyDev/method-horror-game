@@ -6,6 +6,10 @@ dates are ISO 8601.
 ## [Unreleased]
 
 ### Added
+- **Choose your character.** Profile → Character picks who teammates see
+  you as in co-op. Tsila joins Punky: short curly hair and a black METHOD
+  jersey with neon-green trim, with the same six animations. The choice
+  travels with you when you join, and unknown values fall back to Punky.
 - **More horror.**
   - A scare director plays local-only frights in quiet moments: whispers,
     knocking, running steps, lamps bursting, the flashlight dying, a distant

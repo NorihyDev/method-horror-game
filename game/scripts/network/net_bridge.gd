@@ -64,6 +64,7 @@ var _peers: Dictionary = {}
 var _pid_by_uid: Dictionary = {}
 var _names: Dictionary = {}
 var _colors: Dictionary = {}
+var _chars: Dictionary = {}
 var _ready: Dictionary = {}
 var _loaded: Dictionary = {}
 var _away_since: Dictionary = {}
@@ -153,6 +154,7 @@ func _host_on(peer: MultiplayerPeer, p_room: Dictionary, p_trust: Trust, max_cli
 		my_pid = 1
 		_names[1] = NameValidator.normalize(host_name)
 		_colors[1] = host_color
+		_chars[1] = Saves.character()
 		_ready[1] = true
 		_owner_pid = 1
 		_pid_by_uid["lan-host"] = 1
@@ -259,6 +261,7 @@ func _server_auth(peer: int, data: PackedByteArray) -> void:
 	_pid_by_uid[uid] = pid
 	_names[pid] = identity["name"]
 	_colors[pid] = clampi(int(identity["color"]), 0, Saves.AVATAR_COLORS.size() - 1)
+	_chars[pid] = CharacterCatalog.sanitize(identity.get("char", ""))
 	if not reconnect:
 		_ready[pid] = false
 	_peers[peer] = {"uid": uid, "pid": pid, "reconnect": reconnect, "connected": false}
@@ -479,7 +482,7 @@ func server_start() -> bool:
 	mc.enemy_spawned.connect(_on_enemy_spawned)
 	for i in members.size():
 		var pid := int(members[i])
-		mc.add_player_record(pid, str(_names[pid]))
+		mc.add_player_record(pid, str(_names[pid]), str(_chars.get(pid, "")))
 		var spawn := map.player_spawn(i)
 		mc.state.players[pid]["pos"] = MatchState.vec_to_array(spawn.origin)
 		mc.state.players[pid]["yaw"] = spawn.basis.get_euler().y
@@ -808,6 +811,7 @@ func _spawn_avatar(pid: int, pos: Vector3, yaw: float) -> RemoteAvatar:
 	a.player_id = pid
 	a.display_name = str(_names.get(pid, ""))
 	a.color = Saves.AVATAR_COLORS[clampi(int(_colors.get(pid, 0)), 0, Saves.AVATAR_COLORS.size() - 1)]
+	a.character = str(mc.state.player(pid).get("char", ""))
 	map.players_root.add_child(a)
 	a.server_place(pos, yaw)
 	_avatars[pid] = a
@@ -984,6 +988,7 @@ func _s_snapshot(data: Dictionary) -> void:
 			var a := RemoteAvatar.new()
 			a.player_id = int(pid)
 			a.display_name = str(rec.get("name", ""))
+			a.character = str(rec.get("char", ""))
 			map.players_root.add_child(a)
 			a.target(MatchState.array_to_vec(rec.get("pos")), float(rec.get("yaw", 0.0)), true)
 			a.set_status(str(rec.get("status", "")))

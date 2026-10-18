@@ -130,7 +130,12 @@ func join_online(code: String, password: String) -> String:
 	if not RelayClient.is_configured():
 		return "MP_ONLINE_NOT_CONFIGURED"
 	room_info = {"code": clean, "password": password}
-	_hello = {"lan_id": Saves.local_id(), "name": Saves.display_name(), "color": Saves.avatar_color_index()}
+	_hello = {
+		"lan_id": Saves.local_id(),
+		"name": Saves.display_name(),
+		"color": Saves.avatar_color_index(),
+		"char": Saves.character(),
+	}
 	status_changed.emit("MP_STATUS_CONNECTING")
 	return _connect_guest()
 
@@ -168,7 +173,12 @@ func join_lan(address: String) -> String:
 		return "MP_LAN_BAD_ADDRESS"
 	_address = clean
 	_port = NetProtocol.LAN_PORT
-	_hello = {"lan_id": Saves.local_id(), "name": Saves.display_name(), "color": Saves.avatar_color_index()}
+	_hello = {
+		"lan_id": Saves.local_id(),
+		"name": Saves.display_name(),
+		"color": Saves.avatar_color_index(),
+		"char": Saves.character(),
+	}
 	status_changed.emit("MP_STATUS_CONNECTING")
 	net.join(_address, _port, _hello)
 	return ""

@@ -1,10 +1,9 @@
 class_name TeammateModel
 extends Node3D
-## The animated character other players see (Punky, built with MPFB in
-## Blender: see docs/characters.md). Picks a looping clip from the avatar's
-## speed, crouch and downed state, and holds a flashlight in the right hand.
-
-const SCENE := "res://assets/characters/punky/punky.glb"
+## The animated character other players see (Punky, Tsila...: built with
+## MPFB in Blender, see docs/characters.md and CharacterCatalog). Picks a
+## looping clip from the avatar's speed, crouch and downed state, and holds a
+## flashlight in the right hand.
 const CLIPS: Array[String] = ["idle", "walk", "run", "crouch_idle", "crouch_walk", "downed"]
 ## Speed (m/s) each cycle was authored at, printed by the Blender export.
 const CLIP_SPEED := {"walk": 1.125, "run": 3.5, "crouch_walk": 0.733}
@@ -13,19 +12,20 @@ const MOVING_ABOVE := 0.3
 const BLEND := 0.2
 ## Hair, brows, lashes and the clear cornea shell over each eye are cut out by
 ## their texture's alpha: scissored (no sorting, cheap on mobile).
-const CARD_MATERIALS: Array[String] = ["hair", "eyebrow", "eyelash", "high-poly"]
+const CARD_MATERIALS: Array[String] = ["hair", "eyebrow", "eyelash", "high-poly", "_eyes"]
 
 var anim: AnimationPlayer
 var current := ""
 
 
 ## Null when the model is missing, so callers can fall back to simple shapes.
-static func create() -> TeammateModel:
-	var packed := load(SCENE) as PackedScene if ResourceLoader.exists(SCENE) else null
+static func create(character: String = CharacterCatalog.DEFAULT) -> TeammateModel:
+	var path := CharacterCatalog.scene_path(character)
+	var packed := load(path) as PackedScene if ResourceLoader.exists(path) else null
 	if packed == null:
 		return null
 	var model := TeammateModel.new()
-	model.name = "Punky"
+	model.name = CharacterCatalog.display_name(character)
 	var inst := packed.instantiate() as Node3D
 	# Exported facing +Z; the game's forward is -Z.
 	inst.rotation.y = PI
@@ -48,7 +48,7 @@ func _setup(inst: Node3D) -> void:
 				mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 				mat.alpha_scissor_threshold = 0.4
 				mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-				if not "high-poly" in mat.resource_name:
+				if not ("high-poly" in mat.resource_name or "_eyes" in mat.resource_name):
 					mat.roughness = 1.0
 					mat.metallic_specular = 0.2
 	var skel := inst.find_child("Skeleton3D", true, false) as Skeleton3D

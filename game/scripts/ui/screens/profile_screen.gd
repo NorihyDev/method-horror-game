@@ -46,6 +46,8 @@ func on_enter(_p: Dictionary) -> void:
 	row.add_child(UI.button("PROFILE_BADGES", func() -> void: app.goto("shop"), false, 240))
 	body.add_child(row)
 	body.add_child(UI.spacer(6))
+	_character_picker(body)
+	body.add_child(UI.spacer(6))
 	body.add_child(UI.caption("PROFILE_IDENTITY"))
 	body.add_child(UI.para("PROFILE_IDENTITY_BODY", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM))
 	var lid := UI.label(
@@ -74,3 +76,32 @@ func on_enter(_p: Dictionary) -> void:
 	reset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	body.add_child(reset)
 	focus_first()
+
+
+## Character choice: portrait cards; the chosen one is highlighted.
+func _character_picker(body: VBoxContainer) -> void:
+	body.add_child(UI.caption("PROFILE_CHARACTER"))
+	body.add_child(UI.para("PROFILE_CHARACTER_BODY", ThemeFactory.FONT_SMALL + 1, ThemeFactory.TEXT_DIM))
+	var cards := HFlowContainer.new()
+	cards.add_theme_constant_override("h_separation", 14)
+	cards.add_theme_constant_override("v_separation", 14)
+	for id in CharacterCatalog.ids():
+		var card := UI.vbox(6)
+		var pic := TextureRect.new()
+		pic.texture = CharacterCatalog.portrait(id)
+		pic.custom_minimum_size = Vector2(150, 176)
+		pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		card.add_child(pic)
+		var chosen := id == Saves.character()
+		var pick := UI.button(CharacterCatalog.display_name(id), _choose.bind(id), chosen, 150)
+		pick.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		pick.name = "Pick_" + id
+		card.add_child(pick)
+		cards.add_child(card)
+	body.add_child(cards)
+
+
+func _choose(id: String) -> void:
+	Saves.set_character(id)
+	on_enter({})

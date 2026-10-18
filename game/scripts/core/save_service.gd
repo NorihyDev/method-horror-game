@@ -125,6 +125,17 @@ func avatar_color() -> Color:
 	return AVATAR_COLORS[avatar_color_index()]
 
 
+## Who teammates see you as in co-op (CharacterCatalog id).
+func character() -> String:
+	return CharacterCatalog.sanitize(data["profile"].get("character", CharacterCatalog.DEFAULT))
+
+
+func set_character(id: String) -> void:
+	data["profile"]["character"] = CharacterCatalog.sanitize(id)
+	save()
+	profile_changed.emit()
+
+
 func set_avatar_color(index: int) -> void:
 	data["profile"]["avatar_color"] = clampi(index, 0, AVATAR_COLORS.size() - 1)
 	save()

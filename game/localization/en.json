@@ -508,6 +508,8 @@
 	"PROFILE_TITLE": "Profile",
 	"PROFILE_EDIT_NAME": "Change name & colour",
 	"PROFILE_BADGES": "Badges & styles",
+	"PROFILE_CHARACTER": "Character",
+	"PROFILE_CHARACTER_BODY": "Who your teammates see you as in co-op. You always play in first person.",
 	"PROFILE_IDENTITY": "Identity",
 	"PROFILE_IDENTITY_BODY": "Your profile lives on this device only. There is no account or cloud save in this version: uninstalling the game or clearing its data removes your progress, coins and cosmetics.",
 	"PROFILE_LOCAL_ID": "Device profile ID: %s…",

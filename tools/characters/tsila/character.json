@@ -1,0 +1,106 @@
+{
+  "name": "Tsila",
+  "phenotype": {
+    "gender": 1.0,
+    "age": 0.38,
+    "muscle": 0.5,
+    "weight": 0.4,
+    "proportions": 0.6,
+    "height": 0.55,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.55,
+      "caucasian": 0.3,
+      "african": 0.15
+    }
+  },
+  "skin": "young_asian_male/young_asian_male.mhmat",
+  "hair": "afro01/afro01.mhclo",
+  "eyebrows": "eyebrow009/eyebrow009.mhclo",
+  "clothes": [
+    "male_casualsuit04/male_casualsuit04.mhclo",
+    "shoes03/shoes03.mhclo"
+  ],
+  "textures": {
+    "high-poly": "eye.png",
+    "male_casualsuit04": "jersey.png",
+    "eyebrow009": "brows.png"
+  },
+  "targets": [
+    {
+      "target": "head-oval",
+      "value": 0.75
+    },
+    {
+      "target": "head-scale-horiz-decr",
+      "value": 0.38
+    },
+    {
+      "target": "head-fat-decr",
+      "value": 0.2
+    },
+    {
+      "target": "chin-width-decr",
+      "value": 0.2
+    },
+    {
+      "target": "chin-height-incr",
+      "value": 0.2
+    },
+    {
+      "target": "nose-flaring-incr",
+      "value": 0.15
+    },
+    {
+      "target": "mouth-lowerlip-volume-incr",
+      "value": 0.3
+    }
+  ],
+  "decimate": {
+    "shoes03": 0.5
+  },
+  "photo": {
+    "eye_r": [
+      434,
+      274
+    ],
+    "eye_l": [
+      560,
+      274
+    ],
+    "mouth": [
+      500,
+      405
+    ],
+    "chin_y": 490,
+    "mask": [
+      497,
+      367,
+      120,
+      124
+    ],
+    "cheeks": [
+      [
+        330,
+        370,
+        385,
+        420
+      ],
+      [
+        330,
+        370,
+        580,
+        615
+      ]
+    ],
+    "tone_scale": 0.82,
+    "tone_band": [
+      330,
+      370,
+      385,
+      615
+    ],
+    "delight_radius": 45
+  }
+}
