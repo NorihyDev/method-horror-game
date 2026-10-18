@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c1qq84np352vr"
+uid="uid://o8b06vvjfx8c"
 path.s3tc="res://.godot/imported/dekai_dekai_hairshell.webp-a84d5326ecd9f316f764e0aecf1ea238.s3tc.ctex"
 path.etc2="res://.godot/imported/dekai_dekai_hairshell.webp-a84d5326ecd9f316f764e0aecf1ea238.etc2.ctex"
 metadata={
@@ -10,7 +10,7 @@ metadata={
 "vram_texture": true
 }
 generator_parameters={
-"md5": "a09a02ac5da72261a04646f4aecba2d3"
+"md5": "eccc5f4c574a1d8a05d1aa5dec598e44"
 }
 
 [deps]

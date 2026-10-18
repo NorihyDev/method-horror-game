@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ckrjepx2uet7t"
+uid="uid://dcxh31wdey237"
 path.s3tc="res://.godot/imported/tsila_tsila_hairshell.webp-0ec618bcf9ab8d276f3d72a51fddf104.s3tc.ctex"
 path.etc2="res://.godot/imported/tsila_tsila_hairshell.webp-0ec618bcf9ab8d276f3d72a51fddf104.etc2.ctex"
 metadata={
@@ -10,7 +10,7 @@ metadata={
 "vram_texture": true
 }
 generator_parameters={
-"md5": "43c09442464497ff3c8e53989c403630"
+"md5": "5c30f32d71048041d35ee57539401585"
 }
 
 [deps]

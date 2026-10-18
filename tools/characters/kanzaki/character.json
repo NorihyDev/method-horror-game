@@ -88,6 +88,15 @@
     "thickness": 0.006,
     "tuft_size": 0.009,
     "tufts": 1400,
-    "crown": 0.03
+    "crown": 0.0,
+    "max_thickness": 0.014,
+    "dark": 0.55,
+    "rgb": [
+      0.035,
+      0.03,
+      0.028
+    ],
+    "min_thickness": 0.009,
+    "lie": 0.7
   }
 }

@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://glbj4odgv1cr"
+uid="uid://ctc168vs3gras"
 path.s3tc="res://.godot/imported/norihy_norihy_hairshell.webp-d1f908f40fdc54ed092220bde2847f5d.s3tc.ctex"
 path.etc2="res://.godot/imported/norihy_norihy_hairshell.webp-d1f908f40fdc54ed092220bde2847f5d.etc2.ctex"
 metadata={
@@ -10,7 +10,7 @@ metadata={
 "vram_texture": true
 }
 generator_parameters={
-"md5": "43c09442464497ff3c8e53989c403630"
+"md5": "cafe1d52643fd689582f14b3f5624d41"
 }
 
 [deps]

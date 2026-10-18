@@ -67,7 +67,8 @@
   "facebuilder": {},
   "hair_shell": {
     "thickness": 0.012,
-    "tuft_size": 0.014,
-    "tufts": 1200
+    "tuft_size": 0.011,
+    "tufts": 1200,
+    "max_thickness": 0.02
   }
 }

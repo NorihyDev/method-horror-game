@@ -364,6 +364,13 @@ for _ in range(int(HS.get("smooth", 8))):
     hair_w = np.array([0.5 * hair_w[i] + 0.5 * hair_w[nb].mean() if nb else hair_w[i] for i, nb in enumerate(adj)])
 hras, _ = rasterize(R, hair_w[:, None].astype(np.float32))
 scalp = np.clip((hras[..., 0] - 0.35) / 0.3, 0.0, 1.0)[..., None]
+if "cap" in CFG:
+    # Faded short hair below the cap, down to the tops of the ears.
+    _fade_attr = (zz - plane)[:, None].astype(np.float32)
+    _fr, _ = rasterize(R, _fade_attr)
+    _fade = np.clip((_fr[..., 0] + float(CFG["cap"].get("fade", 0.035))) / 0.02, 0.0, 1.0) * (1.0 - scalp[..., 0])
+    _fade = resample(_fade[..., None], 128, (R, R))[..., 0] * 0.75
+    scalp = np.maximum(scalp, _fade[..., None])
 fill = skin * (1 - scalp) + hair * scalp
 mask = mask * (1.0 - scalp[..., 0])
 # Colours just inside the face, pushed outward and blurred: the head around
@@ -540,14 +547,82 @@ keep_faces = [p_.vertices[:] for p_ in fb_obj.data.polygons if hair_w[list(p_.ve
 used_s = sorted({i for f_ in keep_faces for i in f_})
 remap_s = {o: n for n, o in enumerate(used_s)}
 taper = np.clip((hair_w - 0.5) / 0.3, 0.0, 1.0)
-shell_v = [tuple(head_m[i] + nb[i] * (0.0025 + thick * (1.0 if is_cap else taper[i]))) for i in used_s]
+
+
+def to_photo(points_body):
+    """Body-space points -> (photo x, photo y top-down) through FaceBuilder's camera."""
+    fbp = (s * (r @ np.asarray(points_body).T)).T + t
+    out_ = np.empty((len(fbp), 2))
+    for k_, q_ in enumerate(fbp):
+        v_ = world_to_camera_view(scene, fb_cam, Vector(tuple(q_)))
+        out_[k_] = (v_.x * pw_, (1.0 - v_.y) * ph_)
+    return out_
+
+
+# Hair in the photo: not background, clearly darker than the skin, above the mouth.
+_plum = pp.mean(axis=-1)
+_rows_td = np.arange(ph_)[::-1][:, None]  # pp rows are bottom-up: row index -> top-down y
+hair_px = (_soft < 0.5) & (_plum < skin.mean() * float(HS.get("dark", 0.62))) & (_rows_td < PH["mouth"][1])
+# Close small gaps (curls let background through).
+for _ in range(2):
+    _n = hair_px.copy()
+    _n[1:] |= hair_px[:-1]
+    _n[:-1] |= hair_px[1:]
+    _n[:, 1:] |= hair_px[:, :-1]
+    _n[:, :-1] |= hair_px[:, 1:]
+    hair_px = _n & (_soft < 0.5)
+if HS.get("rgb") is None and hair_px.any():
+    hair = np.median(pp[hair_px], axis=0).astype(np.float32) * 0.9
+
+
+def in_hair(xy):
+    xi = np.clip(xy[:, 0].astype(int), 0, pw_ - 1)
+    yi = np.clip((ph_ - 1 - xy[:, 1]).astype(int), 0, ph_ - 1)
+    return hair_px[yi, xi]
+
+
+thick_v = np.full(len(head_m), np.nan)
+if not is_cap:
+    t_max = float(spec.get("max_thickness", 0.14))
+    steps = np.arange(0.004, t_max, 0.004)
+    cand = [i for i in used_s if -0.35 < facing[i] < 0.4]
+    for i in cand:
+        ray = head_m[i][None, :] + nb[i][None, :] * steps[:, None]
+        ok = in_hair(to_photo(ray))
+        # Thickness = how far the hair reaches out before the photo shows background.
+        run = int(np.argmin(ok)) if not ok.all() else len(ok)
+        thick_v[i] = steps[run - 1] if run > 0 else 0.004
+    known = ~np.isnan(thick_v)
+    base_t = float(np.nanmedian(thick_v)) if known.any() else thick
+    vals = np.where(known, thick_v, base_t)
+    # Spread the measured outline over the front and back (diffusion), keeping
+    # the measured values, then soften.
+    for _ in range(60):
+        avg = np.array([vals[nb_].mean() if nb_ else vals[i] for i, nb_ in enumerate(adj)])
+        vals = np.where(known, vals, avg)
+    for _ in range(6):
+        vals = np.array([0.5 * vals[i] + 0.5 * vals[nb_].mean() if nb_ else vals[i] for i, nb_ in enumerate(adj)])
+    vals = np.clip(vals * float(spec.get("volume", 1.0)), float(spec.get("min_thickness", 0.004)), t_max)
+    thick_v = vals
+    print("HAIR fit: measured %d verts, thickness median %.3f max %.3f" % (int(known.sum()), float(np.median(vals[used_s])), float(vals[used_s].max())))
+else:
+    thick_v = np.full(len(head_m), thick)
+    # Structured snapback: the front panels stand up off the forehead and the
+    # crown rises to a rounded top, instead of hugging the skull.
+    _top = head_m[used_s][:, 2].max()
+    _fy, _by = head_m[used_s][:, 1].min(), head_m[used_s][:, 1].max()
+    _front = np.clip((cyh - head_m[:, 1]) / max(cyh - _fy, 1e-4), 0.0, 1.0)
+    _up = np.clip((head_m[:, 2] - plane) / max(_top - plane.min(), 1e-4), 0.0, 1.0)
+    thick_v = thick_v + float(spec.get("front_rise", 0.012)) * _front ** 1.5 * np.sqrt(_up)
+    thick_v = thick_v + float(spec.get("crown_rise", 0.004)) * _up ** 2
+shell_v = [tuple(head_m[i] + nb[i] * (0.0025 + thick_v[i] * (1.0 if is_cap else taper[i]))) for i in used_s]
 shell = bpy.data.meshes.new(NAME + (".cap" if is_cap else ".hairshell"))
 shell.from_pydata(shell_v, [], [tuple(remap_s[i] for i in f_) for f_ in keep_faces])
 suv = shell.uv_layers.new(name="UVMap")
 for poly in shell.polygons:
     key = tuple(used_s[i] for i in poly.vertices)
     for li, val in zip(poly.loop_indices, src_loops[key]):
-        suv.data[li].uv = (val[0] * (1 if is_cap else 7), val[1] * (1 if is_cap else 7))
+        suv.data[li].uv = (val[0], val[1])
 for poly in shell.polygons:
     poly.use_smooth = True
 if is_cap:
@@ -570,17 +645,19 @@ if is_cap:
         y = y0 - np.sin(a_) * reach
         # Gently curved across (sides lower) and pitched up at the front.
         side = (np.cos(a_)) ** 2
-        ring.append(bm.verts.new((x, y, z0 + (y0 - y) * 0.08 - side * 0.012)))
+        ring.append(bm.verts.new((x, y, z0 + (y0 - y) * float(spec.get("brim_pitch", 0.08)) - side * float(spec.get("brim_curve", 0.012)))))
     top_face = bm.faces.new(ring)
     ext = bmesh.ops.extrude_face_region(bm, geom=[top_face])
     for v in ext["geom"]:
         if isinstance(v, bmesh.types.BMVert):
             v.co.z -= 0.006
     # Button on the crown.
-    crown_top = head_m[used_s][np.argmax(head_m[used_s][:, 2])]
+    _ci = used_s[int(np.argmax([shell_v[k][2] for k in range(len(used_s))]))]
+    crown_top = np.array(shell_v[used_s.index(_ci)])
     btn = bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=6, radius=0.007)
     for v in btn["verts"]:
-        v.co += Vector(tuple(crown_top + np.array([0, 0, thick + 0.003])))
+        v.co.z *= 0.45
+        v.co += Vector(tuple(crown_top + np.array([0, 0, 0.002])))
     bm.to_mesh(shell)
     bm.free()
 shell_obj = bpy.data.objects.new(shell.name, shell)
@@ -588,14 +665,55 @@ scene.collection.objects.link(shell_obj)
 smat = bpy.data.materials.new(shell.name.replace(".", "_"))
 smat.use_nodes = True
 sbsdf = smat.node_tree.nodes["Principled BSDF"]
+RS = 1024
 if is_cap:
-    sbsdf.inputs["Base Color"].default_value = list(spec.get("color", [0.018, 0.018, 0.02])) + [1.0]
-    sbsdf.inputs["Roughness"].default_value = 0.9
-else:
+    # Six panels meeting at the button, stitched seams, a band at the rim.
+    _cc = np.array(crown_top)
+    _ang = np.arctan2(head_m[:, 0] - _cc[0], -(head_m[:, 1] - _cc[1]))
+    _hgt = head_m[:, 2] - plane
+    cap_attr = np.column_stack([np.cos(3 * _ang), np.sin(3 * _ang), _hgt]).astype(np.float32)
+    cr, _ = rasterize(RS, cap_attr)
+    _seam_phase = np.arctan2(cr[..., 1], cr[..., 0])
+    seam = np.clip(1.0 - np.abs(np.sin(_seam_phase / 2.0)) / 0.06, 0.0, 1.0)
+    band = np.clip(1.0 - np.abs(cr[..., 2] - 0.012) / 0.0025, 0.0, 1.0)
+    base_c = np.array(spec.get("color", [0.018, 0.018, 0.02]), dtype=np.float32)
+    weave = 0.92 + 0.08 * np.sin(np.arange(RS)[None, :] * 1.7) * np.sin(np.arange(RS)[:, None] * 1.3)
+    cap_img = base_c * weave[..., None] * (1.0 - 0.45 * np.maximum(seam, band))[..., None] + 0.02 * np.maximum(seam, band)[..., None]
+    cimg = bpy.data.images.new(NAME.lower() + "_cap", RS, RS, alpha=False)
+    cimg.pixels.foreach_set(np.dstack([cap_img, np.ones((RS, RS))]).astype(np.float32).ravel())
+    cimg.filepath_raw = os.path.join(WORK, NAME.lower() + "_cap.png")
+    cimg.file_format = "PNG"
+    cimg.save()
     tnode = smat.node_tree.nodes.new("ShaderNodeTexImage")
-    tnode.image = curly_texture(os.path.join(WORK, NAME.lower() + "_hairshell.png"), hair * 1.3)
+    tnode.image = bpy.data.images.load(cimg.filepath_raw)
     smat.node_tree.links.new(tnode.outputs["Color"], sbsdf.inputs["Base Color"])
-    sbsdf.inputs["Roughness"].default_value = 0.75
+    sbsdf.inputs["Roughness"].default_value = 0.85
+else:
+    # Where the photo saw the hair, use it; elsewhere tiled curls in his hair colour.
+    sh_pts = np.array([head_m[i] + nb[i] * (0.0025 + thick_v[i] * taper[i]) for i in range(len(head_m))])
+    xy = to_photo(sh_pts)
+    attr = np.column_stack([xy[:, 0] / pw_, 1.0 - xy[:, 1] / ph_, facing]).astype(np.float32)
+    hr, hcov = rasterize(RS, attr)
+    hcol = sample(hr[..., 0], hr[..., 1])
+    hx = hr[..., 0] * pw_
+    hy = (1.0 - hr[..., 1]) * ph_
+    hin = in_hair(np.column_stack([hx.ravel(), hy.ravel()])).reshape(RS, RS).astype(np.float32)
+    seen_h = np.clip((hr[..., 2] - 0.2) / 0.3, 0.0, 1.0) * hin * hcov
+    seen_h = resample(seen_h[..., None], 128, (RS, RS))[..., 0]
+    curl = np.array(curly_texture(os.path.join(WORK, NAME.lower() + "_curls.png"), hair * 1.25).pixels[:], dtype=np.float32)
+    curl = curl.reshape(512, 512, 4)[..., :3]
+    uu = (np.arange(RS) * 7 * 512 // RS) % 512
+    tiled = curl[uu][:, uu]
+    himg = hcol * seen_h[..., None] + tiled * (1.0 - seen_h[..., None])
+    hi_img = bpy.data.images.new(NAME.lower() + "_hairshell", RS, RS, alpha=False)
+    hi_img.pixels.foreach_set(np.dstack([himg, np.ones((RS, RS))]).astype(np.float32).ravel())
+    hi_img.filepath_raw = os.path.join(WORK, NAME.lower() + "_hairshell.png")
+    hi_img.file_format = "PNG"
+    hi_img.save()
+    tnode = smat.node_tree.nodes.new("ShaderNodeTexImage")
+    tnode.image = bpy.data.images.load(hi_img.filepath_raw)
+    smat.node_tree.links.new(tnode.outputs["Color"], sbsdf.inputs["Base Color"])
+    sbsdf.inputs["Roughness"].default_value = 0.8
 shell.materials.append(smat)
 print("SHELL", shell.name, len(shell.vertices), "verts")
 tufts_obj = None
@@ -656,6 +774,7 @@ if not is_cap and int(spec.get("tufts", 1200)) > 0:
     sv = np.array([tuple(v.co) for v in shell.vertices])
     sn = np.array([tuple(v.normal) for v in shell.vertices])
     full = np.array([taper[used_s[k]] for k in range(len(sv))])
+    depth = np.array([thick_v[used_s[k]] for k in range(len(sv))])
     pick = rng.choice(len(sv), size=min(int(spec.get("tufts", 1200)), len(sv) * 3), p=(full + 0.05) / (full + 0.05).sum())
     bm = bmesh.new()
     uvl = bm.loops.layers.uv.new("UVMap")
@@ -671,11 +790,14 @@ if not is_cap and int(spec.get("tufts", 1200)) > 0:
         for layer in (0, 1):
             if layer == 1 and rng.random() > full[k]:
                 continue
-            sz = size_ * rng.uniform(0.7, 1.25) * (0.5 + 0.5 * full[k]) * (0.75 if layer == 0 else 1.1)
+            # Tufts as big as the hair is deep there (short hair: small, afro: big).
+            sz = float(np.clip(depth[k] * 0.9, 0.006, size_)) * rng.uniform(0.75, 1.2) * (0.5 + 0.5 * full[k]) * (0.8 if layer == 0 else 1.05)
             lift_ = n_ * (0.003 * layer)
             # Hair grows outward but combs back and down a little.
-            comb = Vector((0.0, 0.35, -0.25)) * float(spec.get("comb", 1.0))
-            up = (n_ + comb * 0.6).normalized()
+            comb = Vector(tuple(spec.get("comb_dir", [0.0, 0.35, -0.25]))) * float(spec.get("comb", 1.0))
+            # Short hair lies down along the head; deep hair stands out.
+            lie = float(spec.get("lie", np.clip(1.0 - depth[k] / 0.04, 0.0, 0.85)))
+            up = (n_ * (1.0 - lie) + comb * 0.6 + t1 * lie * 0.8).normalized()
             cu, cv = rng.integers(0, 2) * 0.5, rng.integers(0, 2) * 0.5
             for side in (t1, t2):
                 q = [base_ + lift_ - side * sz * 0.5, base_ + lift_ + side * sz * 0.5,

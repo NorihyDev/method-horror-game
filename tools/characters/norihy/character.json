@@ -70,8 +70,9 @@
   "facebuilder": {},
   "hair_shell": {
     "thickness": 0.034,
-    "tuft_size": 0.026,
+    "tuft_size": 0.016,
     "tufts": 1250,
-    "crown": 0.02
+    "crown": 0.02,
+    "max_thickness": 0.07
   }
 }

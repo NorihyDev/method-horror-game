@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bb5ik4jcjht6l"
+uid="uid://cy6j06u7ayyyn"
 path.s3tc="res://.godot/imported/kanzaki_kanzaki_tufts.webp-abca87f28d8cb8e5e915c4bd89770ab8.s3tc.ctex"
 path.etc2="res://.godot/imported/kanzaki_kanzaki_tufts.webp-abca87f28d8cb8e5e915c4bd89770ab8.etc2.ctex"
 metadata={
@@ -10,7 +10,7 @@ metadata={
 "vram_texture": true
 }
 generator_parameters={
-"md5": "9131af024dfec8a86738cb43392797a3"
+"md5": "41fe98d838903b55d17491f02f6a06e0"
 }
 
 [deps]

@@ -96,8 +96,12 @@ The folder also holds any textures the character uses.
      and never where the photo shows background or hair. Everything else
      is clean skin in the exact colour at the edge of the face. The body is
      tinted to the same colour (`skin_tone.json`), so there is no seam.
-   - Hair (`"hair_shell"`) is a shell grown from the real skull: its front
-     hairline is read from the photo and the rest follows the head shape.
+   - Hair (`"hair_shell"`) is a shell grown from the real skull. Its front
+     hairline is read from the photo. Its depth is fitted to the hair's
+     outline in the photo: rays go out from the head and stop where the
+     photo turns to background. The result is spread over the back and
+     capped by `max_thickness`. Its texture is the photo's own hair where
+     the photo saw it, and curls in the photo's hair colour elsewhere.
      On it sit two layers of crossed hair cards using a generated atlas of
      coiled strands, darker at the root and lighter at the tip. The cards
      are shorter and sparser at the hairline. `tufts` and `tuft_size` set
@@ -112,7 +116,9 @@ The folder also holds any textures the character uses.
      photo off the face, such as a hand (Kanzaki) or braids crossing it
      (Dekai). `"facebuilder": {"paint_lips": true}` paints lips the photo
      doesn't show.
-   - A `"cap"` (Mianja) is built the same way: a crown that follows the real
+   - A `"cap"` (Mianja) is a structured snapback: a raised front, six stitched
+     panels and a rim band baked into its texture, a pitched flat brim and a
+     button, with faded short hair below it. It is built the same way: a crown that follows the real
      skull above a plane from mid-forehead to the nape, a curved flat brim
      and a button.
    - The head is aligned to the body using the eyes, mouth and nose tip,

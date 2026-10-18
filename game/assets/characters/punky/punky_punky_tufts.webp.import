@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dfslwtmg87c26"
-path.s3tc="res://.godot/imported/punky_hair.webp-6afbe10b0d2867c10964717d61ca7d45.s3tc.ctex"
-path.etc2="res://.godot/imported/punky_hair.webp-6afbe10b0d2867c10964717d61ca7d45.etc2.ctex"
+uid="uid://bq2ofnehl824i"
+path.s3tc="res://.godot/imported/punky_punky_tufts.webp-5b13afd03a654060d785083486d186ed.s3tc.ctex"
+path.etc2="res://.godot/imported/punky_punky_tufts.webp-5b13afd03a654060d785083486d186ed.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "db15705e0edc464450993407651b9f71"
+"md5": "9e73b5da7fcd51ae3438d3b03b2db3e1"
 }
 
 [deps]
 
-source_file="res://assets/characters/punky/punky_hair.webp"
-dest_files=["res://.godot/imported/punky_hair.webp-6afbe10b0d2867c10964717d61ca7d45.s3tc.ctex", "res://.godot/imported/punky_hair.webp-6afbe10b0d2867c10964717d61ca7d45.etc2.ctex"]
+source_file="res://assets/characters/punky/punky_punky_tufts.webp"
+dest_files=["res://.godot/imported/punky_punky_tufts.webp-5b13afd03a654060d785083486d186ed.s3tc.ctex", "res://.godot/imported/punky_punky_tufts.webp-5b13afd03a654060d785083486d186ed.etc2.ctex"]
 
 [params]
 

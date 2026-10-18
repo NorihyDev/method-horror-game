@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://j4pe8g46r86x"
+uid="uid://bc8w3ph2isegi"
 path.s3tc="res://.godot/imported/norihy_norihy_tufts.webp-df9ecc624baf26862c460b20d9a54148.s3tc.ctex"
 path.etc2="res://.godot/imported/norihy_norihy_tufts.webp-df9ecc624baf26862c460b20d9a54148.etc2.ctex"
 metadata={
@@ -10,7 +10,7 @@ metadata={
 "vram_texture": true
 }
 generator_parameters={
-"md5": "9131af024dfec8a86738cb43392797a3"
+"md5": "c09c46fec79742db486f91503ce551a4"
 }
 
 [deps]
