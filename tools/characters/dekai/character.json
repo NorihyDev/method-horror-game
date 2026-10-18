@@ -1,0 +1,104 @@
+{
+  "name": "Dekai",
+  "phenotype": {
+    "gender": 1.0,
+    "age": 0.4,
+    "muscle": 0.45,
+    "weight": 0.38,
+    "proportions": 0.6,
+    "height": 0.6,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.2,
+      "caucasian": 0.35,
+      "african": 0.45
+    }
+  },
+  "skin": "young_african_male/young_african_male.mhmat",
+  "hair": "afro01/afro01.mhclo",
+  "eyebrows": "eyebrow009/eyebrow009.mhclo",
+  "clothes": [
+    "male_casualsuit04/male_casualsuit04.mhclo",
+    "shoes03/shoes03.mhclo"
+  ],
+  "textures": {
+    "high-poly": "eye.png",
+    "male_casualsuit04": "jersey.png",
+    "eyebrow009": "brows.png"
+  },
+  "targets": [
+    {
+      "target": "head-oval",
+      "value": 0.5
+    },
+    {
+      "target": "head-scale-horiz-decr",
+      "value": 0.35
+    },
+    {
+      "target": "chin-height-incr",
+      "value": 0.25
+    },
+    {
+      "target": "nose-flaring-incr",
+      "value": 0.2
+    }
+  ],
+  "decimate": {
+    "shoes03": 0.5,
+    "fbhead": 0.22,
+    "hairshell": 0.5
+  },
+  "photo": {
+    "eye_r": [
+      219.9,
+      74.5
+    ],
+    "eye_l": [
+      259.1,
+      74.5
+    ],
+    "mouth": [
+      247.0,
+      113.5
+    ],
+    "chin_y": 139.5,
+    "tone_scale": 0.9,
+    "strength": 0,
+    "exclude": [
+      [
+        206,
+        62,
+        8,
+        44
+      ],
+      [
+        266,
+        74,
+        7,
+        32
+      ]
+    ]
+  },
+  "facebuilder": {},
+  "hair_shell": {
+    "thickness": 0.003,
+    "tufts": 0,
+    "rgb": [
+      0.04,
+      0.034,
+      0.03
+    ],
+    "braids": {
+      "count": 20,
+      "on_head": 0.11,
+      "hang": 0.1,
+      "radius": 0.0045,
+      "front_keep": [
+        2,
+        18
+      ]
+    }
+  }
+}

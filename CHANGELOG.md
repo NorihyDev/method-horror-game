@@ -16,7 +16,7 @@ dates are ISO 8601.
   Every character's head is now the real person's, rebuilt from his photo
   with KeenTools FaceBuilder, with clean skin, hair grown from the real
   skull and, for Mianja, a snapback fitted to his head. Norihy is the new
-  first and default character. Necks join the jersey cleanly, the hair is
+  first and default character. Dekai (braids) and Kanzaki join them. Necks join the jersey cleanly, the hair is
   made of coiled strands, and teammates walk, jog and run with heel strike,
   hip turn and opposite arm swing, with the head kept level.
 - **More horror.**

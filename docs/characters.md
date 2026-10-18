@@ -21,6 +21,8 @@ hello:
 | `paulino` | Paulino | `game/assets/characters/paulino/paulino.glb` | about 17k | Short curly hair, moustache and goatee, teal "baseball" METHOD jersey |
 | `nox` | Nox | `game/assets/characters/nox/nox.glb` | about 17k | Short curly hair, heavier build, teal baseball jersey |
 | `ninja` | Ninja | `game/assets/characters/ninja/ninja.glb` | about 17k | Curly hair, wire glasses, teal baseball jersey |
+| `dekai` | Dekai | `game/assets/characters/dekai/dekai.glb` | about 24k | Box braids (modelled strands), black-and-orange pro METHOD jersey |
+| `kanzaki` | Kanzaki | `game/assets/characters/kanzaki/kanzaki.glb` | about 31k | Short hair, black-and-white pro METHOD jersey with a Madagascar flag |
 | `mianja` | Mianja | `game/assets/characters/mianja/mianja.glb` | about 17k | Black snapback cap over a fade, "pro" METHOD jersey (V-neck, METHOD on both shoulders, grey slashes, sleeve M), dark trousers |
 
 Both use the same skeleton, clips and code:
@@ -72,6 +74,9 @@ The folder also holds any textures the character uses.
    piping, a METHOD wordmark and a Madagascar flag on the sleeve. It
    deliberately carries no third-party sponsor or team logos.
 
+   `make_jersey.py <src> <out> <style>[+flag] [accent hex]` recolours the trim
+   (orange for Dekai, white plus a flag for Kanzaki).
+
    A `"cap"` entry adds a black snapback skinned to the head bone and drops
    the hair underneath it (Mianja). A `"glasses"` entry adds wire frames
    with no lenses (Ninja).
@@ -101,6 +106,12 @@ The folder also holds any textures the character uses.
    - The neck below the jaw takes the body's own neck shape, is cut away
      wherever the top garment covers it, and copies the body's skin weights
      there, so it stays attached when the character moves.
+   - `"braids"` (Dekai) grows plaited tubes from the crown along the scalp
+     and lets them hang. Only the braids in `front_keep` fall over the face.
+   - `"photo": {"exclude": [[cx, cy, rx, ry], ...]}` keeps parts of the
+     photo off the face, such as a hand (Kanzaki) or braids crossing it
+     (Dekai). `"facebuilder": {"paint_lips": true}` paints lips the photo
+     doesn't show.
    - A `"cap"` (Mianja) is built the same way: a crown that follows the real
      skull above a plane from mid-forehead to the nape, a curved flat brim
      and a button.

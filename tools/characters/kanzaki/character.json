@@ -1,0 +1,93 @@
+{
+  "name": "Kanzaki",
+  "phenotype": {
+    "gender": 1.0,
+    "age": 0.4,
+    "muscle": 0.45,
+    "weight": 0.38,
+    "proportions": 0.6,
+    "height": 0.6,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.2,
+      "caucasian": 0.35,
+      "african": 0.45
+    }
+  },
+  "skin": "young_african_male/young_african_male.mhmat",
+  "hair": "afro01/afro01.mhclo",
+  "eyebrows": "eyebrow009/eyebrow009.mhclo",
+  "clothes": [
+    "male_casualsuit04/male_casualsuit04.mhclo",
+    "shoes03/shoes03.mhclo"
+  ],
+  "textures": {
+    "high-poly": "eye.png",
+    "male_casualsuit04": "jersey.png",
+    "eyebrow009": "brows.png"
+  },
+  "targets": [
+    {
+      "target": "head-oval",
+      "value": 0.5
+    },
+    {
+      "target": "head-scale-horiz-decr",
+      "value": 0.35
+    },
+    {
+      "target": "chin-height-incr",
+      "value": 0.25
+    },
+    {
+      "target": "nose-flaring-incr",
+      "value": 0.2
+    }
+  ],
+  "decimate": {
+    "shoes03": 0.5,
+    "fbhead": 0.22,
+    "hairshell": 0.5
+  },
+  "photo": {
+    "eye_r": [
+      215.9,
+      102.0
+    ],
+    "eye_l": [
+      261.1,
+      102.0
+    ],
+    "mouth": [
+      241.5,
+      142.0
+    ],
+    "chin_y": 162.9,
+    "tone_scale": 0.9,
+    "strength": 0,
+    "exclude": [
+      [
+        238,
+        151,
+        26,
+        22
+      ],
+      [
+        252,
+        180,
+        38,
+        18
+      ]
+    ]
+  },
+  "facebuilder": {
+    "paint_lips": true
+  },
+  "hair_shell": {
+    "thickness": 0.006,
+    "tuft_size": 0.009,
+    "tufts": 1400,
+    "crown": 0.03
+  }
+}

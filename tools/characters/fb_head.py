@@ -240,6 +240,11 @@ Y = (1.0 - pv) * ph_  # photo pixel row, top-down
 dd = np.sqrt(((X - ex) / rx_px) ** 2 + ((Y - cy_px) / ry_px) ** 2)
 mask = np.clip((1.0 - dd) / 0.18, 0.0, 1.0)
 mask *= np.clip((fac - 0.15) / 0.3, 0.0, 1.0)
+# Photo areas to keep off the face (a hand over the mouth, glare): ellipses
+# in levelled-photo pixels [cx, cy, rx, ry].
+for _cx, _cy, _rx, _ry in PH.get("exclude", []):
+    _de = np.sqrt(((X - _cx) / _rx) ** 2 + ((Y - _cy) / _ry) ** 2)
+    mask *= np.clip((_de - 0.85) / 0.3, 0.0, 1.0)
 
 
 def sample(u, v):
@@ -371,6 +376,19 @@ reach = np.clip(resample(mask[..., None], 32, (R, R))[..., 0] * 3.0, 0.0, 1.0)[.
 fill = (near * reach + skin * (1 - reach)) * (1 - scalp) + hair * scalp
 soft_mask = np.clip(mask * 1.1, 0.0, 1.0)
 out = col * soft_mask[..., None] + fill * (1.0 - soft_mask[..., None])
+if FBC.get("paint_lips"):
+    # Lips the photo doesn't show: a soft, slightly darker and redder band
+    # around the mouth landmark, following the real lip line of the head.
+    _mi = int(np.argmin(np.linalg.norm(fb_pts - f_mo, axis=1)))
+    _m = head_m[_mi]
+    _dx = (head_m[:, 0] - _m[0]) / (0.36 * iod)
+    _dz = (head_m[:, 2] - _m[2]) / (0.11 * em)
+    _lw = np.clip(1.0 - np.sqrt(_dx ** 2 + _dz ** 2), 0.0, 1.0) ** 0.7
+    _lw *= (head_m[:, 1] < _m[1] + 0.012)
+    _lras, _ = rasterize(R, _lw[:, None].astype(np.float32))
+    _lip = skin * np.array([0.78, 0.6, 0.6], dtype=np.float32)
+    _seam = np.clip(1.0 - np.abs((zb - _m[2]) / 0.0018), 0.0, 1.0)[..., None] * 0.35
+    out = out * (1 - _lras) + (_lip * (1 - _seam) + skin * 0.45 * _seam) * _lras
 out[~cover] = skin
 filled = out
 tex_out = bpy.data.images.new(NAME.lower() + "_head", tw, th, alpha=False)
@@ -681,6 +699,94 @@ if not is_cap and int(spec.get("tufts", 1200)) > 0:
     tmat.surface_render_method = "DITHERED"
     tmesh.materials.append(tmat)
     print("TUFTS", len(tmesh.polygons), "cards")
+braids_obj = None
+if not is_cap and spec.get("braids"):
+    import bmesh
+
+    BR = spec["braids"]
+    rng_b = np.random.default_rng(5)
+    bvh_head = BVHTree.FromPolygons([Vector(tuple(p)) for p in head_m], fb_tris)
+    top_i = np.argmax(head_m[:, 2])
+    crown = head_m[top_i] + np.array([0.0, float(BR.get("back", 0.02)), 0.0])
+    bm = bmesh.new()
+    rad = float(BR.get("radius", 0.0045))
+    count = int(BR.get("count", 16))
+    for bi in range(count):
+        # Spread the braids round the crown; more toward the front.
+        a = (bi + rng_b.uniform(-0.3, 0.3)) / count * np.pi * 2.0
+        direction = Vector((np.sin(a), -np.cos(a) * 1.15, 0.0)).normalized()
+        p = Vector(tuple(crown)) + direction * 0.015
+        path = []
+        on_head = float(BR.get("on_head", 0.11)) * rng_b.uniform(0.85, 1.15)
+        hang = float(BR.get("hang", 0.13)) * rng_b.uniform(0.7, 1.2)
+        # Braids starting toward the face are swept back; only the ones listed
+        # in "front_keep" fall forward over it, as in the photo.
+        if -direction.y > 0.45 and bi not in BR.get("front_keep", []):
+            direction = Vector((direction.x * 2.5, 0.6, 0.0)).normalized()
+            on_head *= 0.6
+        step = 0.008
+        travelled = 0.0
+        # Along the scalp, then falling free with a little outward curve.
+        while travelled < on_head:
+            hit = bvh_head.find_nearest(p)
+            if hit[0] is None:
+                break
+            n = hit[1].normalized()
+            p = hit[0] + n * (rad + 0.004 + float(spec.get("thickness", 0.004)))
+            path.append(p.copy())
+            tang = (direction - n * direction.dot(n)).normalized()
+            p = p + tang * step
+            direction = (tang + Vector((0, 0, -0.35))).normalized()
+            travelled += step
+        drop = Vector((0.0, 0.0, -1.0))
+        out_dir = (path[-1] - Vector((crown[0], crown[1] - 0.02, path[-1].z))).normalized() if path else Vector()
+        q = path[-1].copy() if path else p
+        for k in range(int(hang / step)):
+            q = q + (drop + out_dir * 0.12).normalized() * step
+            path.append(q.copy())
+        rings = []
+        for k, c in enumerate(path):
+            if k + 1 < len(path):
+                t_ = (path[k + 1] - c).normalized()
+            u_ = t_.orthogonal().normalized()
+            w_ = t_.cross(u_).normalized()
+            r_ = rad * (1.0 - 0.35 * k / len(path))
+            ring = [bm.verts.new(c + (u_ * np.cos(j / 6 * np.pi * 2) + w_ * np.sin(j / 6 * np.pi * 2)) * r_) for j in range(6)]
+            rings.append(ring)
+        for k in range(len(rings) - 1):
+            for j in range(6):
+                bm.faces.new([rings[k][j], rings[k][(j + 1) % 6], rings[k + 1][(j + 1) % 6], rings[k + 1][j]])
+    bmesh_uv = bm.loops.layers.uv.new("UVMap")
+    for f_ in bm.faces:
+        for li, loop in enumerate(f_.loops):
+            loop[bmesh_uv].uv = ((loop.vert.co.z * 40.0) % 1.0, li / 4.0)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bmesh_mesh = bpy.data.meshes.new(NAME + ".braids")
+    bm.to_mesh(bmesh_mesh)
+    bm.free()
+    for poly in bmesh_mesh.polygons:
+        poly.use_smooth = True
+    braids_obj = bpy.data.objects.new(bmesh_mesh.name, bmesh_mesh)
+    scene.collection.objects.link(braids_obj)
+    bmat = bpy.data.materials.new(NAME + "_braids")
+    bmat.use_nodes = True
+    # Plaited look: a striped texture along each braid.
+    size_b = 128
+    yy_b, xx_b = np.mgrid[0:size_b, 0:size_b].astype(np.float32)
+    strip = 0.55 + 0.45 * np.abs(np.sin((xx_b / size_b * 2 + yy_b / size_b * 0.5) * np.pi * 2))
+    img_b = np.dstack([np.clip(hair[None, None, :] * 1.5 * strip[..., None], 0, 1), np.ones((size_b, size_b))]).astype(np.float32)
+    ib = bpy.data.images.new(NAME.lower() + "_braids", size_b, size_b, alpha=False)
+    ib.pixels.foreach_set(img_b.ravel())
+    ib.filepath_raw = os.path.join(WORK, NAME.lower() + "_braids.png")
+    ib.file_format = "PNG"
+    ib.save()
+    tnb = bmat.node_tree.nodes.new("ShaderNodeTexImage")
+    tnb.image = bpy.data.images.load(ib.filepath_raw)
+    bb = bmat.node_tree.nodes["Principled BSDF"]
+    bmat.node_tree.links.new(tnb.outputs["Color"], bb.inputs["Base Color"])
+    bb.inputs["Roughness"].default_value = 0.6
+    bmesh_mesh.materials.append(bmat)
+    print("BRAIDS", count, len(bmesh_mesh.polygons), "faces")
 # The MPFB hair cards and cap go (unless asked to keep the cards on top).
 for o in list(bpy.data.objects):
     if o.type != "MESH" or not o.name.startswith(NAME + "."):
@@ -706,7 +812,7 @@ ratio = (f_hi - f_lo) / np.maximum(m_hi - m_lo, 1e-6)
 ratio[2] = (f_hi[2] - f_eyes_z) / max(m_hi[2] - eyes[2], 1e-6)
 print("skull ratio", np.round(ratio, 3))
 for o in bpy.data.objects:
-    if o.type != "MESH" or not o.name.startswith(NAME + ".") or o in (body, head_obj, shell_obj, tufts_obj):
+    if o.type != "MESH" or not o.name.startswith(NAME + ".") or o in (body, head_obj, shell_obj, tufts_obj, braids_obj):
         continue
     key = o.name.split(".", 1)[1]
     if key not in (CFG["hair"].split("/")[0], "cap", "glasses"):
@@ -748,10 +854,11 @@ head_obj.modifiers.new("Armature", "ARMATURE").object = arm
 shell_obj.vertex_groups.new(name="head").add(list(range(len(shell.vertices))), 1.0, "REPLACE")
 shell_obj.parent = arm
 shell_obj.modifiers.new("Armature", "ARMATURE").object = arm
-if tufts_obj:
-    tufts_obj.vertex_groups.new(name="head").add(list(range(len(tufts_obj.data.vertices))), 1.0, "REPLACE")
-    tufts_obj.parent = arm
-    tufts_obj.modifiers.new("Armature", "ARMATURE").object = arm
+for _extra in (tufts_obj, braids_obj):
+    if _extra:
+        _extra.vertex_groups.new(name="head").add(list(range(len(_extra.data.vertices))), 1.0, "REPLACE")
+        _extra.parent = arm
+        _extra.modifiers.new("Armature", "ARMATURE").object = arm
 mat = bpy.data.materials.new(NAME + "_fbhead")
 mat.use_nodes = True
 node = mat.node_tree.nodes.new("ShaderNodeTexImage")

@@ -16,7 +16,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 SRC, OUT = sys.argv[1], sys.argv[2]
 STYLE = sys.argv[3] if len(sys.argv) > 3 else "classic"
-GREEN = np.array([30, 235, 110], dtype=np.float32)
+# Optional 4th argument: accent colour as hex (default METHOD green), and
+# "+flag" in the style adds a Madagascar flag on the left sleeve.
+ACCENT = sys.argv[4].lstrip("#") if len(sys.argv) > 4 else "1eeb6e"
+FLAG = STYLE.endswith("+flag")
+STYLE = STYLE.replace("+flag", "")
+GREEN = np.array([int(ACCENT[i : i + 2], 16) for i in (0, 2, 4)], dtype=np.float32)
 img = np.asarray(Image.open(SRC).convert("RGB")).astype(np.float32)
 h, w, _ = img.shape
 r, g, b = img[..., 0], img[..., 1], img[..., 2]
@@ -141,5 +146,10 @@ if STYLE == "pro":
     big = font
     for sy0 in (130, 245):
         d.text((640 * sx, sy0 * sy), "M", font=big, fill=G, anchor="mm")
+if FLAG:
+    fx, fy = 630 * sx, 160 * sy
+    d.rectangle([fx, fy, fx + 14 * sx, fy + 24 * sy], fill=(245, 245, 245))
+    d.rectangle([fx + 14 * sx, fy, fx + 38 * sx, fy + 12 * sy], fill=(200, 30, 40))
+    d.rectangle([fx + 14 * sx, fy + 12 * sy, fx + 38 * sx, fy + 24 * sy], fill=(0, 125, 60))
 pic.save(OUT)
 print("jersey", pic.size)

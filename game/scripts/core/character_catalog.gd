@@ -49,6 +49,18 @@ const CHARACTERS := {
 		"scene": "res://assets/characters/ninja/ninja.glb",
 		"portrait": "res://assets/characters/ninja/portrait.png",
 	},
+	"dekai":
+	{
+		"name": "Dekai",
+		"scene": "res://assets/characters/dekai/dekai.glb",
+		"portrait": "res://assets/characters/dekai/portrait.png",
+	},
+	"kanzaki":
+	{
+		"name": "Kanzaki",
+		"scene": "res://assets/characters/kanzaki/kanzaki.glb",
+		"portrait": "res://assets/characters/kanzaki/portrait.png",
+	},
 }
 
 
