@@ -28,6 +28,8 @@ for o in list(bpy.data.objects):
 bones = arm.data.bones
 pbs = arm.pose.bones
 REST = {b.name: (b.head_local.copy(), b.tail_local.copy()) for b in bones}
+_nv = REST["neck_01"][1] - REST["neck_01"][0]
+NECK_REST = math.atan2(-_nv.y, _nv.z)
 L_THIGH = (REST["thigh_l"][1] - REST["thigh_l"][0]).length
 L_CALF = (REST["calf_l"][1] - REST["calf_l"][0]).length
 ANKLE_Z = REST["foot_l"][0].z
@@ -79,17 +81,29 @@ def apply_pose(pose, pelvis_drop=0.0):
     bpy.context.view_layer.update()
     for name in ORDER:
         pb = pbs[name]
-        if name == "pelvis" and pelvis_drop:
+        if name == "pelvis" and (pelvis_drop or pose.get("_sway")):
             m = pb.matrix.copy()
             m.translation.z -= pelvis_drop
+            m.translation.x += pose.get("_sway", 0.0)
             pb.matrix = m
             bpy.context.view_layer.update()
         if name not in pose:
+            twist = pose.get("_twist", {}).get(name, 0.0)
+            if twist:
+                m = pb.matrix.copy()
+                rot = Matrix.Rotation(twist, 4, m.col[1].xyz.normalized()) @ Matrix(m.to_3x3()).to_4x4()
+                rot.translation = m.translation
+                pb.matrix = rot
+                bpy.context.view_layer.update()
             continue
         m = pb.matrix.copy()
         cur = m.col[1].xyz.normalized()
         q = cur.rotation_difference(pose[name])
         rot = q.to_matrix().to_4x4() @ Matrix(m.to_3x3()).to_4x4()
+        twist = pose.get("_twist", {}).get(name, 0.0)
+        if twist:
+            axis = rot.col[1].xyz.normalized()
+            rot = Matrix.Rotation(twist, 4, axis) @ rot
         rot.translation = m.translation
         pb.matrix = rot
         bpy.context.view_layer.update()
@@ -126,8 +140,10 @@ def spine(lean, twist_x=0.0, head_pitch=0.0):
         "spine_01": up_fwd(lean * 0.4),
         "spine_02": up_fwd(lean * 0.7),
         "spine_03": up_fwd(lean, twist_x),
-        "neck_01": up_fwd(lean * 0.6 + 0.12),
-        "head": up_fwd(head_pitch),
+        # The rig's neck leans ~0.37 rad forward at rest; keep that, and pitch
+        # the head so the eyes stay level whatever the body lean.
+        "neck_01": up_fwd(NECK_REST + lean * 0.4),
+        "head": up_fwd(0.06 + head_pitch * 0.3),
     }
 
 
@@ -135,31 +151,46 @@ def foot_dir(pitch):
     return unit(0.0, -math.cos(pitch), -math.sin(pitch) - 0.08)
 
 
-def gait(p, stride, stance, lift, hip, lean, arm_swing, elbow, bob, torch=True):
-    """One frame of a walk-like cycle at phase p in [0, 1)."""
+def gait(p, stride, stance, lift, hip, lean, arm_swing, elbow, bob, torch=True, twist=0.12, sway=0.018):
+    """One frame of a walk/jog/run cycle at phase p in [0, 1).
+
+    Left foot lands at p = 0, right at p = 0.5. Heel strikes first and the
+    foot rolls to the toe; the pelvis turns with the swinging leg and sways
+    over the standing one, the chest turns against it, the head stays level,
+    and the free arm swings opposite its leg.
+    """
     pose = spine(lean, 0.0, -lean * 0.8)
-    feet = {}
     for side, offset in (("l", 0.0), ("r", 0.5)):
         q = (p + offset) % 1.0
         if q < stance:
             t = q / stance
             y = stride * (1 - 2 * t)
             z = ANKLE_Z
-            pitch = 0.05 if t < 0.8 else 0.05 + (t - 0.8) / 0.2 * 0.5
+            # Heel first (toe up), flat through mid-stance, then onto the toes.
+            if t < 0.15:
+                pitch = -0.25 * (1 - t / 0.15)
+            elif t < 0.7:
+                pitch = 0.05
+            else:
+                pitch = 0.05 + (t - 0.7) / 0.3 * 0.6
+                z = ANKLE_Z + (t - 0.7) / 0.3 * 0.05
         else:
             t = (q - stance) / (1 - stance)
             y = -stride + 2 * stride * (0.5 - 0.5 * math.cos(math.pi * t))
-            z = ANKLE_Z + lift * math.sin(math.pi * t)
-            pitch = 0.4 * (1 - t) - 0.15 * t
-        feet[side] = y
+            z = ANKLE_Z + 0.05 * (1 - t) + lift * math.sin(math.pi * t)
+            pitch = 0.65 * (1 - t) ** 2 - 0.2 * t
         thigh, calf = leg_ik(side, y, z, hip)
         pose["thigh_" + side] = thigh
         pose["calf_" + side] = calf
         pose["foot_" + side] = foot_dir(pitch)
     s = math.sin(2 * math.pi * p)
-    pose.update(arms(arm_swing * -s, elbow, arm_swing * s, elbow))
+    c = math.cos(2 * math.pi * p)
+    # Left leg swings forward around p = 0.75, so the left arm leads at p = 0.25.
+    pose.update(arms(arm_swing * s, elbow + 0.15 * max(s, 0), -arm_swing * s, elbow + 0.15 * max(-s, 0)))
     if torch:
         pose.update(torch_arm(0.04 * math.sin(4 * math.pi * p)))
+    pose["_twist"] = {"pelvis": twist * -c, "spine_03": twist * 1.4 * c, "head": twist * -0.4 * c}
+    pose["_sway"] = sway * c
     drop = hip + bob * (0.5 + 0.5 * math.cos(4 * math.pi * p))
     return pose, drop
 
@@ -247,10 +278,11 @@ def cycle(name, period, stride, stance, **kw):
 
 
 make("idle", 90, idle)
-cycle("walk", 0.8, 0.27, 0.6, lift=0.1, hip=0.05, lean=0.06, arm_swing=0.3, elbow=0.2, bob=0.025)
-cycle("run", 0.6, 0.42, 0.4, lift=0.25, hip=0.1, lean=0.22, arm_swing=0.6, elbow=1.3, bob=0.04)
+cycle("walk", 0.95, 0.36, 0.6, lift=0.09, hip=0.04, lean=0.05, arm_swing=0.32, elbow=0.25, bob=0.02)
+cycle("jog", 0.72, 0.42, 0.45, lift=0.18, hip=0.07, lean=0.12, arm_swing=0.45, elbow=1.15, bob=0.035, twist=0.14)
+cycle("run", 0.62, 0.55, 0.38, lift=0.3, hip=0.1, lean=0.22, arm_swing=0.7, elbow=1.4, bob=0.045, twist=0.16, sway=0.012)
 make("crouch_idle", 80, crouch_idle)
-cycle("crouch_walk", 1.0, 0.22, 0.6, lift=0.07, hip=0.42, lean=0.45, arm_swing=0.25, elbow=0.6, bob=0.015)
+cycle("crouch_walk", 0.85, 0.3, 0.6, lift=0.07, hip=0.42, lean=0.45, arm_swing=0.25, elbow=0.6, bob=0.015, twist=0.08, sway=0.01)
 make("downed", 60, downed)
 print("SPEEDS", SPEEDS)
 for track in arm.animation_data.nla_tracks:
@@ -304,7 +336,7 @@ for o in meshes:
             tex = nt.nodes.new("ShaderNodeTexImage")
             tex.image = diffuse
             nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-            if role in ("hair", "eyebrows", "eyelashes"):
+            if "hair" in role or role in ("eyebrows", "eyelashes"):
                 nt.links.new(tex.outputs["Alpha"], bsdf.inputs["Alpha"])
                 new.surface_render_method = "BLENDED"
         o.data.materials[i] = new

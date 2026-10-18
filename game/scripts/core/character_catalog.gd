@@ -4,8 +4,15 @@ extends RefCounted
 ## player is first person). Built from photos of real people who agreed to
 ## it; see docs/characters.md. Purely visual, free, no gameplay effect.
 
-const DEFAULT := "punky"
+const DEFAULT := "norihy"
+## In picker order: Norihy first.
 const CHARACTERS := {
+	"norihy":
+	{
+		"name": "Norihy",
+		"scene": "res://assets/characters/norihy/norihy.glb",
+		"portrait": "res://assets/characters/norihy/portrait.png",
+	},
 	"punky":
 	{
 		"name": "Punky",

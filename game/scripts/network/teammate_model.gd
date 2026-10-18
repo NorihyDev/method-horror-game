@@ -4,10 +4,13 @@ extends Node3D
 ## MPFB in Blender, see docs/characters.md and CharacterCatalog). Picks a
 ## looping clip from the avatar's speed, crouch and downed state, and holds a
 ## flashlight in the right hand.
-const CLIPS: Array[String] = ["idle", "walk", "run", "crouch_idle", "crouch_walk", "downed"]
+const CLIPS: Array[String] = ["idle", "walk", "jog", "run", "crouch_idle", "crouch_walk", "downed"]
 ## Speed (m/s) each cycle was authored at, printed by the Blender export.
-const CLIP_SPEED := {"walk": 1.125, "run": 3.5, "crouch_walk": 0.733}
-const RUN_ABOVE := 3.6
+## The game walks at 2.7 m/s (a jog for a person) and sprints at 4.7: each
+## gait plays close to its authored speed so feet don't slide.
+const CLIP_SPEED := {"walk": 1.286, "jog": 2.545, "run": 4.57, "crouch_walk": 1.154}
+const JOG_ABOVE := 1.9
+const RUN_ABOVE := 3.7
 const MOVING_ABOVE := 0.3
 const BLEND := 0.2
 ## Hair, brows, lashes and the clear cornea shell over each eye are cut out by
@@ -86,10 +89,12 @@ func update_motion(speed: float, crouch: bool, downed: bool) -> void:
 		clip = "crouch_walk" if speed > MOVING_ABOVE else "crouch_idle"
 	elif speed > RUN_ABOVE:
 		clip = "run"
+	elif speed > JOG_ABOVE:
+		clip = "jog"
 	elif speed > MOVING_ABOVE:
 		clip = "walk"
 	if CLIP_SPEED.has(clip):
-		scale = clampf(speed / float(CLIP_SPEED[clip]), 0.6, 2.2)
+		scale = clampf(speed / float(CLIP_SPEED[clip]), 0.6, 1.6)
 	play(clip, scale)
 
 

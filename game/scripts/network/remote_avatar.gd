@@ -23,6 +23,9 @@ var _hidden := false
 var _away := false
 var _crouch := false
 var _bob := 0.0
+## Ground speed smoothed over ~0.15 s: network updates arrive in steps, and the
+## raw per-frame speed would make the clip flicker between gaits.
+var _speed := 0.0
 
 
 func get_player_id() -> int:
@@ -120,7 +123,9 @@ func _process(delta: float) -> void:
 	var before := global_position
 	global_position = global_position.lerp(_target_pos, clampf(delta * 12.0, 0.0, 1.0))
 	rotation.y = lerp_angle(rotation.y, _target_yaw, clampf(delta * 12.0, 0.0, 1.0))
-	var speed := (global_position - before).length() / maxf(delta, 0.001)
+	var raw := Vector2(global_position.x - before.x, global_position.z - before.z).length() / maxf(delta, 0.001)
+	_speed = lerpf(_speed, raw, clampf(delta * 7.0, 0.0, 1.0))
+	var speed := _speed
 	_bob += delta * speed * 2.0
 	if _model:
 		_model.update_motion(speed, _crouch, status == MatchState.STATUS_DOWNED)

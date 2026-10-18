@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cfpx8e1tcchl5"
+uid="uid://d34bv5ndhw8kh"
 path.s3tc="res://.godot/imported/paulino_paulino_head.webp-61fe8ef1b4fa4d712ed496676d0fdf46.s3tc.ctex"
 path.etc2="res://.godot/imported/paulino_paulino_head.webp-61fe8ef1b4fa4d712ed496676d0fdf46.etc2.ctex"
 metadata={
@@ -10,7 +10,7 @@ metadata={
 "vram_texture": true
 }
 generator_parameters={
-"md5": "b70334001ece24235aa10f0dc80900eb"
+"md5": "c31ba5977359fd9484e175f57a836ab3"
 }
 
 [deps]

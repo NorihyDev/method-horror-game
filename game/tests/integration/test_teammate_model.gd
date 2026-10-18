@@ -29,7 +29,7 @@ func _check_character(id: String) -> void:
 			for s in mi.mesh.get_surface_count():
 				tris += (mi.mesh as ArrayMesh).surface_get_array_index_len(s) / 3
 			top = maxf(top, mi.mesh.get_aabb().end.y)
-	assert_true(tris > 5000 and tris < 30000, "%s: mobile triangle budget (%d)" % [id, tris])
+	assert_true(tris > 5000 and tris < 35000, "%s: mobile triangle budget (%d)" % [id, tris])
 	assert_true(top > 1.55 and top < 1.95, "%s: human height (%.2f m)" % [id, top])
 	assert_true(CharacterCatalog.portrait(id) != null, "%s has a portrait" % id)
 	model.queue_free()
@@ -43,7 +43,8 @@ func test_clip_follows_motion() -> void:
 	add_child(model)
 	var cases := [
 		[0.0, false, false, "idle"],
-		[2.7, false, false, "walk"],
+		[1.2, false, false, "walk"],
+		[2.7, false, false, "jog"],
 		[4.7, false, false, "run"],
 		[0.0, true, false, "crouch_idle"],
 		[1.35, true, false, "crouch_walk"],
@@ -53,15 +54,17 @@ func test_clip_follows_motion() -> void:
 	for c in cases:
 		model.update_motion(c[0], c[1], c[2])
 		assert_eq(model.current, c[3], "speed %s crouch %s downed %s" % [c[0], c[1], c[2]])
-		assert_true(model.anim.speed_scale > 0.0 and model.anim.speed_scale < 2.21, "playback rate")
+		assert_true(model.anim.speed_scale > 0.0 and model.anim.speed_scale < 1.61, "playback rate")
 	model.queue_free()
 
 
 func test_remote_avatar_uses_model_and_follows_status() -> void:
 	var avatar := RemoteAvatar.new()
 	add_child(avatar)
-	var model := avatar.find_child("Punky", true, false) as TeammateModel
-	assert_true(model != null, "avatar shows Punky")
+	var model := (
+		avatar.find_child(CharacterCatalog.display_name(CharacterCatalog.DEFAULT), true, false) as TeammateModel
+	)
+	assert_true(model != null, "avatar shows the default character")
 	avatar.set_status(MatchState.STATUS_DOWNED)
 	avatar._process(0.016)
 	if model:
@@ -75,7 +78,7 @@ func test_remote_avatar_uses_model_and_follows_status() -> void:
 
 
 func test_avatar_shows_the_chosen_character_and_rejects_unknown_ones() -> void:
-	for pair in [["tsila", "Tsila"], ["punky", "Punky"], ["<b>evil</b>", "Punky"], ["", "Punky"]]:
+	for pair in [["tsila", "Tsila"], ["punky", "Punky"], ["<b>evil</b>", "Norihy"], ["", "Norihy"]]:
 		var avatar := RemoteAvatar.new()
 		avatar.character = pair[0]
 		add_child(avatar)

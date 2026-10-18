@@ -15,7 +15,8 @@ hello:
 
 | Id | Name | File | Triangles | Look |
 |---|---|---|---|---|
-| `punky` (default) | Punky | `game/assets/characters/punky/punky.glb` | about 23.7k | Black mop of hair, grey jacket over a striped shirt, jeans |
+| `norihy` (default, first) | Norihy | `game/assets/characters/norihy/norihy.glb` | about 31k | Afro, teal baseball METHOD jersey |
+| `punky` | Punky | `game/assets/characters/punky/punky.glb` | about 23.7k | Black mop of hair, grey jacket over a striped shirt, jeans |
 | `tsila` | Tsila | `game/assets/characters/tsila/tsila.glb` | about 17k | Short curly hair, black METHOD jersey with neon-green trim, dark trousers |
 | `paulino` | Paulino | `game/assets/characters/paulino/paulino.glb` | about 17k | Short curly hair, moustache and goatee, teal "baseball" METHOD jersey |
 | `nox` | Nox | `game/assets/characters/nox/nox.glb` | about 17k | Short curly hair, heavier build, teal baseball jersey |
@@ -29,7 +30,7 @@ Both use the same skeleton, clips and code:
 | Format | GLB with WebP textures (VRAM-compressed on import), skin 2048 px, others 1024 px or smaller, and a 256 × 300 `portrait.png` (a crop of the person's photo) for the picker |
 | Height | About 1.62–1.68 m, origin between the feet, facing +Z (the game turns them to -Z) |
 | Skeleton | MPFB `game_engine` rig (Unreal-style names: `pelvis`, `spine_01..03`, `upperarm_l`, `hand_r`, `thigh_l`, …) |
-| Clips (all loop) | `idle`, `walk` (authored at 1.125 m/s), `run` (3.5 m/s), `crouch_idle`, `crouch_walk` (0.733 m/s), `downed` (face-down crawl) |
+| Clips (all loop) | `idle`, `walk` (1.29 m/s), `jog` (2.55 m/s; the game's normal walk is 2.7), `run` (4.57 m/s; sprint is 4.7), `crouch_idle`, `crouch_walk` (1.15 m/s), `downed` (face-down crawl). Heel strike and toe-off, opposite arm swing, pelvis turn and sway with the chest turning against it, level head. |
 | Game code | See below |
 | Tests | `tests/integration/test_teammate_model.gd` |
 
@@ -91,9 +92,15 @@ The folder also holds any textures the character uses.
      is clean skin in the exact colour at the edge of the face. The body is
      tinted to the same colour (`skin_tone.json`), so there is no seam.
    - Hair (`"hair_shell"`) is a shell grown from the real skull: its front
-     hairline is read from the photo, the rest follows the head shape, and
-     it carries a generated curly texture. `"keep_cards": true` keeps the
-     MakeHuman hair strands on top (Punky).
+     hairline is read from the photo and the rest follows the head shape.
+     On it sit two layers of crossed hair cards using a generated atlas of
+     coiled strands, darker at the root and lighter at the tip. The cards
+     are shorter and sparser at the hairline. `tufts` and `tuft_size` set
+     the volume; `"tufts": 0` with `"keep_cards": true` keeps the MakeHuman
+     hair strands instead (Punky).
+   - The neck below the jaw takes the body's own neck shape, is cut away
+     wherever the top garment covers it, and copies the body's skin weights
+     there, so it stays attached when the character moves.
    - A `"cap"` (Mianja) is built the same way: a crown that follows the real
      skull above a plane from mid-forehead to the nape, a curved flat brim
      and a button.

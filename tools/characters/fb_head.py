@@ -231,7 +231,7 @@ ex = (PH["eye_r"][0] + PH["eye_l"][0]) / 2.0
 ey = (PH["eye_r"][1] + PH["eye_l"][1]) / 2.0
 iod_px = PH["eye_l"][0] - PH["eye_r"][0]
 em_px = PH["mouth"][1] - ey
-top_y = ey - float(FBC.get("forehead", 0.75)) * em_px
+top_y = ey - float(FBC.get("forehead", 1.0)) * em_px
 bot_y = PH["chin_y"] + 0.15 * em_px
 cy_px, ry_px = (top_y + bot_y) / 2.0, (bot_y - top_y) / 2.0
 rx_px = float(FBC.get("width", 1.15)) * iod_px
@@ -263,7 +263,37 @@ _rows = slice(int(ph_ - (ey + em_px)), int(ph_ - (ey - em_px)))
 _edge = np.concatenate([pp[_rows, :_k].reshape(-1, 3), pp[_rows, -_k:].reshape(-1, 3)])
 _edge = _edge[np.abs(_edge - 0.5).sum(axis=-1) > 0.02]
 _bg = np.median(_edge, axis=0) if len(_edge) else np.array([0.5, 0.5, 0.5])
-mask *= np.clip((np.abs(col - _bg).sum(axis=-1) - 0.08) / 0.1, 0.0, 1.0)
+# Also nothing from right next to the background: the photo's edge pixels
+# are half background, half skin.
+# Background = background-coloured pixels connected to the photo's border
+# (dark eyes or hair inside the face are never background, whatever colour).
+_like = np.abs(pp - _bg).sum(axis=-1) < 0.15
+_like |= np.abs(pp - 0.5).sum(axis=-1) < 0.02  # grey fill from levelling
+_bgc = np.zeros_like(_like)
+_bgc[0, :], _bgc[-1, :], _bgc[:, 0], _bgc[:, -1] = _like[0, :], _like[-1, :], _like[:, 0], _like[:, -1]
+for _ in range(2000):
+    _grow = _bgc.copy()
+    _grow[1:] |= _bgc[:-1]
+    _grow[:-1] |= _bgc[1:]
+    _grow[:, 1:] |= _bgc[:, :-1]
+    _grow[:, :-1] |= _bgc[:, 1:]
+    _grow &= _like
+    if (_grow == _bgc).all():
+        break
+    _bgc = _grow
+# A soft margin around it (edge pixels are half background).
+_m = int(FBC.get("bg_margin", 6))
+_soft = _bgc.astype(np.float32)
+for _ in range(_m):
+    _n = _soft.copy()
+    _n[1:] = np.maximum(_n[1:], _soft[:-1])
+    _n[:-1] = np.maximum(_n[:-1], _soft[1:])
+    _n[:, 1:] = np.maximum(_n[:, 1:], _soft[:, :-1])
+    _n[:, :-1] = np.maximum(_n[:, :-1], _soft[:, 1:])
+    _soft = _soft * 0.0 + np.maximum(_soft, _n * 0.82)
+_xs = np.clip((pu * pw_).astype(int), 0, pw_ - 1)
+_ys = np.clip((pv * ph_).astype(int), 0, ph_ - 1)
+mask *= 1.0 - _soft[_ys, _xs]
 # Skin and hair colours from the photo itself.
 def box(cx, cy, hw, hh):
     rows = slice(int(ph_ - (cy + hh)), int(ph_ - (cy - hh)))
@@ -331,7 +361,16 @@ hras, _ = rasterize(R, hair_w[:, None].astype(np.float32))
 scalp = np.clip((hras[..., 0] - 0.35) / 0.3, 0.0, 1.0)[..., None]
 fill = skin * (1 - scalp) + hair * scalp
 mask = mask * (1.0 - scalp[..., 0])
-out = col * mask[..., None] + fill * (1.0 - mask[..., None])
+# Colours just inside the face, pushed outward and blurred: the head around
+# the face takes the face's own (lit) skin, fading to the even tone further out.
+_l = col.mean(axis=-1)
+inner = (mask > 0.85) & cover & (np.abs(_l - skin.mean()) < 0.1)
+near = push_pull_fill(np.dstack([col, inner.astype(np.float32)]))
+near = resample(near, 64, (R, R))
+reach = np.clip(resample(mask[..., None], 32, (R, R))[..., 0] * 3.0, 0.0, 1.0)[..., None]
+fill = (near * reach + skin * (1 - reach)) * (1 - scalp) + hair * scalp
+soft_mask = np.clip(mask * 1.1, 0.0, 1.0)
+out = col * soft_mask[..., None] + fill * (1.0 - soft_mask[..., None])
 out[~cover] = skin
 filled = out
 tex_out = bpy.data.images.new(NAME.lower() + "_head", tw, th, alpha=False)
@@ -361,6 +400,79 @@ for poly in mesh.polygons:
         uv.data[li].uv = val
 for poly in mesh.polygons:
     poly.use_smooth = True
+# Body surface (shape keys on, modifiers off) to press the neck onto.
+_bm_faces = [tuple(pl.vertices) for pl in body.data.polygons]
+bvh_body = BVHTree.FromPolygons([Vector(q) for q in pts], _bm_faces)
+from mathutils.kdtree import KDTree
+
+kd_body = KDTree(len(pts))
+for _i, _q in enumerate(pts):
+    kd_body.insert(Vector(_q), _i)
+kd_body.balance()
+# Below the jaw the neck takes the body's own neck shape wherever it would
+# stick out of it (that shape is what the jersey collar is made to fit).
+# Body vertices the clothes cover (MPFB deletes them under the clothes).
+_cov_groups = {g.index for g in body.vertex_groups if g.name.startswith("Delete.")}
+covered = np.zeros(len(pts), dtype=bool)
+for bv in body.data.vertices:
+    if any(g.group in _cov_groups and g.weight > 0.5 for g in bv.groups):
+        covered[bv.index] = True
+jaw_z = lips[2] - float(FBC.get("jaw", 0.8)) * em
+full_z = jaw_z - float(FBC.get("neck_blend", 0.035))
+snapped = 0
+tucked = []
+for v in mesh.vertices:
+    z = v.co.z
+    if z >= jaw_z:
+        continue
+    hit = bvh_body.find_nearest(v.co)
+    if hit[0] is None:
+        continue
+    outside = (v.co - hit[0]).dot(hit[1]) > -0.002
+    w = float(np.clip((jaw_z - z) / max(jaw_z - full_z, 1e-4), 0.0, 1.0))
+    w = w * w * (3 - 2 * w)
+    _c, bi, _d = kd_body.find(v.co)
+    if covered[bi]:
+        # Under the clothes: tuck it just inside the skin, out of sight.
+        tucked.append(v.index)
+        continue
+    if not outside and z > cut:
+        continue
+    target = hit[0] + hit[1].normalized() * 0.0015
+    v.co = v.co.lerp(target, w)
+    snapped += 1
+# Also anything the top garment covers: a ray from the neck's axis out
+# through the vertex meets the garment before (or just past) the vertex.
+_top = None
+for _o in bpy.data.objects:
+    if _o.type == "MESH" and _o.name.startswith(NAME + ".") and _o.name.split(".", 1)[1] == CFG["clothes"][0].split("/")[0]:
+        _top = _o
+if _top is not None:
+    _tm = _top.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh()
+    _bvh_top = BVHTree.FromPolygons([_top.matrix_world @ v.co for v in _tm.vertices], [tuple(p_.vertices) for p_ in _tm.polygons])
+    _neck = pts[(np.abs(pts[:, 2] - cut) < 0.02) & (np.abs(pts[:, 0] - eyes[0]) < 0.08)]
+    _ax = Vector((float(_neck[:, 0].mean()), float(_neck[:, 1].mean()), 0.0)) if len(_neck) else Vector((eyes[0], eyes[1] + 0.02, 0))
+    _set = set(tucked)
+    for v in mesh.vertices:
+        if v.co.z > jaw_z or v.index in _set:
+            continue
+        o_ = Vector((_ax.x, _ax.y, v.co.z))
+        d_ = v.co - o_
+        if d_.length < 1e-4:
+            continue
+        hit = _bvh_top.ray_cast(o_, d_.normalized(), d_.length - 0.004)
+        if hit[0] is not None:
+            tucked.append(v.index)
+            _set.add(v.index)
+import bmesh as _bmesh
+
+_bm = _bmesh.new()
+_bm.from_mesh(mesh)
+_bm.verts.ensure_lookup_table()
+_bmesh.ops.delete(_bm, geom=[_bm.verts[i] for i in tucked], context="VERTS")
+_bm.to_mesh(mesh)
+_bm.free()
+print("neck verts pressed onto the body:", snapped, "removed under the clothes:", len(tucked))
 head_obj = bpy.data.objects.new(NAME + ".fbhead", mesh)
 scene.collection.objects.link(head_obj)
 
@@ -468,6 +580,107 @@ else:
     sbsdf.inputs["Roughness"].default_value = 0.75
 shell.materials.append(smat)
 print("SHELL", shell.name, len(shell.vertices), "verts")
+tufts_obj = None
+if not is_cap and int(spec.get("tufts", 1200)) > 0:
+    import bmesh
+
+    def tuft_texture(path, rgb, size=1024, seed=3):
+        """A 2x2 atlas of hair tufts: coiled strands with darker roots, lighter
+        tips and a soft highlight, each cell a different shade."""
+        rng = np.random.default_rng(seed)
+        img = np.zeros((size, size, 4), np.float32)
+        cell = size // 2
+        straight = bool(spec.get("straight", False))
+        for cy_i in range(2):
+            for cx_i in range(2):
+                tone = np.asarray(rgb) * (0.75 + 0.18 * (cy_i * 2 + cx_i))
+                ox, oy = cx_i * cell, cy_i * cell
+                for _ in range(int(spec.get("strands", 34))):
+                    x0 = rng.uniform(0.15, 0.85) * cell
+                    amp = (0.0 if straight else rng.uniform(0.018, 0.04)) * cell
+                    freq = rng.uniform(5.0, 9.0)
+                    lean = rng.uniform(-0.25, 0.25)
+                    length = rng.uniform(0.55, 0.92)
+                    width = rng.uniform(0.006, 0.011) * cell
+                    phase = rng.uniform(0, 6.283)
+                    for k in range(160):
+                        t = k / 159.0
+                        if t > length:
+                            break
+                        y = (1.0 - t) * cell * 0.98
+                        x = x0 + lean * t * cell + amp * np.sin(freq * 6.283 * t + phase)
+                        # Coils: the strand's width and brightness pulse along it.
+                        coil = 0.5 + 0.5 * np.sin(freq * 6.283 * t + phase + 1.3)
+                        w_ = width * (1.0 - 0.45 * t)
+                        x_i, y_i = int(ox + x), int(oy + y)
+                        r_ = int(w_ + 1.5)
+                        ys_ = slice(max(y_i - r_, oy), min(y_i + r_ + 1, oy + cell))
+                        xs_ = slice(max(x_i - r_, ox), min(x_i + r_ + 1, ox + cell))
+                        if ys_.start >= ys_.stop or xs_.start >= xs_.stop:
+                            continue
+                        gy, gx = np.mgrid[ys_, xs_]
+                        d_ = np.sqrt((gx - (ox + x)) ** 2 + (gy - (oy + y)) ** 2)
+                        a_ = np.clip(1.0 - d_ / max(w_, 0.5), 0.0, 1.0) * (1.0 - 0.6 * t ** 3)
+                        shade_ = (0.55 + 0.6 * t) * (0.8 + 0.4 * coil)
+                        sub = img[ys_, xs_]
+                        newer = a_ > sub[..., 3] * 0.6
+                        sub[..., :3] = np.where(newer[..., None], tone * shade_, sub[..., :3])
+                        sub[..., 3] = np.maximum(sub[..., 3], a_)
+        img[..., :3][img[..., 3] < 0.01] = np.asarray(rgb) * 0.6
+        im_ = bpy.data.images.new(os.path.basename(path)[:-4], size, size, alpha=True)
+        im_.pixels.foreach_set(img[::-1].ravel())
+        im_.filepath_raw = path
+        im_.file_format = "PNG"
+        im_.save()
+        return bpy.data.images.load(path)
+
+    rng = np.random.default_rng(11)
+    sv = np.array([tuple(v.co) for v in shell.vertices])
+    sn = np.array([tuple(v.normal) for v in shell.vertices])
+    full = np.array([taper[used_s[k]] for k in range(len(sv))])
+    pick = rng.choice(len(sv), size=min(int(spec.get("tufts", 1200)), len(sv) * 3), p=(full + 0.05) / (full + 0.05).sum())
+    bm = bmesh.new()
+    uvl = bm.loops.layers.uv.new("UVMap")
+    size_ = float(spec.get("tuft_size", 0.022))
+    for k in pick:
+        n_ = Vector(tuple(sn[k])).normalized()
+        base_ = Vector(tuple(sv[k])) + n_ * rng.uniform(-0.004, 0.002)
+        t1 = n_.orthogonal().normalized()
+        t1.rotate(__import__("mathutils").Quaternion(n_, rng.uniform(0, 6.283)))
+        t2 = n_.cross(t1).normalized()
+        # Two layers: short dense tufts close to the scalp, longer ones above;
+        # at the hairline (low "full") tufts are smaller and sparser.
+        for layer in (0, 1):
+            if layer == 1 and rng.random() > full[k]:
+                continue
+            sz = size_ * rng.uniform(0.7, 1.25) * (0.5 + 0.5 * full[k]) * (0.75 if layer == 0 else 1.1)
+            lift_ = n_ * (0.003 * layer)
+            # Hair grows outward but combs back and down a little.
+            comb = Vector((0.0, 0.35, -0.25)) * float(spec.get("comb", 1.0))
+            up = (n_ + comb * 0.6).normalized()
+            cu, cv = rng.integers(0, 2) * 0.5, rng.integers(0, 2) * 0.5
+            for side in (t1, t2):
+                q = [base_ + lift_ - side * sz * 0.5, base_ + lift_ + side * sz * 0.5,
+                     base_ + lift_ + side * sz * 0.5 + up * sz, base_ + lift_ - side * sz * 0.5 + up * sz]
+                f_ = bm.faces.new([bm.verts.new(c) for c in q])
+                for loop, uvv in zip(f_.loops, [(0, 0), (0.5, 0), (0.5, 0.5), (0, 0.5)]):
+                    loop[uvl].uv = (uvv[0] + cu, uvv[1] + cv)
+    tmesh = bpy.data.meshes.new(NAME + ".hairtufts")
+    bm.to_mesh(tmesh)
+    bm.free()
+    tufts_obj = bpy.data.objects.new(tmesh.name, tmesh)
+    scene.collection.objects.link(tufts_obj)
+    tmat = bpy.data.materials.new(NAME + "_hairtufts")
+    tmat.use_nodes = True
+    tn = tmat.node_tree.nodes.new("ShaderNodeTexImage")
+    tn.image = tuft_texture(os.path.join(WORK, NAME.lower() + "_tufts.png"), hair * 1.4)
+    tb = tmat.node_tree.nodes["Principled BSDF"]
+    tmat.node_tree.links.new(tn.outputs["Color"], tb.inputs["Base Color"])
+    tmat.node_tree.links.new(tn.outputs["Alpha"], tb.inputs["Alpha"])
+    tb.inputs["Roughness"].default_value = 0.7
+    tmat.surface_render_method = "DITHERED"
+    tmesh.materials.append(tmat)
+    print("TUFTS", len(tmesh.polygons), "cards")
 # The MPFB hair cards and cap go (unless asked to keep the cards on top).
 for o in list(bpy.data.objects):
     if o.type != "MESH" or not o.name.startswith(NAME + "."):
@@ -493,7 +706,7 @@ ratio = (f_hi - f_lo) / np.maximum(m_hi - m_lo, 1e-6)
 ratio[2] = (f_hi[2] - f_eyes_z) / max(m_hi[2] - eyes[2], 1e-6)
 print("skull ratio", np.round(ratio, 3))
 for o in bpy.data.objects:
-    if o.type != "MESH" or not o.name.startswith(NAME + ".") or o in (body, head_obj, shell_obj):
+    if o.type != "MESH" or not o.name.startswith(NAME + ".") or o in (body, head_obj, shell_obj, tufts_obj):
         continue
     key = o.name.split(".", 1)[1]
     if key not in (CFG["hair"].split("/")[0], "cap", "glasses"):
@@ -508,21 +721,37 @@ for o in bpy.data.objects:
 bones = arm.data.bones
 head_z = (arm.matrix_world @ bones["head"].head_local).z
 neck_z = (arm.matrix_world @ bones["neck_01"].head_local).z
-g_head = head_obj.vertex_groups.new(name="head")
-g_neck = head_obj.vertex_groups.new(name="neck_01")
-g_spine = head_obj.vertex_groups.new(name="spine_03")
+groups = {}
+
+
+def group(name):
+    if name not in groups:
+        groups[name] = head_obj.vertex_groups.new(name=name)
+    return groups[name]
+
+
+body_groups = {g.index: g.name for g in body.vertex_groups if g.name in bones}
 for v in mesh.vertices:
     z = v.co.z
-    a = float(np.clip((z - neck_z) / max(head_z - neck_z, 1e-4), 0.0, 1.0))
-    g_head.add([v.index], a, "REPLACE")
-    g_neck.add([v.index], 1.0 - a if z > neck_z - 0.03 else 0.5, "REPLACE")
-    if z < neck_z - 0.03:
-        g_spine.add([v.index], 0.5, "REPLACE")
+    a = float(np.clip((z - (cut + 0.02)) / 0.04, 0.0, 1.0))
+    if a > 0.0:
+        group("head").add([v.index], a, "ADD")
+    if a < 1.0:
+        # The same bones, with the same weights, as the body at this spot.
+        _co, bi, _d = kd_body.find(v.co)
+        ws = [(body_groups[g.group], g.weight) for g in body.data.vertices[bi].groups if g.group in body_groups]
+        total = sum(w for _n, w in ws) or 1.0
+        for name, w in ws:
+            group(name).add([v.index], (1.0 - a) * w / total, "ADD")
 head_obj.parent = arm
 head_obj.modifiers.new("Armature", "ARMATURE").object = arm
 shell_obj.vertex_groups.new(name="head").add(list(range(len(shell.vertices))), 1.0, "REPLACE")
 shell_obj.parent = arm
 shell_obj.modifiers.new("Armature", "ARMATURE").object = arm
+if tufts_obj:
+    tufts_obj.vertex_groups.new(name="head").add(list(range(len(tufts_obj.data.vertices))), 1.0, "REPLACE")
+    tufts_obj.parent = arm
+    tufts_obj.modifiers.new("Armature", "ARMATURE").object = arm
 mat = bpy.data.materials.new(NAME + "_fbhead")
 mat.use_nodes = True
 node = mat.node_tree.nodes.new("ShaderNodeTexImage")

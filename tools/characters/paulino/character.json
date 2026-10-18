@@ -47,7 +47,7 @@
   ],
   "decimate": {
     "shoes03": 0.5,
-    "fbhead": 0.4,
+    "fbhead": 0.22,
     "hairshell": 0.5
   },
   "photo": {
@@ -70,6 +70,8 @@
   },
   "facebuilder": {},
   "hair_shell": {
-    "thickness": 0.016
+    "thickness": 0.016,
+    "tuft_size": 0.016,
+    "tufts": 1300
   }
 }

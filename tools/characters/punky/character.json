@@ -93,7 +93,8 @@
   "facebuilder": {},
   "hair_shell": {
     "thickness": 0.03,
-    "keep_cards": true
+    "keep_cards": true,
+    "tufts": 0
   },
   "hair_decimate": 0.2
 }
