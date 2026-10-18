@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bn1sr8r4l4e48"
-path.s3tc="res://.godot/imported/punky_punky_eye.webp-4abf5001f5650f3350776c84a6cacd4a.s3tc.ctex"
-path.etc2="res://.godot/imported/punky_punky_eye.webp-4abf5001f5650f3350776c84a6cacd4a.etc2.ctex"
+uid="uid://4sx7swf1oegi"
+path.s3tc="res://.godot/imported/paulino_eyelashes01.webp-d74e2e586e8d9d71bb9bccec7c9bc914.s3tc.ctex"
+path.etc2="res://.godot/imported/paulino_eyelashes01.webp-d74e2e586e8d9d71bb9bccec7c9bc914.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "e2ef6b60456ccc50e536318474439537"
+"md5": "6209fa28ab56d8e4dcada7f666439190"
 }
 
 [deps]
 
-source_file="res://assets/characters/punky/punky_punky_eye.webp"
-dest_files=["res://.godot/imported/punky_punky_eye.webp-4abf5001f5650f3350776c84a6cacd4a.s3tc.ctex", "res://.godot/imported/punky_punky_eye.webp-4abf5001f5650f3350776c84a6cacd4a.etc2.ctex"]
+source_file="res://assets/characters/paulino/paulino_eyelashes01.webp"
+dest_files=["res://.godot/imported/paulino_eyelashes01.webp-d74e2e586e8d9d71bb9bccec7c9bc914.s3tc.ctex", "res://.godot/imported/paulino_eyelashes01.webp-d74e2e586e8d9d71bb9bccec7c9bc914.etc2.ctex"]
 
 [params]
 

@@ -17,6 +17,9 @@ hello:
 |---|---|---|---|---|
 | `punky` (default) | Punky | `game/assets/characters/punky/punky.glb` | about 23.7k | Black mop of hair, grey jacket over a striped shirt, jeans |
 | `tsila` | Tsila | `game/assets/characters/tsila/tsila.glb` | about 17k | Short curly hair, black METHOD jersey with neon-green trim, dark trousers |
+| `paulino` | Paulino | `game/assets/characters/paulino/paulino.glb` | about 17k | Short curly hair, moustache and goatee, teal "baseball" METHOD jersey |
+| `nox` | Nox | `game/assets/characters/nox/nox.glb` | about 17k | Short curly hair, heavier build, teal baseball jersey |
+| `ninja` | Ninja | `game/assets/characters/ninja/ninja.glb` | about 17k | Curly hair, wire glasses, teal baseball jersey |
 | `mianja` | Mianja | `game/assets/characters/mianja/mianja.glb` | about 17k | Black snapback cap over a fade, "pro" METHOD jersey (V-neck, METHOD on both shoulders, grey slashes, sleeve M), dark trousers |
 
 Both use the same skeleton, clips and code:
@@ -64,12 +67,26 @@ The folder also holds any textures the character uses.
    `male_casualsuit04` into the black-and-green jersey: the `classic` style
    for Tsila, the `pro` style for Mianja.
 
+   The `baseball` style (Paulino, Nox, Ninja) is teal with pinstripes, grey
+   piping, a METHOD wordmark and a Madagascar flag on the sleeve. It
+   deliberately carries no third-party sponsor or team logos.
+
    A `"cap"` entry adds a black snapback skinned to the head bone and drops
-   the hair underneath it (Mianja).
+   the hair underneath it (Mianja). A `"glasses"` entry adds wire frames
+   with no lenses (Ninja).
+
+   `prepare_photo.py` levels a tilted photo by its eyes and prints the
+   landmarks for `character.json`. The face oval, cheek samples and
+   de-light radius default to values derived from those landmarks.
+   `"exclude"` ellipses keep parts of the photo off the face, such as real
+   glasses with glare. `"ring_tint"` matches the skin where the photo fades
+   out.
 3. `face_bake.py` projects the character's front photo onto the head:
    - It fits the photo to the model's eyes and lips.
    - It de-lights the photo and matches the skin tone to the cheeks (plus
-     the neck, for a photo with harsh light).
+     the neck, for a photo with harsh light). The body tint is computed in
+     linear light, which is how Cycles applies it, so the face and body
+     match without a seam.
    - It blends the photo in by a feathered face oval and how much each point
      faces forward.
    - Cycles bakes everything into one 2048 px skin texture.
@@ -98,7 +115,7 @@ Then:
 
 ## The face photos
 
-All three faces come from photos of real people, used with their consent. **The
+Every face comes from a photo of a real person, used with their consent. **The
 photos are never committed**: `.gitignore` excludes `face_src.*` and the
 intermediate images. The baked skin textures do show their faces, and the
 picker portraits (`portrait.png`, 256 × 300) are head-and-shoulders crops of

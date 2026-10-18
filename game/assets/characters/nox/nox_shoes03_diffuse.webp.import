@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnx4r2j02dti5"
-path.s3tc="res://.godot/imported/punky_punky_hair.webp-75887e50f5fd3c3e736c6ba55b87eb41.s3tc.ctex"
-path.etc2="res://.godot/imported/punky_punky_hair.webp-75887e50f5fd3c3e736c6ba55b87eb41.etc2.ctex"
+uid="uid://b0q2tcmm82htq"
+path.s3tc="res://.godot/imported/nox_shoes03_diffuse.webp-d037c15e5691cc26edc129067f99fb3d.s3tc.ctex"
+path.etc2="res://.godot/imported/nox_shoes03_diffuse.webp-d037c15e5691cc26edc129067f99fb3d.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "db15705e0edc464450993407651b9f71"
+"md5": "c6ce3cf3019569ff1c7c7d4574230da8"
 }
 
 [deps]
 
-source_file="res://assets/characters/punky/punky_punky_hair.webp"
-dest_files=["res://.godot/imported/punky_punky_hair.webp-75887e50f5fd3c3e736c6ba55b87eb41.s3tc.ctex", "res://.godot/imported/punky_punky_hair.webp-75887e50f5fd3c3e736c6ba55b87eb41.etc2.ctex"]
+source_file="res://assets/characters/nox/nox_shoes03_diffuse.webp"
+dest_files=["res://.godot/imported/nox_shoes03_diffuse.webp-d037c15e5691cc26edc129067f99fb3d.s3tc.ctex", "res://.godot/imported/nox_shoes03_diffuse.webp-d037c15e5691cc26edc129067f99fb3d.etc2.ctex"]
 
 [params]
 

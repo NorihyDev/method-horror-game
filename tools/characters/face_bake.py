@@ -23,6 +23,22 @@ P_EYE_L = np.array(PH_CFG["eye_l"], dtype=float)
 P_MOUTH = np.array(PH_CFG["mouth"], dtype=float)
 P_CHIN_Y = float(PH_CFG["chin_y"])
 TEX = 2048
+# Defaults derived from the landmarks (character.json may override each):
+# a face oval from the brows to the chin, cheek samples under each eye.
+_d = float(P_EYE_L[0] - P_EYE_R[0])
+_ey = float((P_EYE_R[1] + P_EYE_L[1]) / 2)
+_em = float(P_MOUTH[1] - _ey)
+_cy0, _cy1 = int(_ey + 0.45 * _em), int(_ey + 0.7 * _em)
+PH_CFG.setdefault("mask", [float((P_EYE_R[0] + P_EYE_L[0]) / 2), _ey + 0.71 * _em, 0.95 * _d, 0.93 * _em])
+PH_CFG.setdefault(
+    "cheeks",
+    [
+        [_cy0, _cy1, int(P_EYE_R[0] - 0.1 * _d), int(P_EYE_R[0] + 0.25 * _d)],
+        [_cy0, _cy1, int(P_EYE_L[0] - 0.25 * _d), int(P_EYE_L[0] + 0.1 * _d)],
+    ],
+)
+PH_CFG.setdefault("tone_band", [_cy0, _cy1, int(P_EYE_R[0] - 0.1 * _d), int(P_EYE_L[0] + 0.1 * _d)])
+PH_CFG.setdefault("delight_radius", max(8, int(0.38 * _d)))
 
 body = bpy.data.objects[NAME + ".body"]
 mesh = body.data
@@ -92,6 +108,10 @@ d = np.sqrt(((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2)
 mask = np.clip((1.0 - d) / 0.22, 0.0, 1.0)
 fall = max(6.0, ry * 0.1)
 mask[yy > P_CHIN_Y + 2] *= np.clip(1.0 - (yy[yy > P_CHIN_Y + 2] - P_CHIN_Y - 2) / fall, 0.0, 1.0)
+# Optional holes (e.g. real glasses with glare): those parts keep the skin.
+for ecx, ecy, erx, ery in PH_CFG.get("exclude", []):
+    de = np.sqrt(((xx - ecx) / erx) ** 2 + ((yy - ecy) / ery) ** 2)
+    mask *= np.clip((de - 0.8) / 0.4, 0.0, 1.0)
 # Saved to disk and reloaded: an in-memory generated image comes back blank when baking.
 tmp_img = bpy.data.images.new("face_mask_tmp", int(PW), int(PH), alpha=False)
 rgba = np.dstack([mask, mask, mask, np.ones_like(mask)])[::-1].astype(np.float32)
@@ -137,7 +157,32 @@ assert skin_img, "skin texture not found for " + skin_dir
 sp = np.array(skin_img.pixels[:], dtype=np.float32).reshape(skin_img.size[1], skin_img.size[0], 4)
 source = sp[..., :3].reshape(-1, 3)
 source = source[source.sum(axis=1) > 0.05].mean(axis=0)
-tint = np.clip(target / source, 0.4, 3.0)
+if PH_CFG.get("ring_tint"):
+    # Match the skin right where the photo fades out, not the whole texture,
+    # so the face has no visible edge.
+    sh, sw = sp.shape[0], sp.shape[1]
+    uv_main_data = mesh.uv_layers[main_uv].data
+    ring = []
+    for li, loop in enumerate(mesh.loops):
+        pu, pv = photo_uv.data[li].uv
+        px, py = int(pu * PW), int((1.0 - pv) * PH)
+        if 0 <= px < PW and 0 <= py < PH and 0.05 < mask[py, px] < 0.6:
+            if mesh.vertices[loop.vertex_index].normal.y < -0.4:
+                mu, mv = uv_main_data[li].uv
+                ring.append(sp[int(mv * sh) % sh, int(mu * sw) % sw, :3])
+    if len(ring) > 50:
+        source = np.mean(ring, axis=0)
+        print("RING", len(ring), source)
+
+
+def to_linear(c):
+    c = np.asarray(c, dtype=np.float64)
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+# The bake shader multiplies in linear light, so the tint is a linear ratio
+# (an sRGB ratio would leave the body darker than the face).
+tint = np.clip(to_linear(target) / to_linear(source), 0.2, 8.0)
 # De-light the photo: remove the studio light's broad gradient and keep the
 # facial detail, re-lit at the even body tone (target).
 lum = pp[..., :3].mean(axis=-1)

@@ -6,6 +6,8 @@ python -I make_jersey.py <male_casualsuit04_diffuse.png> <out.png> [classic|pro]
 "classic" (Tsila): round green collar, badge, straight side flashes.
 "pro" (Mianja): V-neck, METHOD on both shoulders, grey slashes, sleeve "M",
 green cuffs and a larger badge, like the team's match jersey.
+"baseball" (Paulino, Nox, Ninja): teal pinstriped button-up with grey
+piping, a METHOD wordmark and a Madagascar flag on the sleeve.
 """
 import sys
 
@@ -40,10 +42,54 @@ out[jeans] = dark[jeans]
 # Unused texture space (flat slate) goes black so nothing bleeds into seams.
 empty = (np.abs(img - np.array([62, 96, 117])).sum(axis=-1) < 6)
 out[empty] = 10
+if STYLE == "baseball":
+    TEAL = np.array([38, 168, 186], dtype=np.float32)
+    PIPE = np.array([118, 124, 130], dtype=np.float32)
+    yy, xx = np.mgrid[0:h, 0:w]
+    # The old front logo becomes plain cloth.
+    logo = ((xx - 428 * w / 768) ** 2 + (yy - 128 * h / 768) ** 2) < (54 * w / 768) ** 2
+    cloth = (shirt | (logo & top)) & ~empty
+    shade = np.clip(lum / max(lum[shirt & ~empty].mean(), 1.0), 0.75, 1.2)
+    shade[logo] = 1.0
+    out[cloth] = TEAL * shade[cloth][:, None]
+    # Pinstripes: thin darker verticals across the shirt panels.
+    stripe = (xx % int(w / 768 * 10)) < max(1, int(w / 768))
+    out[cloth & stripe] = TEAL * 0.72
+    out[orange & ~logo] = PIPE
+    out[collar] = PIPE
 pic = Image.fromarray(np.clip(out, 0, 255).astype(np.uint8))
 
 # Front panel (the one that carried the logo): badge, wordmark, side flashes.
 d = ImageDraw.Draw(pic)
+if STYLE == "baseball":
+    sx, sy = w / 768.0, h / 768.0
+    try:
+        bold = ImageFont.truetype("arialbd.ttf", int(22 * sx))
+        small = ImageFont.truetype("arialbd.ttf", int(12 * sx))
+    except OSError:
+        bold = small = ImageFont.load_default()
+    pipe = (118, 124, 130)
+    navy = (22, 34, 62)
+    # Cover the old logo with plain teal, then the button placket and V.
+    d.line([(400 * sx, 34 * sy), (428 * sx, 78 * sy), (456 * sx, 34 * sy)], fill=pipe, width=int(5 * sx))
+    d.line([(428 * sx, 78 * sy), (428 * sx, 290 * sy)], fill=pipe, width=int(5 * sx))
+    for k in range(5):
+        y = (100 + k * 40) * sy
+        d.ellipse([422 * sx, y - 5 * sy, 434 * sx, y + 5 * sy], fill=pipe)
+    # Wordmark on the wearer's left chest, emblem on the right.
+    d.text((470 * sx, 128 * sy), "METHOD", font=bold, fill=navy, anchor="mm")
+    d.text((470 * sx, 150 * sy), "HORROR", font=small, fill=(240, 244, 246), anchor="mm")
+    d.rectangle([362 * sx, 104 * sy, 400 * sx, 142 * sy], outline=navy, width=int(4 * sx))
+    d.text((381 * sx, 123 * sy), "M", font=bold, fill=navy, anchor="mm")
+    d.text((128 * sx, 70 * sy), "METHOD", font=bold, fill=navy, anchor="mm")
+    # Madagascar flag on one sleeve.
+    fx, fy = 630 * sx, 120 * sy
+    d.rectangle([fx, fy, fx + 14 * sx, fy + 24 * sy], fill=(245, 245, 245))
+    d.rectangle([fx + 14 * sx, fy, fx + 38 * sx, fy + 12 * sy], fill=(200, 30, 40))
+    d.rectangle([fx + 14 * sx, fy + 12 * sy, fx + 38 * sx, fy + 24 * sy], fill=(0, 125, 60))
+    pic.save(OUT)
+    print("jersey", pic.size, STYLE)
+    sys.exit(0)
 sx, sy = w / 768.0, h / 768.0
 cx, cy = 428 * sx, 128 * sy
 d.ellipse([cx - 52 * sx, cy - 52 * sy, cx + 52 * sx, cy + 52 * sy], fill=(16, 18, 17))

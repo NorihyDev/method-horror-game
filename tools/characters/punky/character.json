@@ -1,34 +1,124 @@
 {
   "name": "Punky",
   "phenotype": {
-    "gender": 1.0, "age": 0.36, "muscle": 0.45, "weight": 0.38, "proportions": 0.6, "height": 0.6,
-    "cupsize": 0.5, "firmness": 0.5,
-    "race": {"asian": 0.45, "caucasian": 0.12, "african": 0.43}
+    "gender": 1.0,
+    "age": 0.36,
+    "muscle": 0.45,
+    "weight": 0.38,
+    "proportions": 0.6,
+    "height": 0.6,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.45,
+      "caucasian": 0.12,
+      "african": 0.43
+    }
   },
   "skin": "young_african_male/young_african_male.mhmat",
   "hair": "culturalibre_hair_06/culturalibre_hair_06.mhclo",
   "eyebrows": "eyebrow006/eyebrow006.mhclo",
-  "clothes": ["male_casualsuit05/male_casualsuit05.mhclo", "shoes03/shoes03.mhclo"],
-  "textures": {"high-poly": "eye.png", "culturalibre_hair_06": "hair.png"},
-  "targets": [
-    {"target": "head-oval", "value": 0.5},
-    {"target": "head-scale-horiz-decr", "value": 0.22},
-    {"target": "head-fat-decr", "value": 0.3},
-    {"target": "chin-height-incr", "value": 0.35},
-    {"target": "chin-width-decr", "value": 0.25},
-    {"target": "nose-scale-horiz-incr", "value": 0.25},
-    {"target": "nose-flaring-incr", "value": 0.35},
-    {"target": "nose-point-width-incr", "value": 0.3},
-    {"target": "mouth-lowerlip-volume-incr", "value": 0.35},
-    {"target": "mouth-scale-horiz-decr", "value": 0.1}
+  "clothes": [
+    "male_casualsuit05/male_casualsuit05.mhclo",
+    "shoes03/shoes03.mhclo"
   ],
-  "decimate": {"shoes03": 0.5},
+  "textures": {
+    "high-poly": "eye.png",
+    "culturalibre_hair_06": "hair.png"
+  },
+  "targets": [
+    {
+      "target": "head-oval",
+      "value": 0.5
+    },
+    {
+      "target": "head-scale-horiz-decr",
+      "value": 0.22
+    },
+    {
+      "target": "head-fat-decr",
+      "value": 0.3
+    },
+    {
+      "target": "chin-height-incr",
+      "value": 0.35
+    },
+    {
+      "target": "chin-width-decr",
+      "value": 0.25
+    },
+    {
+      "target": "nose-scale-horiz-incr",
+      "value": 0.25
+    },
+    {
+      "target": "nose-flaring-incr",
+      "value": 0.35
+    },
+    {
+      "target": "nose-point-width-incr",
+      "value": 0.3
+    },
+    {
+      "target": "mouth-lowerlip-volume-incr",
+      "value": 0.35
+    },
+    {
+      "target": "mouth-scale-horiz-decr",
+      "value": 0.1
+    }
+  ],
+  "decimate": {
+    "shoes03": 0.5
+  },
   "photo": {
-    "eye_r": [250, 147], "eye_l": [308, 148], "mouth": [280, 210], "chin_y": 243,
-    "mask": [279, 192, 55, 58],
-    "cheeks": [[175, 200, 236, 252], [175, 200, 308, 324]],
-    "neck": [255, 280, 260, 300], "neck_weight": 0.65, "tone_scale": 0.92,
-    "tone_band": [175, 200, 236, 324],
+    "eye_r": [
+      250,
+      147
+    ],
+    "eye_l": [
+      308,
+      148
+    ],
+    "mouth": [
+      280,
+      210
+    ],
+    "chin_y": 243,
+    "mask": [
+      279,
+      192,
+      55,
+      58
+    ],
+    "cheeks": [
+      [
+        175,
+        200,
+        236,
+        252
+      ],
+      [
+        175,
+        200,
+        308,
+        324
+      ]
+    ],
+    "neck": [
+      255,
+      280,
+      260,
+      300
+    ],
+    "neck_weight": 0.65,
+    "tone_scale": 0.82,
+    "tone_band": [
+      175,
+      200,
+      236,
+      324
+    ],
     "delight_radius": 22
   }
 }

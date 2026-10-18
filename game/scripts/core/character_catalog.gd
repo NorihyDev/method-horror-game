@@ -24,6 +24,24 @@ const CHARACTERS := {
 		"scene": "res://assets/characters/mianja/mianja.glb",
 		"portrait": "res://assets/characters/mianja/portrait.png",
 	},
+	"paulino":
+	{
+		"name": "Paulino",
+		"scene": "res://assets/characters/paulino/paulino.glb",
+		"portrait": "res://assets/characters/paulino/portrait.png",
+	},
+	"nox":
+	{
+		"name": "Nox",
+		"scene": "res://assets/characters/nox/nox.glb",
+		"portrait": "res://assets/characters/nox/portrait.png",
+	},
+	"ninja":
+	{
+		"name": "Ninja",
+		"scene": "res://assets/characters/ninja/ninja.glb",
+		"portrait": "res://assets/characters/ninja/portrait.png",
+	},
 }
 
 

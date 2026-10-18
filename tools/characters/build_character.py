@@ -4,6 +4,7 @@ blender -b --python build_character.py -- <character_dir> <work_dir>
 Saves <work_dir>/base.blend and preview renders. See docs/characters.md.
 """
 import json
+import math
 import os
 import sys
 
@@ -114,8 +115,73 @@ def add_cap(spec):
         bpy.data.objects.remove(hair)
 
 
+def add_glasses(spec):
+    """Thin wire-frame glasses (no lenses) skinned to the head bone."""
+    import bmesh
+    from mathutils import Matrix, Vector
+
+    name = CFG["name"]
+    body = bpy.data.objects[name + ".body"]
+    arm = body.parent
+    states = [(m, m.show_viewport) for m in body.modifiers]
+    for m, _ in states:
+        m.show_viewport = False
+    ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    tmp = ev.to_mesh()
+    pts = [body.matrix_world @ v.co for v in tmp.vertices]
+    ev.to_mesh_clear()
+    for m, was in states:
+        m.show_viewport = was
+
+    def centre(group):
+        gi = body.vertex_groups[group].index
+        sel = [pts[v.index] for v in body.data.vertices if any(g.group == gi and g.weight > 0.5 for g in v.groups)]
+        return sum(sel, Vector()) / len(sel)
+
+    eyes = [centre("joint-r-eye"), centre("joint-l-eye")]
+    front = min(e.y for e in eyes) - float(spec.get("offset", 0.024))
+    wire = float(spec.get("wire", 0.0016))
+    half_w, half_h = float(spec.get("width", 0.024)), float(spec.get("height", 0.018))
+    bm = bmesh.new()
+
+    def tube(a, b):
+        ret = bmesh.ops.create_cone(bm, cap_ends=False, segments=6, radius1=wire, radius2=wire, depth=(b - a).length)
+        rot = (b - a).to_track_quat("Z", "Y").to_matrix().to_4x4()
+        bmesh.ops.transform(bm, matrix=Matrix.Translation((a + b) / 2) @ rot, verts=ret["verts"])
+
+    inner = []
+    for e in eyes:
+        c = Vector((e.x, front, e.z))
+        ring = [c + Vector((math.cos(t) * half_w, 0, math.sin(t) * half_h)) for t in [i * math.tau / 20 for i in range(20)]]
+        for i in range(20):
+            tube(ring[i], ring[(i + 1) % 20])
+        inner.append(c + Vector((-half_w if e.x > 0 else half_w, 0, half_h * 0.3)))
+        side = 1.0 if e.x > 0 else -1.0
+        hinge = c + Vector((side * half_w, 0, half_h * 0.4))
+        tube(hinge, hinge + Vector((side * 0.012, 0.1, 0.0)))
+    tube(inner[0], inner[1])
+    mesh = bpy.data.meshes.new(name + ".glasses")
+    bm.to_mesh(mesh)
+    bm.free()
+    obj = bpy.data.objects.new(name + ".glasses", mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    obj.parent = arm
+    obj.vertex_groups.new(name="head").add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+    obj.modifiers.new("Armature", "ARMATURE").object = arm
+    mat = bpy.data.materials.new(name + "_glasses")
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Base Color"].default_value = list(spec.get("color", [0.45, 0.36, 0.22])) + [1.0]
+    bsdf.inputs["Metallic"].default_value = 0.8
+    bsdf.inputs["Roughness"].default_value = 0.35
+    mesh.materials.append(mat)
+    print("GLASSES", [tuple(round(x, 3) for x in e) for e in eyes])
+
+
 if "cap" in CFG:
     add_cap(CFG["cap"])
+if "glasses" in CFG:
+    add_glasses(CFG["glasses"])
 
 scene = bpy.context.scene
 scene.render.engine = "BLENDER_EEVEE"

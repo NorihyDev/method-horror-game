@@ -11,6 +11,8 @@ dates are ISO 8601.
   jersey with neon-green trim, with the same six animations. The choice
   travels with you when you join, and unknown values fall back to Punky.
   Mianja is the third: a black snapback cap and the pro METHOD jersey.
+  Paulino, Nox and Ninja (with glasses) wear a teal baseball METHOD
+  jersey. Skin now matches between face and body on every character.
 - **More horror.**
   - A scare director plays local-only frights in quiet moments: whispers,
     knocking, running steps, lamps bursting, the flashlight dying, a distant

@@ -1,0 +1,64 @@
+{
+  "name": "Nox",
+  "phenotype": {
+    "gender": 1.0,
+    "age": 0.45,
+    "muscle": 0.5,
+    "weight": 0.7,
+    "proportions": 0.55,
+    "height": 0.55,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.2,
+      "caucasian": 0.4,
+      "african": 0.4
+    }
+  },
+  "skin": "young_african_male/young_african_male.mhmat",
+  "hair": "afro01/afro01.mhclo",
+  "eyebrows": "eyebrow009/eyebrow009.mhclo",
+  "clothes": [
+    "male_casualsuit04/male_casualsuit04.mhclo",
+    "shoes03/shoes03.mhclo"
+  ],
+  "textures": {
+    "high-poly": "eye.png",
+    "male_casualsuit04": "jersey.png",
+    "eyebrow009": "brows.png"
+  },
+  "targets": [
+    {
+      "target": "head-fat-incr",
+      "value": 0.35
+    },
+    {
+      "target": "nose-flaring-incr",
+      "value": 0.25
+    },
+    {
+      "target": "mouth-scale-horiz-incr",
+      "value": 0.1
+    }
+  ],
+  "decimate": {
+    "shoes03": 0.5
+  },
+  "photo": {
+    "eye_r": [
+      231.2,
+      117.9
+    ],
+    "eye_l": [
+      283.8,
+      117.9
+    ],
+    "mouth": [
+      257.3,
+      162.5
+    ],
+    "chin_y": 198.8,
+    "tone_scale": 0.95,
+    "ring_tint": true
+  }
+}
