@@ -113,7 +113,9 @@ func _touch_shots() -> void:
 	Settings.set_value("touch_controls", "on", false)
 	Session.start_solo("house", "normal")
 	await _wait(150)
-	app.current().call("_on_begin")
+	# Skip the briefing if it is still up (loading speed varies).
+	if app.current().has_method("_on_begin"):
+		app.current().call("_on_begin")
 	await _wait(120)
 	var gameplay := app.current()
 	var player: PlayerController = gameplay.get("player")
