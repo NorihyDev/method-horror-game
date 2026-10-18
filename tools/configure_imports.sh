@@ -18,7 +18,7 @@ for f in assets/generated/decals/*.png.import; do
          -e 's/^mipmaps\/generate=.*/mipmaps\/generate=true/' \
          -e 's/^detect_3d\/compress_to=.*/detect_3d\/compress_to=0/' "$f"
 done
-for f in assets/characters/*/*.webp.import; do
+for f in assets/characters/*/*.webp.import assets/monsters/*/*.webp.import; do
   sed -i -e 's/^compress\/mode=.*/compress\/mode=2/' \
          -e 's/^detect_3d\/compress_to=.*/detect_3d\/compress_to=0/' "$f"
 done

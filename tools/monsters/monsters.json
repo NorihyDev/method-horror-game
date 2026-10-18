@@ -1,0 +1,71 @@
+{
+  "frankie": {
+    "name": "Frankie",
+    "file": "big frankie (4)/big frankie/big frankie.fbx",
+    "texture_dir": "big frankie (4)/big frankie/texture big frankie",
+    "relink": {
+      "texture big frankie (1).png": "texture_big_frankie 2.png"
+    },
+    "triangles": 14000,
+    "deform_bones_only": true,
+    "clips": {
+      "idle": "scary idle frankie",
+      "walk": "Walking frankie",
+      "run": "run frankie",
+      "search": "scary idle frankie",
+      "alert": "roar frankie",
+      "windup": "roar frankie",
+      "strike": "Door anim frankie",
+      "recover": "scary idle frankie",
+      "hit": "roar frankie",
+      "open_door": "Door anim frankie"
+    }
+  },
+  "doctor": {
+    "name": "Doctor",
+    "file": "Killers Pack By Dime/Killers Pack By Dime/Doctor/Doctor/Doctor.fbx",
+    "triangles": 14000,
+    "hunch": 0.18,
+    "drag": 0.3
+  },
+  "miner": {
+    "name": "Miner",
+    "file": "Killers Pack By Dime/Killers Pack By Dime/Miner/Miner/Miner.fbx",
+    "triangles": 14000,
+    "hunch": 0.22,
+    "drag": 0.45
+  },
+  "clown": {
+    "name": "Clown",
+    "file": "Killers Pack By Dime/Killers Pack By Dime/Clown/Clown/Clown.fbx",
+    "triangles": 14000,
+    "hunch": 0.3,
+    "drag": 0.2
+  },
+  "gravvok": {
+    "name": "Gravvok",
+    "file": "GRAVVOK - Retro PSX Monster/GRAVVOK - Retro PSX Monster/GRAVVOK.fbx",
+    "relink": {
+      "*": "face body texture GRAVVOK.png"
+    },
+    "triangles": 9000,
+    "clips": {
+      "idle": "idle",
+      "walk": "walk",
+      "run": "run cuadroped",
+      "search": "idle agressive",
+      "alert": "roar",
+      "windup": "idle agressive",
+      "strike": "bite attack",
+      "recover": "idle agressive",
+      "hit": "hit reaction",
+      "open_door": "sweeping attack"
+    },
+    "tint": [
+      0.62,
+      0.55,
+      0.52
+    ],
+    "saturation": 0.35
+  }
+}

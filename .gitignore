@@ -54,3 +54,7 @@ tools/characters/**/face_flat.png
 tools/characters/**/face_mask.png
 *.blend
 *.blend1
+
+# Third-party source packs (licences vary; converted models live elsewhere)
+game/assets/monster-pack/
+game/assets/monsters/

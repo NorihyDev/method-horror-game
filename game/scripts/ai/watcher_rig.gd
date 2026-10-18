@@ -33,11 +33,18 @@ var lens_mat: StandardMaterial3D
 var style := "watcher"
 ## Lineman only: the beam players see sweeping the tunnels.
 var headlamp: SpotLight3D
+## Imported model (MonsterCatalog); null when using the procedural body.
+var model: Node3D
 var _coat: Node3D
 var _current := ""
+var _steps_per_loop := 2.0
+var _last_step := -1
 
 
 func _ready() -> void:
+	if _build_imported():
+		play("idle")
+		return
 	_build_body()
 	anim = AnimationPlayer.new()
 	anim.name = "AnimationPlayer"
@@ -63,13 +70,22 @@ func play(anim_name: String, blend: float = 0.25, speed: float = 1.0) -> void:
 		return
 	if anim_name == "freeze":
 		# Hold the current pose mid-motion (the Headmistress while watched).
+		if model and anim.current_animation != "" and _current != "freeze":
+			# Finish any blend first, or the freeze can catch the model in its rest pose.
+			var cur := anim.current_animation
+			var at := anim.current_animation_position
+			anim.play(cur, 0.0)
+			anim.seek(at, true)
 		_current = "freeze"
 		anim.speed_scale = 0.0
+		return
+	if not anim.has_animation(anim_name):
 		return
 	if anim_name == _current and anim.is_playing():
 		anim.speed_scale = speed
 		return
 	_current = anim_name
+	_last_step = -1
 	anim.play(anim_name, blend)
 	anim.speed_scale = speed
 
@@ -88,6 +104,63 @@ func set_lens_intensity(k: float) -> void:
 ## Called by the foot-plant method track.
 func _on_foot() -> void:
 	foot_planted.emit()
+
+
+# --- Imported model --------------------------------------------------------------
+
+
+func _build_imported() -> bool:
+	var e := MonsterCatalog.entry(style)
+	if e.is_empty():
+		return false
+	var packed := load(str(e["scene"])) as PackedScene
+	if packed == null:
+		return false
+	model = packed.instantiate() as Node3D
+	model.name = "Model"
+	# Scaled to its target height; exported facing +Z like the procedural body.
+	var k := float(e["height"]) / maxf(float(e["source_height"]), 0.01)
+	model.scale = Vector3.ONE * k
+	add_child(model)
+	anim = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	for clip in ["idle", "walk", "run", "search", "recover"]:
+		if anim and anim.has_animation(clip):
+			anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	var skel := model.find_child("Skeleton3D", true, false) as Skeleton3D
+	var head_bone := str(e.get("head", ""))
+	var head: Node3D = model
+	if skel and not head_bone.is_empty() and skel.find_bone(head_bone) >= 0:
+		var att := BoneAttachment3D.new()
+		att.bone_name = head_bone
+		skel.add_child(att)
+		head = att
+	joints["head"] = head
+	if e.has("lamp"):
+		headlamp = SpotLight3D.new()
+		headlamp.light_color = Color(1.0, 0.86, 0.62)
+		headlamp.light_energy = 2.2
+		headlamp.spot_range = 15.0
+		headlamp.spot_angle = 24.0
+		headlamp.spot_attenuation = 0.9
+		headlamp.shadow_enabled = false
+		headlamp.position = e["lamp"] / k
+		headlamp.rotation = Vector3(deg_to_rad(-8), PI, 0)
+		head.add_child(headlamp)
+	return anim != null
+
+
+## Imported clips have no foot-plant track: step twice per walk/run loop.
+func _process(_delta: float) -> void:
+	if model == null or anim == null or not anim.is_playing() or _current not in ["walk", "run"]:
+		return
+	var length := maxf(anim.current_animation_length, 0.01)
+	var step := int(anim.current_animation_position / length * _steps_per_loop)
+	if step != _last_step:
+		if _last_step >= 0:
+			foot_planted.emit()
+		_last_step = step
 
 
 # --- Body ----------------------------------------------------------------------------
