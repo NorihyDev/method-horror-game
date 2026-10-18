@@ -241,9 +241,9 @@ mesh.materials.clear()
 mesh.materials.append(skin)
 mesh.uv_layers.remove(mesh.uv_layers["photo"])
 
-# Hair cards stay alpha-blended and a little rough.
-hair = bpy.data.objects[NAME + "." + CFG["hair"].split("/")[0]]
-for m in hair.data.materials:
+# Hair cards stay alpha-blended and a little rough (none under a cap).
+hair = bpy.data.objects.get(NAME + "." + CFG["hair"].split("/")[0])
+for m in hair.data.materials if hair else []:
     m.surface_render_method = "BLENDED" if hasattr(m, "surface_render_method") else m.surface_render_method
     for node in m.node_tree.nodes:
         if node.type == "BSDF_PRINCIPLED":

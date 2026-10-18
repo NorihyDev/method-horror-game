@@ -17,6 +17,7 @@ hello:
 |---|---|---|---|---|
 | `punky` (default) | Punky | `game/assets/characters/punky/punky.glb` | about 23.7k | Black mop of hair, grey jacket over a striped shirt, jeans |
 | `tsila` | Tsila | `game/assets/characters/tsila/tsila.glb` | about 17k | Short curly hair, black METHOD jersey with neon-green trim, dark trousers |
+| `mianja` | Mianja | `game/assets/characters/mianja/mianja.glb` | about 17k | Black snapback cap over a fade, "pro" METHOD jersey (V-neck, METHOD on both shoulders, grey slashes, sleeve M), dark trousers |
 
 Both use the same skeleton, clips and code:
 
@@ -60,7 +61,11 @@ The folder also holds any textures the character uses.
    - Tsila: a dark iris, darkened `eyebrow009` brows, and `jersey.png`.
 
    `make_jersey.py` makes `jersey.png` by repainting MakeHuman's
-   `male_casualsuit04` into the black-and-green jersey.
+   `male_casualsuit04` into the black-and-green jersey: the `classic` style
+   for Tsila, the `pro` style for Mianja.
+
+   A `"cap"` entry adds a black snapback skinned to the head bone and drops
+   the hair underneath it (Mianja).
 3. `face_bake.py` projects the character's front photo onto the head:
    - It fits the photo to the model's eyes and lips.
    - It de-lights the photo and matches the skin tone to the cheeks (plus
@@ -93,7 +98,7 @@ Then:
 
 ## The face photos
 
-Both faces come from photos of real people, used with their consent. **The
+All three faces come from photos of real people, used with their consent. **The
 photos are never committed**: `.gitignore` excludes `face_src.*` and the
 intermediate images. The baked skin textures and the portraits do show their
 faces, and this repository is public.

@@ -293,6 +293,11 @@ for o in meshes:
         nt = new.node_tree
         bsdf = nt.nodes["Principled BSDF"]
         bsdf.inputs["Roughness"].default_value = 0.85 if key != "high-poly" else 0.25
+        if diffuse is None:
+            # Untextured parts (a cap): keep the original flat colour.
+            for n in mat.node_tree.nodes:
+                if n.type == "BSDF_PRINCIPLED":
+                    bsdf.inputs["Base Color"].default_value = n.inputs["Base Color"].default_value
         if diffuse:
             if max(diffuse.size) > 1024 and key != "body":
                 diffuse.scale(1024, 1024)

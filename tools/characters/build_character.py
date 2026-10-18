@@ -49,6 +49,74 @@ for suffix, png in CFG.get("textures", {}).items():
                     n.image = img
                     print("TEXTURE", o.name, png)
 
+
+
+def add_cap(spec):
+    """A snapback cap (crown + flat brim) skinned to the head bone."""
+    import bmesh
+
+    body = bpy.data.objects[CFG["name"] + ".body"]
+    arm = body.parent
+    states = [(m, m.show_viewport) for m in body.modifiers]
+    for m, _ in states:
+        m.show_viewport = False
+    ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    tmp = ev.to_mesh()
+    pts = [body.matrix_world @ v.co for v in tmp.vertices]
+    ev.to_mesh_clear()
+    for m, was in states:
+        m.show_viewport = was
+    top = max(p.z for p in pts)
+    head = [p for p in pts if p.z > top - 0.13]
+    cx = sum(p.x for p in head) / len(head)
+    cy = sum(p.y for p in head) / len(head)
+    rx = (max(p.x for p in head) - min(p.x for p in head)) * 0.5
+    ry = (max(p.y for p in head) - min(p.y for p in head)) * 0.5
+    base_z = top - float(spec.get("depth", 0.085))
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=28, v_segments=14, radius=1.0)
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -0.02], context="VERTS")
+    for v in bm.verts:
+        v.co.x *= rx * 1.2
+        v.co.y *= ry * 1.14
+        v.co.z = v.co.z * (top - base_z + 0.02) + base_z
+        v.co.x += cx
+        v.co.y += cy
+    brim = bmesh.ops.create_cone(bm, cap_ends=True, segments=28, radius1=1.0, radius2=1.0, depth=0.012)
+    # The brim: an oval sticking out over the forehead (its back half hides
+    # inside the crown), tipped up a little at the front.
+    for v in brim["verts"]:
+        v.co.x = v.co.x * rx * 0.95 + cx
+        v.co.y = v.co.y * ry * 0.75 + cy - ry * 1.05
+        v.co.z = v.co.z + base_z + 0.012 - (v.co.y - (cy - ry * 0.5)) * 0.1
+    mesh = bpy.data.meshes.new(CFG["name"] + ".cap")
+    bm.to_mesh(mesh)
+    bm.free()
+    for poly in mesh.polygons:
+        poly.use_smooth = True
+    obj = bpy.data.objects.new(CFG["name"] + ".cap", mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    obj.parent = arm
+    group = obj.vertex_groups.new(name="head")
+    group.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+    mod = obj.modifiers.new("Armature", "ARMATURE")
+    mod.object = arm
+    mat = bpy.data.materials.new(CFG["name"] + "_cap")
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Base Color"].default_value = list(spec.get("color", [0.02, 0.02, 0.022])) + [1.0]
+    bsdf.inputs["Roughness"].default_value = 0.85
+    mesh.materials.append(mat)
+    print("CAP", round(rx, 3), round(ry, 3), round(top, 3))
+    # Remove hair the cap covers so it can't poke through the crown.
+    hair = bpy.data.objects.get(CFG["name"] + "." + CFG["hair"].split("/")[0])
+    if hair and spec.get("hide_hair", True):
+        bpy.data.objects.remove(hair)
+
+
+if "cap" in CFG:
+    add_cap(CFG["cap"])
+
 scene = bpy.context.scene
 scene.render.engine = "BLENDER_EEVEE"
 scene.render.resolution_x = 900

@@ -10,6 +10,7 @@ dates are ISO 8601.
   you as in co-op. Tsila joins Punky: short curly hair and a black METHOD
   jersey with neon-green trim, with the same six animations. The choice
   travels with you when you join, and unknown values fall back to Punky.
+  Mianja is the third: a black snapback cap and the pro METHOD jersey.
 - **More horror.**
   - A scare director plays local-only frights in quiet moments: whispers,
     knocking, running steps, lamps bursting, the flashlight dying, a distant

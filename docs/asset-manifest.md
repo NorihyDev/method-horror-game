@@ -15,7 +15,7 @@ art is the CC0 MakeHuman content inside the Punky character model.
 | Viewmodel (hand + flashlight) | `scripts/player/viewmodel.gd` | Procedural | METHOD | Proprietary | Placeholder |
 | Item models | `scripts/interaction/item_visuals.gd` | Procedural | METHOD | Proprietary | Placeholder |
 | UI font | engine default (bundled with Godot, see THIRD_PARTY_NOTICES) + `SystemFont` serif/monospace requests | Godot / player's OS | — | Engine license; OS fonts are not redistributed | Final candidate |
-| Teammate characters "Punky" and "Tsila" (meshes, rig, 6 animation clips, textures, portraits) | `game/assets/characters/` | Blender 5.2 + MPFB 2 scripts in `tools/characters/` (see `docs/characters.md`); MakeHuman base mesh, skin, eyes, brows, lashes, hair, clothes and shoes; face textures projected from photos used with each person's consent | METHOD; MakeHuman community assets | MakeHuman assets CC0 1.0; likenesses used with consent (photos not in repo) | First version |
+| Teammate characters "Punky", "Tsila" and "Mianja" (meshes, rig, 6 animation clips, textures, portraits) | `game/assets/characters/` | Blender 5.2 + MPFB 2 scripts in `tools/characters/` (see `docs/characters.md`); MakeHuman base mesh, skin, eyes, brows, lashes, hair, clothes and shoes; face textures projected from photos used with each person's consent | METHOD; MakeHuman community assets | MakeHuman assets CC0 1.0; likenesses used with consent (photos not in repo) | First version |
 | Writing (notes, tapes, files, UI) | `game/localization/*.json` | Original | METHOD | Proprietary | Draft |
 
 ## Quality limits (be honest in store copy)

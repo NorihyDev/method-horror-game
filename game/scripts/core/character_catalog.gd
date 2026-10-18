@@ -18,6 +18,12 @@ const CHARACTERS := {
 		"scene": "res://assets/characters/tsila/tsila.glb",
 		"portrait": "res://assets/characters/tsila/portrait.png",
 	},
+	"mianja":
+	{
+		"name": "Mianja",
+		"scene": "res://assets/characters/mianja/mianja.glb",
+		"portrait": "res://assets/characters/mianja/portrait.png",
+	},
 }
 
 

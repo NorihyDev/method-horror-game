@@ -2,7 +2,10 @@
 with neon-green trim and a METHOD badge, and turns the jeans into dark
 trousers. Keeps the cloth's shading so it still reads as fabric.
 
-python -I make_jersey.py <male_casualsuit04_diffuse.png> <out.png>
+python -I make_jersey.py <male_casualsuit04_diffuse.png> <out.png> [classic|pro]
+"classic" (Tsila): round green collar, badge, straight side flashes.
+"pro" (Mianja): V-neck, METHOD on both shoulders, grey slashes, sleeve "M",
+green cuffs and a larger badge, like the team's match jersey.
 """
 import sys
 
@@ -10,6 +13,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 SRC, OUT = sys.argv[1], sys.argv[2]
+STYLE = sys.argv[3] if len(sys.argv) > 3 else "classic"
 GREEN = np.array([30, 235, 110], dtype=np.float32)
 img = np.asarray(Image.open(SRC).convert("RGB")).astype(np.float32)
 h, w, _ = img.shape
@@ -65,5 +69,31 @@ for panel_x in (128, 428):
         d.polygon(poly, fill=tuple(GREEN.astype(int)))
 # Sleeve cuffs and the wordmark across the back shoulders.
 d.text((128 * sx, 60 * sy), "METHOD", font=small, fill=tuple(GREEN.astype(int)), anchor="mm")
+if STYLE == "pro":
+    G = tuple(GREEN.astype(int))
+    GREY = (64, 66, 68)
+    # Grey slashes inside the side flashes, front and back.
+    for panel_x in (128, 428):
+        px = panel_x * sx
+        for side in (-1, 1):
+            for k in range(3):
+                x0 = px + side * (62 - k * 13) * sx
+                y0 = (150 + k * 22) * sy
+                poly = [(x0, y0), (x0 + side * 7 * sx, y0), (x0 - side * 18 * sx, y0 + 60 * sy), (x0 - side * 25 * sx, y0 + 60 * sy)]
+                d.polygon(poly, fill=GREY)
+    # V-neck: a green V under the collar, black inside.
+    vx, vy = 428 * sx, 30 * sy
+    d.polygon([(vx - 26 * sx, vy), (vx + 26 * sx, vy), (vx, vy + 42 * sy)], fill=G)
+    d.polygon([(vx - 16 * sx, vy), (vx + 16 * sx, vy), (vx, vy + 27 * sy)], fill=(16, 18, 17))
+    # METHOD along both front shoulders, with piping under it.
+    for ox in (-66, 66):
+        d.text(((428 + ox) * sx, 62 * sy), "METHOD", font=small, fill=G, anchor="mm")
+        d.line([((428 + ox - 30) * sx, 72 * sy), ((428 + ox + 30) * sx, 72 * sy)], fill=G, width=int(3 * sx))
+    # Bigger badge plate.
+    d.rectangle([cx - 70 * sx, cy - 46 * sy, cx + 70 * sx, cy + 52 * sy], outline=G, width=int(6 * sx))
+    # Sleeves: the M mark and a green cuff band.
+    big = font
+    for sy0 in (130, 245):
+        d.text((640 * sx, sy0 * sy), "M", font=big, fill=G, anchor="mm")
 pic.save(OUT)
 print("jersey", pic.size)

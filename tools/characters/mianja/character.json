@@ -1,0 +1,116 @@
+{
+  "name": "Mianja",
+  "phenotype": {
+    "gender": 1.0,
+    "age": 0.4,
+    "muscle": 0.6,
+    "weight": 0.42,
+    "proportions": 0.6,
+    "height": 0.62,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.2,
+      "caucasian": 0.35,
+      "african": 0.45
+    }
+  },
+  "skin": "young_african_male/young_african_male.mhmat",
+  "hair": "short01/short01.mhclo",
+  "eyebrows": "eyebrow012/eyebrow012.mhclo",
+  "clothes": [
+    "male_casualsuit04/male_casualsuit04.mhclo",
+    "shoes03/shoes03.mhclo"
+  ],
+  "textures": {
+    "high-poly": "eye.png",
+    "male_casualsuit04": "jersey.png"
+  },
+  "cap": {
+    "color": [
+      0.018,
+      0.018,
+      0.02
+    ],
+    "depth": 0.1
+  },
+  "targets": [
+    {
+      "target": "head-oval",
+      "value": 0.4
+    },
+    {
+      "target": "head-fat-decr",
+      "value": 0.25
+    },
+    {
+      "target": "chin-height-incr",
+      "value": 0.25
+    },
+    {
+      "target": "chin-width-decr",
+      "value": 0.1
+    },
+    {
+      "target": "nose-flaring-incr",
+      "value": 0.25
+    },
+    {
+      "target": "mouth-scale-horiz-decr",
+      "value": 0.05
+    }
+  ],
+  "decimate": {
+    "shoes03": 0.5
+  },
+  "photo": {
+    "eye_r": [
+      491.3,
+      210.7
+    ],
+    "eye_l": [
+      595.4,
+      210.7
+    ],
+    "mouth": [
+      546.1,
+      319.5
+    ],
+    "chin_y": 410.5,
+    "mask": [
+      543,
+      290,
+      100,
+      102
+    ],
+    "cheeks": [
+      [
+        255,
+        280,
+        450,
+        475
+      ],
+      [
+        255,
+        280,
+        605,
+        625
+      ]
+    ],
+    "neck": [
+      430,
+      450,
+      500,
+      560
+    ],
+    "neck_weight": 0.35,
+    "tone_scale": 0.9,
+    "tone_band": [
+      255,
+      280,
+      450,
+      625
+    ],
+    "delight_radius": 40
+  }
+}
