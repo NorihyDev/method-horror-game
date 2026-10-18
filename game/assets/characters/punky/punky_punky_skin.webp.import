@@ -2,7 +2,7 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bnbflk54cmki4"
+uid="uid://bexdub55oohxa"
 path.s3tc="res://.godot/imported/punky_punky_skin.webp-9e17866be102fbdef0f3169722073ef5.s3tc.ctex"
 path.etc2="res://.godot/imported/punky_punky_skin.webp-9e17866be102fbdef0f3169722073ef5.etc2.ctex"
 metadata={
@@ -10,7 +10,7 @@ metadata={
 "vram_texture": true
 }
 generator_parameters={
-"md5": "c98e23e5d099af55cce061c455f45e37"
+"md5": "3a29c7bd936bd07c4e2d6612691b27c2"
 }
 
 [deps]

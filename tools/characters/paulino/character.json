@@ -46,7 +46,9 @@
     }
   ],
   "decimate": {
-    "shoes03": 0.5
+    "shoes03": 0.5,
+    "fbhead": 0.4,
+    "hairshell": 0.5
   },
   "photo": {
     "eye_r": [
@@ -63,6 +65,11 @@
     ],
     "chin_y": 209.5,
     "tone_scale": 0.85,
-    "ring_tint": true
+    "ring_tint": true,
+    "strength": 0
+  },
+  "facebuilder": {},
+  "hair_shell": {
+    "thickness": 0.016
   }
 }

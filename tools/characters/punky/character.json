@@ -69,56 +69,31 @@
     }
   ],
   "decimate": {
-    "shoes03": 0.5
+    "shoes03": 0.5,
+    "fbhead": 0.28,
+    "hairshell": 0.35
   },
   "photo": {
     "eye_r": [
-      250,
-      147
+      247.5,
+      122.8
     ],
     "eye_l": [
-      308,
-      148
+      306.3,
+      122.8
     ],
     "mouth": [
-      280,
-      210
+      276.8,
+      186.3
     ],
-    "chin_y": 243,
-    "mask": [
-      279,
-      192,
-      55,
-      58
-    ],
-    "cheeks": [
-      [
-        175,
-        200,
-        236,
-        252
-      ],
-      [
-        175,
-        200,
-        308,
-        324
-      ]
-    ],
-    "neck": [
-      255,
-      280,
-      260,
-      300
-    ],
-    "neck_weight": 0.65,
-    "tone_scale": 0.82,
-    "tone_band": [
-      175,
-      200,
-      236,
-      324
-    ],
-    "delight_radius": 22
-  }
+    "chin_y": 220.0,
+    "tone_scale": 0.9,
+    "strength": 0
+  },
+  "facebuilder": {},
+  "hair_shell": {
+    "thickness": 0.03,
+    "keep_cards": true
+  },
+  "hair_decimate": 0.2
 }

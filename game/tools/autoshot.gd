@@ -2,7 +2,8 @@ extends Node
 ## Development tool: renders reference screenshots of a map from fixed camera
 ## positions. Requires a real display/GPU (not --headless).
 ## Usage: godot --path game -- --autoshot=<absolute dir> [--map=house] [--power]
-##   [--teammate[=<clip>]] [--character=<id>] puts a co-op teammate in front of the camera.
+##   [--teammate[=<clip>]] [--character=<id>] [--mate-distance=<m>] puts a co-op teammate
+##   in front of the camera.
 ##   [--phantom] shows the scare director's figure down the view (when there is room).
 ##   [--at=x,y,z,yaw,pitch] takes one shot from there instead of the map's list.
 
@@ -154,7 +155,9 @@ func _ready() -> void:
 			e.look_at(Vector3(target.x, e.global_position.y, target.z), Vector3.UP)
 		if mate:
 			var ahead := Vector3(-sin(float(shot[2])), 0, -cos(float(shot[2])))
-			var spot := map.closest_nav_point((shot[1] as Vector3) + ahead * 2.6)
+			var spot := map.closest_nav_point(
+				(shot[1] as Vector3) + ahead * float(AppInfo.arg_value("--mate-distance", "2.6"))
+			)
 			mate.server_place(spot, float(shot[2]) + PI)
 			mate.target(spot, float(shot[2]) + PI, true, 4)
 		if AppInfo.has_arg("--phantom"):

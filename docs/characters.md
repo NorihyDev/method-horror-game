@@ -81,7 +81,32 @@ The folder also holds any textures the character uses.
    `"exclude"` ellipses keep parts of the photo off the face, such as real
    glasses with glare. `"ring_tint"` matches the skin where the photo fades
    out.
-3. `face_bake.py` projects the character's front photo onto the head:
+3. `fb_head.py` gives the character the person's real head, using KeenTools
+   FaceBuilder (a Blender add-on; free for Blender, installed separately):
+   - FaceBuilder detects the face in the photo, places its automatic pins
+     and solves a 3D head and the camera that took the photo.
+   - The script projects the photo onto that head itself, only inside a
+     face oval (brows to chin), only where the surface faces the camera,
+     and never where the photo shows background or hair. Everything else
+     is clean skin in the exact colour at the edge of the face. The body is
+     tinted to the same colour (`skin_tone.json`), so there is no seam.
+   - Hair (`"hair_shell"`) is a shell grown from the real skull: its front
+     hairline is read from the photo, the rest follows the head shape, and
+     it carries a generated curly texture. `"keep_cards": true` keeps the
+     MakeHuman hair strands on top (Punky).
+   - A `"cap"` (Mianja) is built the same way: a crown that follows the real
+     skull above a plane from mid-forehead to the nape, a curved flat brim
+     and a button.
+   - The head is aligned to the body using the eyes, mouth and nose tip,
+     joins it at the neck below the jersey collar, and is skinned to the
+     neck and head bones. The MPFB head, eyeballs, brows and lashes are
+     hidden or removed.
+   - Glasses are refitted from the MPFB skull to the new one.
+   - With `"facebuilder"` in `character.json`, run this before
+     `face_bake.py`, and set `"photo": {"strength": 0}`.
+4. `face_bake.py` projects the character's front photo onto the head
+   (characters without FaceBuilder), or with `strength` 0 only tints the
+   body to the photo's skin tone:
    - It fits the photo to the model's eyes and lips.
    - It de-lights the photo and matches the skin tone to the cheeks (plus
      the neck, for a photo with harsh light). The body tint is computed in
@@ -90,7 +115,7 @@ The folder also holds any textures the character uses.
    - It blends the photo in by a feathered face oval and how much each point
      faces forward.
    - Cycles bakes everything into one 2048 px skin texture.
-4. `animate_export.py` writes the clips procedurally:
+5. `animate_export.py` writes the clips procedurally:
    - Poses are armature-space bone directions.
    - Legs use two-bone IK, so planted feet stay on the floor.
    - The clips are pushed to NLA tracks.
@@ -102,6 +127,7 @@ Each step takes `<character_dir> <work_dir>`. The work folder holds
 
 ```bash
 blender -b --python build_character.py -- tsila <work>
+blender -b <work>/base.blend --python fb_head.py -- tsila <work>
 blender -b <work>/base.blend --python face_bake.py -- tsila <work>
 blender -b <work>/face.blend --python animate_export.py -- tsila <work> <work>/out/tsila.glb
 ```
@@ -125,13 +151,14 @@ If someone withdraws consent:
 
 - remove their folder under `game/assets/characters/` and their catalog
   entry;
-- or rebuild without `face_bake.py`, which gives MPFB's stock face.
+- or rebuild without `fb_head.py` and with `"strength": 0`, which gives
+  MPFB's stock face.
 
 ## Known limits
 
-- Head shapes come from MPFB sliders, not 3D scans. The likeness comes
-  mostly from the projected photo, so it reads best from the front and fades
-  toward the sides.
+- Heads are FaceBuilder reconstructions from a single front photo: true to
+  the face from the front and at three-quarters. The sides and back of the
+  head, which the photo never saw, are filled in and mostly covered by hair.
 - Hair is cut-out cards: alpha scissor, no sorting.
 - Animations are procedural keyframes, not motion capture.
 - There are no interact, revive or death clips yet. Dead players are hidden

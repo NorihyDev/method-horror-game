@@ -58,7 +58,9 @@
     }
   ],
   "decimate": {
-    "shoes03": 0.5
+    "shoes03": 0.5,
+    "fbhead": 0.4,
+    "hairshell": 0.5
   },
   "photo": {
     "eye_r": [
@@ -101,6 +103,11 @@
       385,
       615
     ],
-    "delight_radius": 45
+    "delight_radius": 45,
+    "strength": 0
+  },
+  "facebuilder": {},
+  "hair_shell": {
+    "thickness": 0.018
   }
 }

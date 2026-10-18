@@ -32,7 +32,11 @@
       0.018,
       0.02
     ],
-    "depth": 0.1
+    "depth": 0.1,
+    "front": 0.035,
+    "back": -0.005,
+    "thickness": 0.008,
+    "brim": 0.075
   },
   "targets": [
     {
@@ -61,7 +65,9 @@
     }
   ],
   "decimate": {
-    "shoes03": 0.5
+    "shoes03": 0.5,
+    "fbhead": 0.4,
+    "hairshell": 0.5
   },
   "photo": {
     "eye_r": [
@@ -111,6 +117,8 @@
       450,
       625
     ],
-    "delight_radius": 40
-  }
+    "delight_radius": 40,
+    "strength": 0
+  },
+  "facebuilder": {}
 }

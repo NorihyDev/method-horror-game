@@ -13,6 +13,9 @@ dates are ISO 8601.
   Mianja is the third: a black snapback cap and the pro METHOD jersey.
   Paulino, Nox and Ninja (with glasses) wear a teal baseball METHOD
   jersey. Skin now matches between face and body on every character.
+  Every character's head is now the real person's, rebuilt from his photo
+  with KeenTools FaceBuilder, with clean skin, hair grown from the real
+  skull and, for Mianja, a snapback fitted to his head.
 - **More horror.**
   - A scare director plays local-only frights in quiet moments: whispers,
     knocking, running steps, lamps bursting, the flashlight dying, a distant

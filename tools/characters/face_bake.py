@@ -95,10 +95,23 @@ if "photo" in mesh.uv_layers:
 main_uv = mesh.uv_layers.active.name
 photo_uv = mesh.uv_layers.new(name="photo")
 mw = body.matrix_world
-for loop in mesh.loops:
-    co = CO[loop.vertex_index]
-    px, py = model_to_photo(co.x, co.z)
-    photo_uv.data[loop.index].uv = (px / PW, 1.0 - py / PH)
+PHOTO_CAM = bpy.data.objects.get("PhotoCam")
+if PHOTO_CAM:
+    # FaceBuilder's solved camera: true perspective and head pose.
+    from bpy_extras.object_utils import world_to_camera_view
+
+    scn = bpy.context.scene
+    scn.render.resolution_x, scn.render.resolution_y = int(PW), int(PH)
+    scn.render.pixel_aspect_x = scn.render.pixel_aspect_y = 1.0
+    for loop in mesh.loops:
+        v = world_to_camera_view(scn, PHOTO_CAM, CO[loop.vertex_index])
+        photo_uv.data[loop.index].uv = (v.x, v.y)
+    print("PROJECTION camera")
+else:
+    for loop in mesh.loops:
+        co = CO[loop.vertex_index]
+        px, py = model_to_photo(co.x, co.z)
+        photo_uv.data[loop.index].uv = (px / PW, 1.0 - py / PH)
 
 # Mask image in photo space: a feathered face oval from the brows to the chin.
 mask = np.zeros((int(PH), int(PW)), dtype=np.float32)
@@ -108,6 +121,9 @@ d = np.sqrt(((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2)
 mask = np.clip((1.0 - d) / 0.22, 0.0, 1.0)
 fall = max(6.0, ry * 0.1)
 mask[yy > P_CHIN_Y + 2] *= np.clip(1.0 - (yy[yy > P_CHIN_Y + 2] - P_CHIN_Y - 2) / fall, 0.0, 1.0)
+# strength 0: no photo at all (a FaceBuilder head carries the face); the bake
+# then only tints the body to the photo's skin tone.
+mask *= float(PH_CFG.get("strength", 1.0))
 # Optional holes (e.g. real glasses with glare): those parts keep the skin.
 for ecx, ecy, erx, ery in PH_CFG.get("exclude", []):
     de = np.sqrt(((xx - ecx) / erx) ** 2 + ((yy - ecy) / ery) ** 2)
@@ -146,6 +162,10 @@ if "neck" in PH_CFG:
     w = float(PH_CFG.get("neck_weight", 0.65))
     target = cheeks * (1.0 - w) + sample(PH_CFG["neck"]).mean(axis=0) * w
 target = target * float(PH_CFG.get("tone_scale", 1.0))
+# A FaceBuilder head records the exact colour at its face edge: match it.
+_tone = os.path.join(D, "skin_tone.json")
+if float(PH_CFG.get("strength", 1.0)) == 0.0 and os.path.exists(_tone):
+    target = np.array(json.load(open(_tone))["skin"], dtype=np.float32)
 # The body's own skin texture: the diffuse image from the skin asset's folder.
 skin_dir = CFG["skin"].split("/")[0]
 skin_img = None
@@ -229,6 +249,9 @@ geo = N("ShaderNodeNewGeometry")
 facing = N("ShaderNodeVectorMath")
 facing.operation = "DOT_PRODUCT"
 facing.inputs[1].default_value = (0.0, -1.0, 0.0)
+if PHOTO_CAM:
+    toward = (PHOTO_CAM.matrix_world.translation - Vector(tuple((eye_r + eye_l) / 2))).normalized()
+    facing.inputs[1].default_value = tuple(toward)
 ramp = N("ShaderNodeMapRange")
 ramp.inputs["From Min"].default_value = 0.35
 ramp.inputs["From Max"].default_value = 0.75

@@ -178,7 +178,7 @@ def add_glasses(spec):
     print("GLASSES", [tuple(round(x, 3) for x in e) for e in eyes])
 
 
-if "cap" in CFG:
+if "cap" in CFG and "facebuilder" not in CFG:
     add_cap(CFG["cap"])
 if "glasses" in CFG:
     add_glasses(CFG["glasses"])
