@@ -23,7 +23,7 @@ Both use the same skeleton, clips and code:
 
 | | |
 |---|---|
-| Format | GLB with WebP textures (VRAM-compressed on import), skin 2048 px, others 1024 px or smaller, and a 256 × 300 `portrait.png` for the picker |
+| Format | GLB with WebP textures (VRAM-compressed on import), skin 2048 px, others 1024 px or smaller, and a 256 × 300 `portrait.png` (a crop of the person's photo) for the picker |
 | Height | About 1.62–1.68 m, origin between the feet, facing +Z (the game turns them to -Z) |
 | Skeleton | MPFB `game_engine` rig (Unreal-style names: `pelvis`, `spine_01..03`, `upperarm_l`, `hand_r`, `thigh_l`, …) |
 | Clips (all loop) | `idle`, `walk` (authored at 1.125 m/s), `run` (3.5 m/s), `crouch_idle`, `crouch_walk` (0.733 m/s), `downed` (face-down crawl) |
@@ -100,8 +100,9 @@ Then:
 
 All three faces come from photos of real people, used with their consent. **The
 photos are never committed**: `.gitignore` excludes `face_src.*` and the
-intermediate images. The baked skin textures and the portraits do show their
-faces, and this repository is public.
+intermediate images. The baked skin textures do show their faces, and the
+picker portraits (`portrait.png`, 256 × 300) are head-and-shoulders crops of
+the photos themselves. This repository is public.
 
 If someone withdraws consent:
 
