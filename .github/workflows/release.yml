@@ -51,7 +51,8 @@ jobs:
           timeout 900 godot --headless --path game -- --test
       - name: Desktop and server release exports
         run: |
-          mkdir -p dist
+          # Godot refuses to export into a folder that does not exist.
+          mkdir -p dist/linux dist/windows dist/server
           G=godot
           timeout 600 $G --headless --path game --export-release "Linux" ../dist/linux/method_horror.x86_64
           timeout 600 $G --headless --path game --export-release "Windows Desktop" ../dist/windows/METHOD_HORROR.exe

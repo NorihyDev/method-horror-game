@@ -5,6 +5,14 @@ dates are ISO 8601.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-19
+
+### Fixed
+- Release and build exports failed: the dedicated server preset had no
+  texture format selected (Godot 4.7 refuses to export without one), and the
+  release workflow did not create the folders it exports into. 0.3.0 was
+  tagged but never built.
+
 ## [0.3.0] - 2026-10-19
 
 ### Added
@@ -195,5 +203,6 @@ dates are ISO 8601.
   payload types/sizes), puzzle answers withheld from client snapshots, and
   lag-bounded crank timing.
 
-[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.3.0...main
+[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.3.1...main
+[0.3.1]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.3.1
 [0.3.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.3.0
