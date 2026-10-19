@@ -209,7 +209,7 @@ func _props() -> void:
 	FacilityProps.vending_machine(b, Vector3(2.6, PY, 12.55), 180)
 	PropFactory.debris(b, Vector3(20, PY, 10), 6.0, 16)
 	b.room = "corridor"
-	PropFactory.crate(b, Vector3(34.5, PY, 24.3), Vector3(0.8, 0.6, 0.8), 12, "metal_dark")
+	PropFactory.crate(b, Vector3(34.5, PY, 24.3), Vector3(0.8, 0.6, 0.8), 192, "metal_dark")
 	PropFactory.crate(b, Vector3(35.3, PY, 14.2), Vector3(0.7, 0.5, 0.7), -8, "metal_dark")
 	b.room = "signal_box"
 	PropFactory.table(b, Vector3(31.0, PY, 23.0), 0, 1.4, 0.8, "dark_wood")

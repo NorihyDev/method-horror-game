@@ -291,8 +291,9 @@ func _props() -> void:
 	b.room = "dining"
 	PropFactory.table(b, Vector3(11, 0, 3.5), 90, 2.4, 1.1)
 	for z in [2.6, 3.5, 4.4]:
-		PropFactory.chair(b, Vector3(10.2, 0, z), -90)
-		PropFactory.chair(b, Vector3(11.8, 0, z), 90)
+		# Seats face the table.
+		PropFactory.chair(b, Vector3(10.2, 0, z), 90)
+		PropFactory.chair(b, Vector3(11.8, 0, z), -90)
 	PropFactory.cabinet(b, Vector3(13.55, 0, 5.8), -90, 1.6, 0.9, 0.5)
 	PropFactory.picture(b, Vector3(11, 1.7, 0.1), 0, 1.0, 0.7, 4.0)
 	PropFactory.rug(b, Vector3(11, 0, 3.5), Vector2(3.0, 4.0))

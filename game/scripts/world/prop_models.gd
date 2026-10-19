@@ -11,6 +11,7 @@ const INFO := "res://assets/props/props.json"
 ## Largest height stretch allowed against the footprint fit, so a model
 ## never looks squashed or pulled.
 const MAX_STRETCH := 1.25
+const PLACED := &"prop_models"
 
 static var _info: Dictionary = {}
 static var _scenes: Dictionary = {}
@@ -52,6 +53,7 @@ static func place(
 	if lie:
 		basis = basis * Basis(Vector3.RIGHT, -PI / 2)
 	node.transform = Transform3D(basis.scaled_local(Vector3(s, sy, s)), pos)
+	_tag(node, id, lie)
 	b.root.add_child(node)
 	for mi: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false):
 		mi.visibility_range_end = 30.0
@@ -70,6 +72,7 @@ static func place_flat(b: GeoBuilder, id: String, center: Vector3, basis: Basis,
 	var sy := h / maxf(float(size[1]), 0.01)
 	var node := _scene(id).instantiate() as Node3D
 	node.transform = Transform3D(basis.scaled_local(Vector3(sx, sy, (sx + sy) * 0.5)), center - basis.y * h * 0.5)
+	_tag(node, id, false)
 	b.root.add_child(node)
 	# Its tinted glass reads as a black pane in torchlight: clear, faint glass.
 	for mi: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false):
@@ -88,6 +91,13 @@ static func _clear_glass() -> StandardMaterial3D:
 		_glass.roughness = 0.05
 		_glass.metallic_specular = 0.8
 	return _glass
+
+
+## Placed models are findable (facing checks): group PLACED, meta "prop".
+static func _tag(node: Node3D, id: String, lying: bool) -> void:
+	node.set_meta("prop", id)
+	node.set_meta("lying", lying)
+	node.add_to_group(PLACED)
 
 
 static func _scene(id: String) -> PackedScene:

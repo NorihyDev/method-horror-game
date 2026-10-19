@@ -236,7 +236,7 @@ func _props() -> void:
 	# Staff room.
 	b.room = "staff"
 	PropFactory.table(b, Vector3(24.0, 0, 10.0), 0, 1.8, 0.9, "painted_wood")
-	for p: Array in [[Vector3(23.4, 0, 10.75), 0.0], [Vector3(24.6, 0, 10.75), 0.0], [Vector3(24.0, 0, 9.25), 180.0]]:
+	for p: Array in [[Vector3(23.4, 0, 10.75), 180.0], [Vector3(24.6, 0, 10.75), 180.0], [Vector3(24.0, 0, 9.25), 0.0]]:
 		PropFactory.chair(b, p[0], p[1])
 	PropFactory.sofa(b, Vector3(27.5, 0, 9.0), -90, 1.8)
 	PropFactory.counter(b, Vector3(20.4, 0, 7.0), 90, 2.2, true)
@@ -262,8 +262,8 @@ func _props() -> void:
 	PropFactory.shelf(b, Vector3(32.0, 0, 27.75), 180, 2.4, 2.0, 0.4, "dark_wood")
 	PropFactory.table(b, Vector3(30.0, 0, 23.0), 90, 2.0, 1.0, "dark_wood")
 	for z in [22.4, 23.6]:
-		PropFactory.chair(b, Vector3(28.9, 0, z), -90)
-		PropFactory.chair(b, Vector3(31.1, 0, z), 90)
+		PropFactory.chair(b, Vector3(28.9, 0, z), 90)
+		PropFactory.chair(b, Vector3(31.1, 0, z), -90)
 	PropFactory.rug(b, Vector3(30.0, 0, 23.0), Vector2(4.0, 3.0))
 	# Music room.
 	b.room = "music"

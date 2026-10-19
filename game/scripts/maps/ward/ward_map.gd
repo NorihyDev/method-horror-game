@@ -236,7 +236,7 @@ func _props() -> void:
 	PropFactory.workbench(b, Vector3(29.55, 0, 3.0), -90)
 	PropFactory.shelf(b, Vector3(22.4, 0, 4.0), 90, 1.8, 2.0, 0.45, "metal_dark")
 	FacilityProps.locker_bank(b, Vector3(26.0, 0, 0.3), 0, 4)
-	PropFactory.crate(b, Vector3(28.8, 0, 7.2), Vector3(0.8, 0.6, 0.8), 15, "metal_dark")
+	PropFactory.crate(b, Vector3(28.8, 0, 7.2), Vector3(0.8, 0.6, 0.8), 195, "metal_dark")
 	PropFactory.pipe_run(b, Vector3(22.3, 2.6, 0.5), Vector3(29.7, 2.6, 0.5), 0.06)
 	b.room = "corridor"
 	FacilityProps.gurney(b, Vector3(5.5, 0, 9.6), 90)
@@ -346,7 +346,7 @@ func _morgue_props(b: GeoBuilder) -> void:
 	b.room = "coldstore"
 	PropFactory.shelf(b, Vector3(12.6, 0, 26.5), -90, 1.8, 2.0, 0.45, "metal_dark")
 	PropFactory.shelf(b, Vector3(10.5, 0, 30.6), 180, 1.8, 2.0, 0.45, "metal_dark")
-	PropFactory.crate(b, Vector3(9.0, 0, 30.2), Vector3(0.8, 0.6, 0.7), 6, "metal_dark")
+	PropFactory.crate(b, Vector3(9.0, 0, 30.2), Vector3(0.8, 0.6, 0.7), 186, "metal_dark")
 	FacilityProps.gurney(b, Vector3(10.4, 0, 27.0), 90)
 	PropFactory.part(b, Vector3(10.4, 0, 27.0), 90, Vector3(0, 0.98, 0), Vector3(0.5, 0.22, 1.6), "fabric_blue")
 	var tag := Label3D.new()

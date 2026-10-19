@@ -18,6 +18,12 @@ dates are ISO 8601.
   spare bits of the existing motion packet, so older builds still connect.
 
 ### Fixed
+- Furniture facing the wrong way: the dining chairs in the house, the staff
+  room and library chairs in the school turned their backs to their tables,
+  and three tool chests (Black Ward, Last Train) faced the wall. A new test
+  builds every map and checks that seats face their table, cabinets, sofas,
+  shelves, the stove and clocks turn their fronts to the room, beds have
+  their headboard to the wall and pictures hang the right way round.
 - The first-person hands were turned the wrong way: the palms faced the
   player (the flashlight lay in an open palm). They now show the backs of the
   hands: a fist round the flashlight, a reach back-of-hand up.
