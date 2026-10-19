@@ -93,6 +93,20 @@ export GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD='…'
 ./tools/godot.sh --headless --path game --export-release "Android" ../builds/android/method_horror.apk
 ```
 
+**The current key.** Since 0.3.1 the APK is signed with the METHOD HORROR
+release key (alias `methodhorror`, certificate SHA-256
+`AB:E7:8F:00:1E:A5:3A:2F:C6:7C:8B:78:C2:25:51:F3:D0:0C:3D:C2:9E:14:55:0B:62:11:5C:4F:07:69:5C:24`).
+It lives on the maintainer's machine, outside the repository, and must be
+backed up: an app update has to be signed with the same key. The CI secrets
+above are not configured yet, so each release's APK is built locally with the
+commands above and attached to the GitHub release as `METHOD_HORROR.apk`
+(a fixed name, so `releases/latest/download/METHOD_HORROR.apk` always serves
+the newest one), with its `.sha256`.
+
+Every export preset excludes `assets/monsters/*` and `assets/monster-pack/*`:
+the imported monster packs are local only (see docs/monsters.md), so a build
+made on a machine that has them still ships the procedural enemies.
+
 Google Play requires an AAB built with Gradle (`gradle_build/use_gradle_build=true`
 and the Android build template). That path is documented here but **not yet
 exercised**.

@@ -15,6 +15,16 @@ supernatural threats those experiments left behind.
 > on one PC. **Two phones on different networks have not been tried yet**,
 > and **no phone has run the game yet**. Every claim below is labeled.
 
+## Download
+
+**[⬇ Download the Android APK (latest release)](https://github.com/NorihyDev/method-horror-game/releases/latest/download/METHOD_HORROR.apk)**
+— signed release build, Android 7.0 and newer. Windows, Linux and the
+dedicated server are on the [releases page](https://github.com/NorihyDev/method-horror-game/releases/latest).
+
+To install, open the APK on the phone and allow installing from your browser
+or file manager when Android asks (the game is not on Google Play). The APK
+is built and signed but **has not been run on a phone yet**.
+
 ![Main menu](docs/screenshots/main_menu.jpg)
 
 | | |
@@ -35,6 +45,7 @@ without them each enemy uses its procedural body (see
 
 ## Contents
 
+- [Download](#download)
 - [What works today](#what-works-today)
 - [Setup](#setup)
 - [How to play](#how-to-play)
