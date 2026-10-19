@@ -52,6 +52,10 @@ static func cylinder(
 static func table(
 	b: GeoBuilder, pos: Vector3, rot: float, w: float = 1.6, d: float = 0.9, mat: String = "dark_wood"
 ) -> void:
+	var tid := "dining_table" if maxf(w, d) >= 1.4 else "small_wooden_table_01"
+	if PropModels.place(b, tid, pos, rot, Vector3(w, 0.765, d), false, 1.6):
+		solid(b, pos, rot, Vector3(0, 0.4, 0), Vector3(w, 0.8, d))
+		return
 	part(b, pos, rot, Vector3(0, 0.74, 0), Vector3(w, 0.05, d), mat)
 	for sx in [-1, 1]:
 		for sz in [-1, 1]:
@@ -62,6 +66,15 @@ static func table(
 
 
 static func chair(b: GeoBuilder, pos: Vector3, rot: float, tipped: bool = false, mat: String = "dark_wood") -> void:
+	var cid := "SchoolChair_01" if mat == "painted_wood" else "painted_wooden_chair_02"
+	if (
+		tipped
+		and PropModels.place(b, cid, pos + _basis(rot) * Vector3(0, 0.23, -0.1), rot, Vector3(0.45, 0.95, 0.45), true)
+	):
+		return
+	if not tipped and PropModels.place(b, cid, pos, rot, Vector3(0.48, 0.95, 0.48)):
+		solid(b, pos, rot, Vector3(0, 0.45, 0), Vector3(0.45, 0.9, 0.45))
+		return
 	if tipped:
 		var basis := _basis(rot) * Basis(Vector3.RIGHT, deg_to_rad(-88))
 		b.box(pos + Vector3(0, 0.24, 0), Vector3(0.45, 0.05, 0.45), mat, false, GeoBuilder.FACE_ALL, basis)
@@ -83,6 +96,10 @@ static func chair(b: GeoBuilder, pos: Vector3, rot: float, tipped: bool = false,
 
 
 static func sofa(b: GeoBuilder, pos: Vector3, rot: float, w: float = 2.0, mat: String = "fabric") -> void:
+	var sid := "ArmChair_01" if w <= 1.2 else "sofa_03"
+	if PropModels.place(b, sid, pos, rot, Vector3(w, 1.0, 0.9)):
+		solid(b, pos, rot, Vector3(0, 0.4, -0.05), Vector3(w, 0.8, 0.85))
+		return
 	part(b, pos, rot, Vector3(0, 0.22, 0), Vector3(w, 0.44, 0.85), mat, true)
 	part(b, pos, rot, Vector3(0, 0.62, -0.34), Vector3(w, 0.55, 0.18), mat, true)
 	part(b, pos, rot, Vector3(-w * 0.5 + 0.1, 0.55, 0.0), Vector3(0.2, 0.3, 0.85), mat)
@@ -96,6 +113,9 @@ static func armchair(b: GeoBuilder, pos: Vector3, rot: float, mat: String = "fab
 
 
 static func bed(b: GeoBuilder, pos: Vector3, rot: float) -> void:
+	if PropModels.place(b, "vintage_day_bed", pos, rot, Vector3(1.4, 1.0, 2.0)):
+		solid(b, pos, rot, Vector3(0, 0.35, 0), Vector3(1.4, 0.7, 2.0))
+		return
 	part(b, pos, rot, Vector3(0, 0.2, 0), Vector3(1.4, 0.3, 2.0), "dark_wood", true)
 	part(b, pos, rot, Vector3(0, 0.45, 0.05), Vector3(1.3, 0.2, 1.85), "fabric_blue")
 	part(b, pos, rot, Vector3(0, 0.6, -0.75), Vector3(0.9, 0.12, 0.35), "fabric")
@@ -112,6 +132,10 @@ static func shelf(
 	mat: String = "dark_wood",
 	clutter: bool = true
 ) -> void:
+	var shid := "worn_metal_rack" if mat.begins_with("metal") else "wooden_bookshelf_worn"
+	if PropModels.place(b, shid, pos, rot, Vector3(w, h, d)):
+		solid(b, pos, rot, Vector3(0, h * 0.5, 0), Vector3(w, h, d))
+		return
 	part(b, pos, rot, Vector3(-w * 0.5 + 0.02, h * 0.5, 0), Vector3(0.04, h, d), mat)
 	part(b, pos, rot, Vector3(w * 0.5 - 0.02, h * 0.5, 0), Vector3(0.04, h, d), mat)
 	part(b, pos, rot, Vector3(0, h * 0.5, -d * 0.5 + 0.01), Vector3(w, h, 0.02), mat)
@@ -157,6 +181,10 @@ static func _clutter(b: GeoBuilder, pos: Vector3, rot: float, y: float, w: float
 static func cabinet(
 	b: GeoBuilder, pos: Vector3, rot: float, w: float = 1.0, h: float = 0.9, d: float = 0.5, mat: String = "dark_wood"
 ) -> void:
+	var kid := "painted_wooden_cabinet" if mat == "painted_wood" or w < 1.0 else "vintage_wooden_drawer_01"
+	if PropModels.place(b, kid, pos, rot, Vector3(w, h + 0.03, d)):
+		solid(b, pos, rot, Vector3(0, h * 0.5, 0), Vector3(w, h, d))
+		return
 	part(b, pos, rot, Vector3(0, h * 0.5, 0), Vector3(w, h, d), mat, true)
 	part(b, pos, rot, Vector3(0, h + 0.015, 0.01), Vector3(w + 0.04, 0.03, d + 0.04), mat)
 	part(b, pos, rot, Vector3(-w * 0.25, h * 0.55, d * 0.5 + 0.01), Vector3(w * 0.44, h * 0.8, 0.02), mat)
@@ -183,6 +211,9 @@ static func fridge(b: GeoBuilder, pos: Vector3, rot: float) -> void:
 
 
 static func stove(b: GeoBuilder, pos: Vector3, rot: float) -> void:
+	if PropModels.place(b, "electric_stove", pos, rot, Vector3(0.75, 0.92, 0.65)):
+		solid(b, pos, rot, Vector3(0, 0.45, 0), Vector3(0.75, 0.9, 0.65))
+		return
 	part(b, pos, rot, Vector3(0, 0.45, 0), Vector3(0.75, 0.9, 0.65), "metal_dark", true)
 	for sx in [-1, 1]:
 		for sz in [-1, 1]:
@@ -196,6 +227,14 @@ static func wardrobe(b: GeoBuilder, pos: Vector3, rot: float, mat: String = "dar
 
 
 static func crate(b: GeoBuilder, pos: Vector3, size: Vector3, rot: float = 0.0, mat: String = "dark_wood") -> void:
+	if mat == "dark_wood":
+		var crid := "wooden_crate_02" if size.y >= 0.55 else "wooden_crate_01"
+		if PropModels.place(b, crid, pos, rot, size):
+			solid(b, pos, rot, Vector3(0, size.y * 0.5, 0), size)
+			return
+	elif mat == "metal_dark" and PropModels.place(b, "metal_tool_chest", pos, rot, size):
+		solid(b, pos, rot, Vector3(0, size.y * 0.5, 0), size)
+		return
 	part(b, pos, rot, Vector3(0, size.y * 0.5, 0), size, mat, true)
 	part(b, pos, rot, Vector3(0, size.y * 0.5, size.z * 0.5 + 0.005), Vector3(size.x * 0.9, 0.06, 0.01), mat)
 
@@ -272,6 +311,13 @@ static func boiler(b: GeoBuilder, pos: Vector3) -> void:
 
 
 static func workbench(b: GeoBuilder, pos: Vector3, rot: float) -> void:
+	if PropModels.place(b, "WoodenTable_03", pos, rot, Vector3(2.0, 0.92, 0.8)):
+		PropModels.place(
+			b, "metal_tool_chest", pos + _basis(rot) * Vector3(0.6, 0.92, -0.15), rot, Vector3(0.55, 0.5, 0.35)
+		)
+		part(b, pos, rot, Vector3(0, 1.55, -0.39), Vector3(2.0, 1.1, 0.03), "painted_wood")
+		solid(b, pos, rot, Vector3(0, 0.46, 0), Vector3(2.0, 0.92, 0.8))
+		return
 	part(b, pos, rot, Vector3(0, 0.88, 0), Vector3(2.0, 0.08, 0.8), "dark_wood")
 	for sx in [-1, 1]:
 		part(b, pos, rot, Vector3(sx * 0.92, 0.42, 0), Vector3(0.08, 0.84, 0.72), "dark_wood")
@@ -286,6 +332,9 @@ static func workbench(b: GeoBuilder, pos: Vector3, rot: float) -> void:
 
 ## A car under a dust sheet: reads as a looming silhouette in the garage.
 static func covered_car(b: GeoBuilder, pos: Vector3, rot: float) -> void:
+	if PropModels.place(b, "covered_car", pos, rot, Vector3(1.8, 1.45, 4.3)):
+		solid(b, pos, rot, Vector3(0, 0.55, 0), Vector3(1.8, 1.1, 4.3))
+		return
 	part(b, pos, rot, Vector3(0, 0.55, 0), Vector3(1.8, 0.75, 4.3), "fabric", true)
 	part(b, pos, rot, Vector3(0, 1.1, -0.2), Vector3(1.5, 0.5, 2.2), "fabric", true)
 	var basis := _basis(rot) * Basis(Vector3.RIGHT, deg_to_rad(28))

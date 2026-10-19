@@ -1,0 +1,162 @@
+{
+ "ArmChair_01": {
+  "size": [
+   0.849,
+   1.066,
+   0.766
+  ],
+  "tris": 4000
+ },
+ "SchoolChair_01": {
+  "size": [
+   0.566,
+   1.006,
+   0.675
+  ],
+  "tris": 4000
+ },
+ "SchoolDesk_01": {
+  "size": [
+   0.712,
+   0.883,
+   0.546
+  ],
+  "tris": 4000
+ },
+ "WoodenTable_03": {
+  "size": [
+   1.327,
+   0.83,
+   0.575
+  ],
+  "tris": 2298
+ },
+ "covered_car": {
+  "size": [
+   1.791,
+   1.413,
+   4.38
+  ],
+  "tris": 9000
+ },
+ "dining_table": {
+  "size": [
+   2.256,
+   0.877,
+   1.39
+  ],
+  "tris": 1048
+ },
+ "electric_stove": {
+  "size": [
+   0.503,
+   0.859,
+   0.648
+  ],
+  "tris": 4000
+ },
+ "metal_office_desk": {
+  "size": [
+   2.0,
+   0.788,
+   0.947
+  ],
+  "tris": 4000
+ },
+ "metal_tool_chest": {
+  "size": [
+   0.685,
+   0.652,
+   0.407
+  ],
+  "tris": 4000
+ },
+ "old_bed_frame": {
+  "size": [
+   0.905,
+   1.205,
+   2.002
+  ],
+  "tris": 6999
+ },
+ "painted_wooden_cabinet": {
+  "size": [
+   1.195,
+   1.182,
+   0.617
+  ],
+  "tris": 2227
+ },
+ "painted_wooden_chair_02": {
+  "size": [
+   0.639,
+   1.264,
+   0.662
+  ],
+  "tris": 1246
+ },
+ "small_wooden_table_01": {
+  "size": [
+   0.916,
+   0.533,
+   0.44
+  ],
+  "tris": 3410
+ },
+ "sofa_03": {
+  "size": [
+   2.728,
+   1.12,
+   0.925
+  ],
+  "tris": 3999
+ },
+ "vintage_day_bed": {
+  "size": [
+   1.973,
+   1.127,
+   0.855
+  ],
+  "tris": 2715
+ },
+ "vintage_wooden_drawer_01": {
+  "size": [
+   1.715,
+   1.091,
+   1.007
+  ],
+  "tris": 4000
+ },
+ "wooden_bookshelf_worn": {
+  "size": [
+   1.374,
+   2.063,
+   0.581
+  ],
+  "tris": 4000
+ },
+ "wooden_crate_01": {
+  "size": [
+   0.824,
+   0.35,
+   0.409
+  ],
+  "tris": 4000
+ },
+ "wooden_crate_02": {
+  "size": [
+   0.529,
+   0.464,
+   1.166
+  ],
+  "tris": 3999
+ },
+ "worn_metal_rack": {
+  "size": [
+   0.915,
+   1.9,
+   0.6
+  ],
+  "tris": 4000
+ }
+}

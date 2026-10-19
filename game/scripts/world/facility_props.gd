@@ -12,6 +12,11 @@ const P = preload("res://scripts/world/prop_factory.gd")
 
 static func hospital_bed(b: GeoBuilder, pos: Vector3, rot: float, raised: bool = false) -> void:
 	var frame := "metal"
+	if PropModels.place(b, "old_bed_frame", pos, rot, Vector3(0.95, 1.1, 2.0)):
+		# A thin stained mattress on the iron frame.
+		P.part(b, pos, rot, Vector3(0, 0.55, 0.0), Vector3(0.82, 0.12, 1.85), "fabric_blue")
+		P.solid(b, pos, rot, Vector3(0, 0.45, 0), Vector3(0.95, 0.9, 2.0))
+		return
 	P.part(b, pos, rot, Vector3(0, 0.5, 0), Vector3(0.95, 0.12, 2.0), frame)
 	P.part(b, pos, rot, Vector3(0, 0.62, 0.05), Vector3(0.88, 0.14, 1.85), "fabric_blue")
 	var head_tilt := Basis(Vector3.RIGHT, deg_to_rad(-35.0 if raised else 0.0))

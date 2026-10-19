@@ -14,6 +14,10 @@ const DESK_TOP := 0.72
 
 ## Pupil desk with its chair tucked in on the near side (+Z local).
 static func school_desk(b: GeoBuilder, pos: Vector3, rot: float, tipped: bool = false) -> void:
+	if PropModels.place(b, "SchoolDesk_01", pos, rot, Vector3(0.62, DESK_TOP + 0.02, 0.46), false, 1.6):
+		P.solid(b, pos, rot, Vector3(0, DESK_TOP * 0.5, 0), Vector3(0.62, DESK_TOP, 0.46))
+		P.chair(b, pos + P._basis(rot) * Vector3(0, 0, 0.42), rot + 180.0, tipped, "painted_wood")
+		return
 	P.part(b, pos, rot, Vector3(0, DESK_TOP - 0.02, 0), Vector3(0.62, 0.04, 0.46), "painted_wood")
 	P.part(b, pos, rot, Vector3(0, DESK_TOP - 0.12, 0), Vector3(0.58, 0.16, 0.42), "metal_green")
 	for sx in [-1, 1]:
@@ -25,6 +29,9 @@ static func school_desk(b: GeoBuilder, pos: Vector3, rot: float, tipped: bool = 
 
 ## Teacher's desk: a solid pedestal desk (top at 0.78, like PropFactory.table).
 static func teacher_desk(b: GeoBuilder, pos: Vector3, rot: float) -> void:
+	if PropModels.place(b, "metal_office_desk", pos, rot, Vector3(1.5, 0.79, 0.75), false, 1.6):
+		P.solid(b, pos, rot, Vector3(0, 0.39, 0), Vector3(1.5, 0.78, 0.75))
+		return
 	P.part(b, pos, rot, Vector3(0, 0.76, 0), Vector3(1.5, 0.05, 0.75), "dark_wood")
 	P.part(b, pos, rot, Vector3(-0.5, 0.37, 0), Vector3(0.45, 0.74, 0.7), "dark_wood")
 	P.part(b, pos, rot, Vector3(0.62, 0.37, 0), Vector3(0.06, 0.74, 0.7), "dark_wood")
