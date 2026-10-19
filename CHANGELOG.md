@@ -6,6 +6,8 @@ dates are ISO 8601.
 ## [Unreleased]
 
 ### Added
+- **Pick your character on first launch**, with your name and colour; all
+  three can be changed later in Profile.
 - **Up to 10 players** in an online room (was 4), through the redeployed
   relay. Players beyond a map's six spawn points start beside them on free
   floor; over the relay the host sends one update for everyone instead of

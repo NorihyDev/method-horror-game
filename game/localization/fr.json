@@ -22,6 +22,8 @@
 	"NAME_COLOR": "Couleur",
 	"NAME_COLOR_N": "Couleur %d",
 	"NAME_PRIVACY": "Le jeu en ligne (quand il sera disponible) crée une identité invitée distincte, délivrée par le serveur. Votre nom ne donne accès à rien et d'autres joueurs peuvent porter le même.",
+	"NAME_CHARACTER": "Votre personnage",
+	"NAME_CHARACTER_HINT": "Celui que vos coéquipiers voient en coop (vous jouez à la première personne). Vous pouvez changer de nom, de couleur et de personnage à tout moment dans Profil.",
 	"NAME_CONFIRM": "Confirmer",
 	"NAME_ERR_SHORT": "Utilisez au moins 2 caractères.",
 	"NAME_ERR_LONG": "Utilisez au plus 20 caractères.",

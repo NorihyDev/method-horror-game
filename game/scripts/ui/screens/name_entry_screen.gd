@@ -1,11 +1,13 @@
 extends Screen
-## Choose a display name and avatar color. This is NOT an account: it stays on
-## this device. Online play later issues a separate guest identity.
+## Choose a display name, avatar color and character (first launch, and from
+## Profile). This is NOT an account: it stays on this device. Online play
+## later issues a separate guest identity.
 
 var _edit: LineEdit
 var _error: Label
 var _colors: HBoxContainer
 var _color_index := 0
+var _character := ""
 var _first_run := false
 
 
@@ -16,6 +18,7 @@ func build() -> void:
 	add_child(bg)
 	var box := UI.vbox(14)
 	box.custom_minimum_size.x = 640
+	box.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(UI.caption("NAME_CAPTION"))
 	box.add_child(UI.heading("NAME_TITLE"))
 	box.add_child(UI.accent_bar())
@@ -52,13 +55,29 @@ func build() -> void:
 		)
 		_colors.add_child(b)
 	_paint_colors()
+	box.add_child(UI.caption("NAME_CHARACTER"))
+	var hint := UI.para("NAME_CHARACTER_HINT", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM)
+	hint.custom_minimum_size.x = 640
+	box.add_child(hint)
+	_character = Saves.character()
+	var picker := CharacterPicker.new(_character, 116)
+	picker.custom_minimum_size.x = 640
+	picker.picked.connect(func(id: String) -> void: _character = id)
+	box.add_child(picker)
 	var privacy := UI.para("NAME_PRIVACY", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT)
 	privacy.custom_minimum_size.x = 640
 	box.add_child(privacy)
 	var row := UI.hbox(12)
 	row.add_child(UI.button("NAME_CONFIRM", _submit, true, 240))
 	box.add_child(row)
-	add_child(UI.center(box))
+	# Scrolls on short screens (phones in landscape, large interface scale).
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var pad := UI.margin(box, 24, 32, 24, 32)
+	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(pad)
+	add_child(scroll)
 
 
 func on_enter(p: Dictionary) -> void:
@@ -97,6 +116,7 @@ func _submit() -> void:
 		return
 	Saves.set_display_name(_edit.text)
 	Saves.set_avatar_color(_color_index)
+	Saves.set_character(_character)
 	AudioService.play_ui("ui_confirm")
 	if _first_run:
 		app.reset_to("main_menu")

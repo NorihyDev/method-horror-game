@@ -22,6 +22,8 @@
 	"NAME_COLOR": "Colour",
 	"NAME_COLOR_N": "Colour %d",
 	"NAME_PRIVACY": "Online play (when available) creates a separate guest identity issued by the server. Your name never grants access to anything, and other players may share it.",
+	"NAME_CHARACTER": "Your character",
+	"NAME_CHARACTER_HINT": "Who your teammates see you as in co-op (you play in first person). You can change your name, colour and character any time in Profile.",
 	"NAME_CONFIRM": "Confirm",
 	"NAME_ERR_SHORT": "Use at least 2 characters.",
 	"NAME_ERR_LONG": "Use at most 20 characters.",
