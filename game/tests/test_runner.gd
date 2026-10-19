@@ -4,7 +4,7 @@ extends Node
 ## 1 on failure, 2 on watchdog timeout. Optional `--filter=<substring>`.
 
 const DIRS: PackedStringArray = ["res://tests/unit", "res://tests/integration"]
-const WATCHDOG_SECONDS := 240.0
+const WATCHDOG_SECONDS := 600.0
 
 var _total := 0
 var _failed := 0

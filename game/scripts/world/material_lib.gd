@@ -23,7 +23,7 @@ const SURFACES := {
 	"metal_dark": ["metal", Color(0.45, 0.47, 0.5), 0.6, 0.6, 0.6, 0.5, 0.25, 0.0],
 	"metal_green": ["metal", Color(0.5, 0.6, 0.52), 0.6, 0.6, 0.5, 0.5, 0.25, 0.0],
 	"dark_wood": ["dark_wood", Color(1, 1, 1), 0.8, 0.65, 0.0, 0.6, 0.2, 0.0],
-	"painted_wood": ["dark_wood", Color(2.6, 2.5, 2.3), 0.8, 0.75, 0.0, 0.4, 0.2, 0.0],
+	"painted_wood": ["dark_wood", Color(1.05, 1.0, 0.92), 0.8, 0.75, 0.0, 0.4, 0.2, 0.0],
 	"fabric": ["fabric", Color(1, 1, 1), 1.0, 1.0, 0.0, 0.5, 0.3, 0.0],
 	"fabric_blue": ["fabric", Color(0.7, 0.8, 1.0), 1.0, 1.0, 0.0, 0.5, 0.3, 0.0],
 	"blocks": ["blocks", Color(1, 1, 1), 0.5, 0.9, 0.0, 0.9, 0.4, 0.4],
