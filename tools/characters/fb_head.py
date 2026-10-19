@@ -327,6 +327,7 @@ hair = np.array(CFG.get("hair_shell", {}).get("rgb", [0.05, 0.043, 0.04]), dtype
 # Fill: skin, darkening toward the hair colour on the scalp.
 # --- Hair: which head vertices carry hair (front from the photo, rest by rule) ---
 HS = CFG.get("hair_shell", {})
+HAIRLINE = {40.0: 0.035, 62.0: 0.01, 75.0: -0.03, 90.0: 0.012, 110.0: -0.025, 135.0: -0.075, 152.0: -0.09, 165.0: -0.094}
 ex_n = ex / pw_
 vX = uvp[:, 0] * pw_
 vY = (1.0 - uvp[:, 1]) * ph_
@@ -338,11 +339,18 @@ photo_hair = ((vY < ey - float(HS.get("above_brows", 0.6)) * em_px) & (vlum < sk
 top_pts = head_m[head_m[:, 2] > f_eye_z]
 cxh, cyh = float(np.median(top_pts[:, 0])), float(top_pts[:, 1].min() + top_pts[:, 1].max()) / 2.0
 zz, yy, xx = head_m[:, 2], head_m[:, 1], head_m[:, 0]
-rule = (
-    (zz > f_eye_z + float(HS.get("crown", 0.03)))
-    | ((yy > cyh) & (zz > f_eye_z - 0.015))
-    | ((yy > cyh + 0.035) & (zz > f_eye_z - float(HS.get("nape", 0.06))))
-).astype(np.float32)
+# A natural hairline all the way round (where the photo cannot see): high at
+# the temples, down in front of the ears (sideburns), up over the ears and low
+# at the nape, as a smooth curve by angle from the front (degrees -> metres
+# relative to the eyes). "hairline" in hair_shell overrides points.
+_az = np.degrees(np.abs(np.arctan2(xx - cxh, -(yy - cyh))))
+_line = dict(HAIRLINE)
+_line[0.0] = float(HS.get("crown", 0.03))
+_line[180.0] = -float(HS.get("nape", 0.095))
+_line.update({float(k): float(v) for k, v in HS.get("hairline", {}).items()})
+_ka = sorted(_line)
+hairline_z = f_eye_z + np.interp(_az, _ka, [_line[k] for k in _ka])
+rule = np.clip((zz - hairline_z) / 0.012 + 0.5, 0.0, 1.0)
 ear = (np.abs(xx - cxh) > 0.06) & (zz < f_eye_z + 0.015) & (zz > f_eye_z - 0.06) & (np.abs(yy - cyh) < 0.035)
 rule[ear] = 0.0
 seen_w = np.clip((facing - 0.3) / 0.25, 0.0, 1.0)
@@ -406,7 +414,9 @@ tex_out.save()
 print("FB texture", tw, "skin", np.round(skin, 3), "face texels %.0f%%" % (100 * float((mask > 0.5).mean())))
 
 # --- Join at the neck ----------------------------------------------------------------
-cut = lips[2] - float(FBC.get("cut", 1.75)) * em
+# The body keeps its neck up to here (head and neck meet under the jaw, so
+# no gap shows the inside of the collar).
+cut = lips[2] - float(FBC.get("cut", 1.2)) * em
 keep_below = cut - float(FBC.get("overlap", 0.07))
 mesh = bpy.data.meshes.new(NAME + ".fbhead")
 verts = [tuple(p) for p in head_m]
@@ -603,6 +613,10 @@ if not is_cap:
     for _ in range(6):
         vals = np.array([0.5 * vals[i] + 0.5 * vals[nb_].mean() if nb_ else vals[i] for i, nb_ in enumerate(adj)])
     vals = np.clip(vals * float(spec.get("volume", 1.0)), float(spec.get("min_thickness", 0.004)), t_max)
+    # Hair thins out over the last few centimetres above the hairline (no
+    # helmet edge at the nape, sideburns or over the ears).
+    _edge = np.clip((zz - hairline_z) / float(spec.get("edge_fade", 0.04)), 0.08, 1.0)
+    vals = vals * (_edge + (1.0 - _edge) * seen_w)
     thick_v = vals
     print("HAIR fit: measured %d verts, thickness median %.3f max %.3f" % (int(known.sum()), float(np.median(vals[used_s])), float(vals[used_s].max())))
 else:
