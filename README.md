@@ -21,12 +21,17 @@ supernatural threats those experiments left behind.
 |---|---|
 | ![Hallway](docs/screenshots/hallway.jpg) | ![The Watcher](docs/screenshots/watcher.jpg) |
 | ![Fuse panel](docs/screenshots/fuse_panel.jpg) | ![HUD with touch controls](docs/screenshots/touch_hud.jpg) |
+| ![The dining room, with real furniture](docs/screenshots/house_dining.jpg) | ![The covered car in the garage](docs/screenshots/house_garage.jpg) |
 | ![The Sister in the Black Ward](docs/screenshots/ward_sister.jpg) | ![Observation room](docs/screenshots/ward_observation.jpg) |
 | ![The Lineman on the platform](docs/screenshots/station_lineman.jpg) | ![A ghost train passing](docs/screenshots/station_ghost_train.jpg) |
 | ![The Headmistress in the school corridor](docs/screenshots/school_headmistress.jpg) | ![Music-room chimes](docs/screenshots/school_chimes.jpg) |
 | ![Subject Zero in the facility](docs/screenshots/facility_subject.jpg) | ![The freight lift arrives](docs/screenshots/facility_lift.jpg) |
 
-*Screenshots are real renders of the current build (desktop, Mobile renderer).*
+*Screenshots are real renders of version 0.3.1 (desktop, Mobile renderer).
+The enemies are shown with the optional imported monster models, which are
+installed locally and not part of this repository or its release builds;
+without them each enemy uses its procedural body (see
+[docs/monsters.md](docs/monsters.md)).*
 
 ## Contents
 
