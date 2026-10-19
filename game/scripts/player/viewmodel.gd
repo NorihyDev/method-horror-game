@@ -1,9 +1,10 @@
 class_name Viewmodel
 extends Node3D
-## First-person hand + flashlight. Procedural placeholder: a sleeve, a hand
-## and a flashlight built from primitives, animated with sway and tweens.
-## Replacement path: swap `_build_mesh()` for an imported rigged arm scene
-## exposing the same `flashlight` SpotLight3D (docs/asset-replacement.md).
+## First-person arms + flashlight. The arms are the player's own character
+## (FirstPersonArms, posed by IK): the right hand grips the flashlight and
+## follows its sway, bob and sprint pumping; the left hand reaches out to use
+## and pick things up. A sleeve and hand built from boxes remain as the
+## fallback when the character model is unavailable.
 
 var flashlight: SpotLight3D
 var _pivot: Node3D
@@ -15,6 +16,12 @@ var _last_cam_basis: Basis
 var _anim_offset := Vector3.ZERO
 var _tween: Tween
 var _fill: OmniLight3D
+var _arms: FirstPersonArms
+var _box_hand: Array[MeshInstance3D] = []
+var _left_kind := ""
+var _left_time := 0.0
+var _left_w := 0.0
+var _inspecting := false
 
 
 func _ready() -> void:
@@ -48,6 +55,15 @@ func _ready() -> void:
 	flashlight.rotation = Vector3(deg_to_rad(2.5), deg_to_rad(4.0), 0)
 	_rig.add_child(flashlight)
 	BeamCone.attach(flashlight, true, 0.2)
+	_arms = FirstPersonArms.new()
+	_arms.name = "Arms"
+	add_child(_arms)
+	if _arms.setup(Saves.character()):
+		for mi in _box_hand:
+			mi.visible = false
+	else:
+		_arms.queue_free()
+		_arms = null
 
 
 func _build_mesh() -> void:
@@ -58,10 +74,12 @@ func _build_mesh() -> void:
 	_body_mat.roughness = 0.4
 	_body_mat.metallic = 0.6
 	_lens_mat = MaterialLib.glow(Color(1.0, 0.95, 0.8), 2.0)
-	_add_box(Vector3(0.09, 0.09, 0.32), sleeve, Vector3(0.03, -0.06, 0.2), Vector3(0.15, 0, 0))
-	_add_box(Vector3(0.075, 0.06, 0.1), skin, Vector3(0.0, -0.02, 0.0), Vector3.ZERO)
+	_box_hand.append(_add_box(Vector3(0.09, 0.09, 0.32), sleeve, Vector3(0.03, -0.06, 0.2), Vector3(0.15, 0, 0)))
+	_box_hand.append(_add_box(Vector3(0.075, 0.06, 0.1), skin, Vector3(0.0, -0.02, 0.0), Vector3.ZERO))
 	for i in 4:
-		_add_box(Vector3(0.016, 0.02, 0.05), skin, Vector3(-0.03 + i * 0.019, 0.015, -0.03), Vector3(0.3, 0, 0))
+		_box_hand.append(
+			_add_box(Vector3(0.016, 0.02, 0.05), skin, Vector3(-0.03 + i * 0.019, 0.015, -0.03), Vector3(0.3, 0, 0))
+		)
 	var body := CylinderMesh.new()
 	body.top_radius = 0.022
 	body.bottom_radius = 0.02
@@ -82,19 +100,20 @@ func _build_mesh() -> void:
 	_add_mesh(lens, _lens_mat, Transform3D(Basis(Vector3.RIGHT, PI / 2), Vector3(0, 0.02, -0.206)))
 
 
-func _add_box(size: Vector3, mat: Material, pos: Vector3, rot: Vector3) -> void:
+func _add_box(size: Vector3, mat: Material, pos: Vector3, rot: Vector3) -> MeshInstance3D:
 	var m := BoxMesh.new()
 	m.size = size
-	_add_mesh(m, mat, Transform3D(Basis.from_euler(rot), pos))
+	return _add_mesh(m, mat, Transform3D(Basis.from_euler(rot), pos))
 
 
-func _add_mesh(mesh: Mesh, mat: Material, xform: Transform3D) -> void:
+func _add_mesh(mesh: Mesh, mat: Material, xform: Transform3D) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.material_override = mat
 	mi.transform = xform
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_rig.add_child(mi)
+	return mi
 
 
 func set_style(beam: Color, body: Color) -> void:
@@ -132,12 +151,67 @@ func update_motion(
 	var bob := Vector3.ZERO
 	if grounded and speed > 0.3 and not reduced:
 		bob = Vector3(cos(bob_phase) * 0.012, absf(sin(bob_phase)) * 0.014, 0) * (1.6 if sprinting else 1.0)
+		if sprinting:
+			# The flashlight arm pumps with the stride.
+			bob += Vector3(0.0, 0.015 * cos(bob_phase), -0.05 * sin(bob_phase))
 	var t := Time.get_ticks_msec() / 1000.0
 	var idle := Vector3(sin(t * 1.1) * 0.003, sin(t * 1.7) * 0.004, 0) if not reduced else Vector3.ZERO
 	var lower := Vector3(0.02, -0.06, 0.04) if sprinting else (Vector3(0, -0.02, 0) if crouching else Vector3.ZERO)
 	var sway := Vector3(_sway.x, _sway.y, 0) * (0.0 if reduced else 0.35)
 	_rig.position = _rig.position.lerp(bob + idle + lower + sway + _anim_offset, clampf(delta * 12.0, 0.0, 1.0))
 	_rig.rotation = Vector3(-_sway.y * 0.4 + (deg_to_rad(-12) if sprinting else 0.0), _sway.x * 0.4, 0)
+	if _arms:
+		_drive_arms(delta, sprinting and grounded and speed > 0.3 and not reduced, crouching, bob_phase)
+
+
+## Right hand on the flashlight grip; left hand by the side, pumping when
+## sprinting, or reaching for whatever is being used.
+func _drive_arms(delta: float, pumping: bool, crouching: bool, phase: float) -> void:
+	var g := _pivot.transform * _rig.transform
+	_arms.pose_arm(
+		"r",
+		g * Vector3(0.022, -0.02, 0.05),
+		g.basis * Vector3(-0.35, -0.05, -1.0),
+		g.basis * Vector3(-0.25, 1.0, 0.0),
+		Vector3(1.0, -1.3, 0.5),
+		1.0
+	)
+	var wrist := Vector3(-0.3, -0.64 - (0.04 if crouching else 0.0), 0.02)
+	var fingers := Vector3(0.05, -1.0, -0.25)
+	var thumb := Vector3(0.0, 0.0, -1.0)
+	var curl := 0.35
+	if pumping:
+		wrist = Vector3(-0.21, -0.37 + 0.05 * cos(phase), -0.25 + 0.17 * sin(phase))
+		fingers = Vector3(0.35, 0.1, -1.0)
+		thumb = Vector3(0.0, 1.0, 0.0)
+		curl = 0.85
+	_left_time = maxf(0.0, _left_time - delta)
+	var acting := _inspecting or _left_time > 0.0
+	_left_w = move_toward(_left_w, 1.0 if acting else 0.0, delta * (6.0 if acting else 3.5))
+	if _left_w > 0.0:
+		var aim: Array = _left_target()
+		var k := _left_w * _left_w * (3.0 - 2.0 * _left_w)
+		wrist = wrist.lerp(aim[0], k)
+		fingers = fingers.lerp(aim[1], k)
+		thumb = thumb.lerp(aim[2], k)
+		curl = lerpf(curl, aim[3], k)
+	_arms.pose_arm("l", wrist, fingers, thumb, Vector3(-1.0, -1.2, 0.4), curl)
+
+
+func _left_target() -> Array:
+	match "inspect" if _inspecting else _left_kind:
+		"pickup":
+			return [Vector3(-0.1, -0.33, -0.42), Vector3(0.1, -0.7, -1.0), Vector3(0.4, 0.3, 0.0), 0.55]
+		"use":
+			return [Vector3(-0.04, -0.27, -0.3), Vector3(0.8, 0.0, -0.6), Vector3(0.0, 1.0, 0.0), 0.6]
+		"inspect":
+			return [Vector3(-0.16, -0.24, -0.36), Vector3(0.4, 0.3, -1.0), Vector3(0.0, 0.4, 0.3), 0.4]
+	return [Vector3(-0.1, -0.15, -0.47), Vector3(0.05, 0.0, -1.0), Vector3(0.0, 1.0, 0.0), 0.2]
+
+
+func _left(kind: String, seconds: float) -> void:
+	_left_kind = kind
+	_left_time = seconds
 
 
 func _play(offsets: Array[Vector3], times: Array[float]) -> void:
@@ -150,15 +224,19 @@ func _play(offsets: Array[Vector3], times: Array[float]) -> void:
 
 func play_pickup() -> void:
 	_play([Vector3(-0.03, -0.12, -0.02), Vector3.ZERO], [0.14, 0.25])
+	_left("pickup", 0.5)
 
 
 func play_reach() -> void:
 	_play([Vector3(-0.02, 0.0, -0.08), Vector3.ZERO], [0.1, 0.2])
+	_left("reach", 0.42)
 
 
 func play_use() -> void:
 	_play([Vector3(0, -0.15, 0.05), Vector3(0, -0.15, 0.05), Vector3.ZERO], [0.15, 0.25, 0.25])
+	_left("use", 0.65)
 
 
 func play_inspect(on: bool) -> void:
 	_play([Vector3(-0.12, 0.08, 0.08) if on else Vector3.ZERO], [0.25])
+	_inspecting = on

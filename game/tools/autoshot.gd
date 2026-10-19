@@ -138,6 +138,10 @@ func _ready() -> void:
 		mate.character = AppInfo.arg_value("--character", CharacterCatalog.DEFAULT)
 		mate.display_name = CharacterCatalog.display_name(mate.character)
 		map.add_child(mate)
+	if AppInfo.has_arg("--fp-states"):
+		await _fp_states(map, player)
+		get_tree().quit(0)
+		return
 	var shots: Array = SHOTS.get(map_id, [])
 	if AppInfo.has_arg("--at"):
 		var f := AppInfo.arg_value("--at").split_floats(",")
@@ -155,6 +159,8 @@ func _ready() -> void:
 			e.global_position = map.closest_nav_point((shot[1] as Vector3) + fwd * 3.5)
 			var target: Vector3 = shot[1]
 			e.look_at(Vector3(target.x, e.global_position.y, target.z), Vector3.UP)
+			# Hold it there facing the camera (its AI would patrol off).
+			e.set_physics_process(false)
 		if mate:
 			var ahead := Vector3(-sin(float(shot[2])), 0, -cos(float(shot[2])))
 			var spot := map.closest_nav_point(
@@ -191,3 +197,45 @@ func _prepare(what: String, match_ctrl: MatchController) -> void:
 			match_ctrl.set_entity_state("evac_train", {"progress": 1.0, "arrived": true})
 		"lift_arrived":
 			match_ctrl.set_entity_state("freight_lift", {"progress": 1.0, "arrived": true})
+
+
+## First-person arms in each motion state, in the lit hallway.
+func _fp_states(map: MapBase, player: PlayerController) -> void:
+	map.set_power(true)
+	player.global_position = Vector3(1.0, 0.05, 8.5)
+	player.set("_yaw", -PI / 2)
+	player.set("_pitch", -0.05)
+	player.set_physics_process(false)
+	var vm := player.viewmodel
+	var dt := 1.0 / 60.0
+	var phase := 0.0
+	for st: Array in [
+		["idle", 0.0, false, false, ""],
+		["walk", 2.0, false, false, ""],
+		["sprint_a", 4.5, true, false, ""],
+		["sprint_b", 4.5, true, false, ""],
+		["crouch", 1.2, false, true, ""],
+		["reach", 0.0, false, false, "reach"],
+		["pickup", 0.0, false, false, "pickup"],
+		["use", 0.0, false, false, "use"],
+		["inspect", 0.0, false, false, "inspect"],
+	]:
+		if st[4] == "inspect":
+			vm.play_inspect(true)
+		elif st[4] != "":
+			vm.call("play_" + str(st[4]))
+		var frames := 14 if st[4] != "" else 50
+		for i in frames:
+			phase += dt * float(st[1]) * 2.1
+			if i == frames - 1 and str(st[0]).begins_with("sprint"):
+				phase = PI * (0.5 if st[0] == "sprint_a" else 1.5)
+			vm.update_motion(dt, st[1], st[2], st[3], true, phase)
+			await get_tree().physics_frame
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(_out.path_join("fp_%s.png" % st[0]))
+		print("shot: fp_" + str(st[0]))
+		if st[4] == "inspect":
+			vm.play_inspect(false)
+		for i in 40:
+			vm.update_motion(dt, 0.0, false, false, true, phase)
+			await get_tree().physics_frame

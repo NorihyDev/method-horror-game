@@ -16,6 +16,7 @@ Prints MONSTER <id> height=<m> so the catalog can scale it to its target.
 import json
 import math
 import os
+import tempfile
 import sys
 
 import bpy
@@ -151,6 +152,12 @@ def fit_skeleton(pts):
     body["head"] = (body["neck_01"][1], Vector((cx, cy - 0.01 * H, zh(0.98))))
     sh_z = zh(0.81)
     t_pose = (hi[0] - lo[0]) > 0.75 * H
+    if t_pose:
+        # Arm height from the mesh: the median height of its widest points (a
+        # tall hat or helmet lamp puts the arms well below 81 % of the height).
+        far = pts[np.abs(pts[:, 0] - cx) > 0.3 * H]
+        if len(far):
+            sh_z = float(np.median(far[:, 2]))
     for side, sx in (("l", 1.0), ("r", -1.0)):
         sh = Vector((cx + sx * 0.11 * H, cy, sh_z))
         if t_pose:
@@ -221,6 +228,32 @@ def skin(mesh_obj, arm, body, t_pose=False):
         elif side == "_r":
             d = np.where(pts[:, 0] > cx + 0.01, d + 10.0, d)
         dists[n] = d
+    if CFG.get("island_skin"):
+        # Loose mesh pieces belong to one region: a coat piece that is mostly
+        # torso is never dragged along by an arm brushing past it.
+        parent = list(range(len(pts)))
+
+        def find(i):
+            while parent[i] != i:
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            return i
+
+        for e in mesh_obj.data.edges:
+            ra, rb = find(e.vertices[0]), find(e.vertices[1])
+            if ra != rb:
+                parent[ra] = rb
+        roots = np.array([find(i) for i in range(len(pts))])
+        arm_names = [n for n in dists if "arm" in n or n.startswith("hand")]
+        best = np.argmin(np.stack([dists[n] for n in dists], axis=1), axis=1)
+        is_arm = np.isin(best, [list(dists).index(n) for n in arm_names])
+        for r in np.unique(roots):
+            sel = roots == r
+            if is_arm[sel].mean() < 0.5:
+                # Still a sleeve where it hugs the arm (a tight tube).
+                tight = float(CFG.get("sleeve_tube", 0.024)) * (pts[:, 2].max() - pts[:, 2].min())
+                for n in arm_names:
+                    dists[n] = np.where(sel & (dists[n] > tight), dists[n] + 10.0, dists[n])
     names = list(dists)
     D = np.stack([dists[n] for n in names], axis=1)
     order = np.argsort(D, axis=1)[:, :3]
@@ -259,6 +292,9 @@ def make_clips(arm, body, H):
     hip_z = rest["thigh_l"][0].z
     ankle_z = rest["foot_l"][0].z
     hunch = float(CFG.get("hunch", 0.25))
+    # How far attacks raise the shoulder (below 1 for a coat that tears when
+    # an arm lifts high out of it).
+    lift = float(CFG.get("arm_lift", 1.0))
 
     def leg(side, fy, fz, drop):
         sx = 1.0 if side == "l" else -1.0
@@ -346,7 +382,7 @@ def make_clips(arm, body, H):
 
     clips = {}
     clips["idle"] = (90, lambda p: (stand({**torso(hunch + 0.03 * math.sin(2 * math.pi * p), 0.1 * math.sin(4 * math.pi * p), 0.15 * math.sin(2 * math.pi * p)), **arms_down(0.05, 0.08, 0.3, 0.35)}), 0.03, 0.0, {}))
-    clips["walk"] = (round(1.3 * FPS), lambda p: gait(p, 0.17 * H, 0.62, 0.05 * H, 0.03 * H, hunch, 0.22, 0.35, 0.012 * H, drag=float(CFG.get("drag", 0.4))))
+    clips["walk"] = (round(1.3 * FPS), lambda p: gait(p, 0.19 * H, 0.62, 0.06 * H, 0.03 * H, hunch, 0.36, 0.4, 0.016 * H, drag=float(CFG.get("drag", 0.4))))
     clips["run"] = (round(0.62 * FPS), lambda p: gait(p, 0.3 * H, 0.38, 0.16 * H, 0.06 * H, hunch + 0.25, 0.75, 1.3, 0.025 * H))
 
     def search(p):
@@ -364,8 +400,11 @@ def make_clips(arm, body, H):
     clips["alert"] = (round(1.1 * FPS), alert)
 
     def windup(p):
-        k = 0.5 - 0.5 * math.cos(math.pi * p)
-        pose = stand({**torso(hunch - 0.2 * k, 0.1, -0.2 * k), **arms_down(0.1, -0.6 - 1.8 * k, 0.3, 0.6 + 0.6 * k, 0.25)}, 0.08 * k)
+        kr = 0.5 - 0.5 * math.cos(math.pi * p)
+        k = kr * lift
+        # Stiff-armed bodies rear back further instead (1 - lift).
+        back = (0.2 + 0.4 * (1.0 - lift)) * kr
+        pose = stand({**torso(hunch - back, 0.1 + 0.25 * (1.0 - lift) * kr, -0.2 * kr), **arms_down(0.1, -0.6 - 1.8 * k, 0.3, 0.6 + 0.6 * k, 0.25)}, 0.08 * k)
         pose["upperarm_r"] = unit(-0.4, 0.3 * k, -0.6 + 1.6 * k)
         return pose, 0.08 * k, 0.0, {"spine_03": -0.4 * k}
 
@@ -373,8 +412,11 @@ def make_clips(arm, body, H):
 
     def strike(p):
         k = min(1.0, p * 2.5)
-        pose = stand({**torso(hunch + 0.35 * k, -0.1, 0.25 * k), **arms_down(0.2, 2.1 - 1.6 * k, 0.3, 0.3)}, 0.1)
-        pose["upperarm_r"] = unit(-0.25, -0.9 * k, 1.0 - 1.4 * k)
+        top = 0.5 + 1.6 * lift
+        # ...and lunge further forward, head snapping down.
+        lunge = (0.35 + 0.45 * (1.0 - lift)) * k
+        pose = stand({**torso(hunch + lunge, -0.1 - 0.3 * (1.0 - lift) * k, 0.25 * k), **arms_down(0.2, top - (top - 0.5) * k, 0.3, 0.3)}, 0.1)
+        pose["upperarm_r"] = unit(-0.25, -0.9 * k, (1.0 - 1.4 * k) * lift - (1.0 - lift) * 0.6)
         return pose, 0.1, 0.0, {"spine_03": 0.45 * k}
 
     clips["strike"] = (round(0.5 * FPS), strike)
@@ -388,7 +430,7 @@ def make_clips(arm, body, H):
     clips["hit"] = (round(0.6 * FPS), hit)
 
     def door(p):
-        k = math.sin(math.pi * p)
+        k = math.sin(math.pi * p) * min(1.0, lift + 0.2)
         pose = stand({**torso(hunch + 0.1 * k, 0.0), **arms_down(0.1, 0.3 + 1.2 * k, 0.3, 0.2)}, 0.04)
         pose["upperarm_r"] = unit(-0.2, -0.3 - 0.7 * k, -0.8 + 0.6 * k)
         pose["lowerarm_r"] = unit(-0.1, -0.5 - 0.5 * k, -0.6 + 0.6 * k)
@@ -478,4 +520,5 @@ bpy.ops.export_scene.gltf(
 )
 tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in bpy.data.objects if o.type == "MESH")
 print("MONSTER %s height=%.3f tris=%d size=%d" % (MID, height, tris, os.path.getsize(OUT)))
-bpy.ops.wm.save_as_mainfile(filepath=OUT[:-4] + ".blend")
+# The .blend stays out of the game folder (Godot would try to import it).
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(tempfile.gettempdir(), MID + ".blend"))

@@ -26,7 +26,11 @@
     "file": "Killers Pack By Dime/Killers Pack By Dime/Doctor/Doctor/Doctor.fbx",
     "triangles": 14000,
     "hunch": 0.18,
-    "drag": 0.3
+    "drag": 0.3,
+    "arm_lift": 0.35,
+    "arm_reach": 0.06,
+    "island_skin": true,
+    "sleeve_tube": 0.0
   },
   "miner": {
     "name": "Miner",

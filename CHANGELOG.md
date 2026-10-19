@@ -5,6 +5,19 @@ dates are ISO 8601.
 
 ## [Unreleased]
 
+### Added
+- **Real first-person arms.** The player's own character (the one chosen in
+  Profile) is cut down to its arms and hands and posed live by IK: the right
+  hand grips the flashlight and follows its sway and bob, both arms pump when
+  sprinting, and the left hand reaches out to use things, picks items up,
+  swaps the battery and holds what is being inspected. The old box hand
+  remains as the fallback.
+
+### Fixed
+- The miner (Last Train) stood with his arms stuck out in a T-pose: his arms
+  were fitted at the wrong height. The plague doctor's raised arm tore his
+  coat; he now attacks by rearing back and lunging. Walks swing the arms more.
+
 ## [0.3.1] - 2026-10-19
 
 ### Fixed
