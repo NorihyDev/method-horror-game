@@ -15,6 +15,10 @@ dates are ISO 8601.
   like his own shirt. `make_jersey.py` takes an optional cloth colour.
 
 ### Fixed
+- The flashlight sat on top of the hand instead of in it, in first person and
+  on teammates. It now passes through the closed fist, found from each
+  character's own finger bones, with the fingers and thumb wrapped round it
+  (teammates keep their grip while walking and running).
 - Every character's hair now follows a natural hairline all round (temples,
   sideburns, over the ears, down to the nape) and thins out at its edge, instead
   of ending in a straight helmet edge at the back; the body's neck now meets

@@ -33,6 +33,7 @@ var _rest := {}
 var _len := {}
 var _curl_axis := {}
 var _palm_sign := {}
+var _curl_axes := {}
 
 
 func setup(character_id: String) -> bool:
@@ -227,6 +228,25 @@ func pose_arm(side: String, wrist: Vector3, fingers: Vector3, thumb_up: Vector3,
 	_curl(side, curl)
 
 
+## Poses an arm so the fist closes round a held object: `grip` is where the
+## object passes through the fist, `along` the object's axis (it runs along
+## the knuckle line, index side first), `fingers` the back of the hand's
+## direction (wrist to knuckles). All in camera space.
+func pose_grip(side: String, grip: Vector3, along: Vector3, fingers: Vector3, pole: Vector3, curl: float) -> void:
+	if not ready_ok:
+		return
+	var inv := _skel_xf.affine_inverse()
+	var f_s := (inv.basis * fingers).normalized()
+	var a_s := (inv.basis * along).normalized()
+	var mid_loc := (_rest[_bone["middle_01_" + side]] as Transform3D).origin
+	var bh := _frame(f_s, a_s) * _frame(mid_loc, HandGrip.across_local(skeleton, side)).inverse()
+	var wrist_s := inv * grip - bh * HandGrip.grip_local(skeleton, side)
+	# pose_arm rolls its index-side vector by hand_roll: pre-roll it back.
+	var f_c := fingers.normalized()
+	var t_c := along.normalized().rotated(f_c, -float(hand_roll[side]))
+	pose_arm(side, _skel_xf * wrist_s, f_c, t_c, pole, curl)
+
+
 static func _frame(f: Vector3, t: Vector3) -> Basis:
 	var x := f.normalized()
 	var y := (t - x * t.dot(x)).normalized()
@@ -234,13 +254,6 @@ static func _frame(f: Vector3, t: Vector3) -> Basis:
 
 
 func _curl(side: String, curl: float) -> void:
-	var sign: float = _palm_sign[side]
-	for finger in FINGERS + ["thumb"]:
-		for j in [1, 2, 3]:
-			var bi := skeleton.find_bone("%s_%02d_%s" % [finger, j, side])
-			if bi < 0 or not _curl_axis.has(bi):
-				continue
-			var amount := curl * (0.35 if finger == "thumb" else (1.25 if j == 1 else 1.45))
-			var rest: Transform3D = _rest[bi]
-			var q := Quaternion(_curl_axis[bi], sign * amount)
-			skeleton.set_bone_pose_rotation(bi, rest.basis.get_rotation_quaternion() * q)
+	if not _curl_axes.has(side):
+		_curl_axes[side] = HandGrip.curl_axes(skeleton, side)
+	HandGrip.apply_curl(skeleton, _curl_axes[side], curl, true)

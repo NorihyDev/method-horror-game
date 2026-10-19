@@ -66,8 +66,20 @@ func _setup(inst: Node3D) -> void:
 		cyl.height = 0.2
 		torch.mesh = cyl
 		torch.material_override = MaterialLib.flat(Color(0.15, 0.15, 0.16), 0.4, 0.6)
-		torch.position = Vector3(0, 0.06, 0.03)
 		hold.add_child(torch)
+		if skel.find_bone("index_01_r") >= 0:
+			# Through the closed fist along the knuckle line, lens out of the
+			# index-finger side, the back third held.
+			var along := HandGrip.across_local(skel, "r")
+			var up := Vector3.UP if absf(along.y) < 0.9 else Vector3.RIGHT
+			var x := up.cross(along).normalized()
+			torch.transform = Transform3D(
+				Basis(x, along, x.cross(along)), HandGrip.grip_local(skel, "r") + along * 0.035
+			)
+			var grip := GripModifier.new()
+			skel.add_child(grip)
+		else:
+			torch.position = Vector3(0, 0.06, 0.03)
 	play("idle")
 
 

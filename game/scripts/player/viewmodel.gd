@@ -168,11 +168,13 @@ func update_motion(
 ## sprinting, or reaching for whatever is being used.
 func _drive_arms(delta: float, pumping: bool, crouching: bool, phase: float) -> void:
 	var g := _pivot.transform * _rig.transform
-	_arms.pose_arm(
+	# The barrel runs through the fist; the forearm comes up from the lower
+	# right, so the back of the hand points up and in.
+	_arms.pose_grip(
 		"r",
-		g * Vector3(0.022, -0.02, 0.05),
-		g.basis * Vector3(-0.35, -0.05, -1.0),
-		g.basis * Vector3(-0.25, 1.0, 0.0),
+		g * Vector3(0.0, 0.02, -0.01),
+		g.basis * Vector3(0.0, 0.0, -1.0),
+		g.basis * Vector3(-0.6, 0.55, 0.1),
 		Vector3(1.0, -1.3, 0.5),
 		1.0
 	)
