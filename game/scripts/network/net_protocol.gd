@@ -181,5 +181,21 @@ static func players_packet(players: Dictionary) -> Dictionary:
 	for pid in players:
 		var p: Dictionary = players[pid]
 		var flags := (1 if p.get("crouch", false) else 0) | (4 if p.get("flashlight", false) else 0)
+		flags |= pitch_bits(float(p.get("pitch", 0.0)))
 		out[int(pid)] = [MatchState.array_to_vec(p["pos"]), float(p["yaw"]), flags]
 	return out
+
+
+static func motion_flags(crouch: bool, sprint: bool, flashlight: bool, pitch: float) -> int:
+	return (1 if crouch else 0) | (2 if sprint else 0) | (4 if flashlight else 0) | pitch_bits(pitch)
+
+
+## Look pitch packed into bits 8-15 of the motion flags: -1.6..1.6 rad in 255
+## steps. Builds that predate it read only the low bits and ignore these.
+static func pitch_bits(pitch: float) -> int:
+	return int(round((clampf(pitch, -1.6, 1.6) + 1.6) / 3.2 * 255.0)) << 8
+
+
+static func pitch_from_bits(flags: int) -> float:
+	var q := (flags >> 8) & 255
+	return 0.0 if q == 0 else float(q) / 255.0 * 3.2 - 1.6

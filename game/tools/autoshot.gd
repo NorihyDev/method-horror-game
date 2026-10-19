@@ -138,6 +138,10 @@ func _ready() -> void:
 		mate.character = AppInfo.arg_value("--character", CharacterCatalog.DEFAULT)
 		mate.display_name = CharacterCatalog.display_name(mate.character)
 		map.add_child(mate)
+	if AppInfo.has_arg("--fp-run"):
+		await _fp_run(map, player)
+		get_tree().quit(0)
+		return
 	if AppInfo.has_arg("--fp-states"):
 		await _fp_states(map, player)
 		get_tree().quit(0)
@@ -167,7 +171,12 @@ func _ready() -> void:
 				(shot[1] as Vector3) + ahead * float(AppInfo.arg_value("--mate-distance", "2.6"))
 			)
 			mate.server_place(spot, float(shot[2]) + PI)
-			mate.target(spot, float(shot[2]) + PI, true, 4)
+			mate.target(
+				spot,
+				float(shot[2]) + PI,
+				true,
+				4 | NetProtocol.pitch_bits(float(AppInfo.arg_value("--mate-pitch", "0")))
+			)
 		if AppInfo.has_arg("--phantom"):
 			var scares := ScareDirector.new()
 			add_child(scares)
@@ -207,6 +216,10 @@ func _fp_states(map: MapBase, player: PlayerController) -> void:
 	player.set("_pitch", -0.05)
 	player.set_physics_process(false)
 	var vm := player.viewmodel
+	if AppInfo.has_arg("--hand-roll"):
+		var r := AppInfo.arg_value("--hand-roll").split_floats(",")
+		var arms: FirstPersonArms = vm.get("_arms")
+		arms.hand_roll = {"r": deg_to_rad(r[0]), "l": deg_to_rad(r[1])}
 	var dt := 1.0 / 60.0
 	var phase := 0.0
 	for st: Array in [
@@ -239,3 +252,39 @@ func _fp_states(map: MapBase, player: PlayerController) -> void:
 		for i in 40:
 			vm.update_motion(dt, 0.0, false, false, true, phase)
 			await get_tree().physics_frame
+
+
+## One sprinting stride down the hallway, frame by frame (for a GIF).
+func _fp_run(map: MapBase, player: PlayerController) -> void:
+	map.set_power(true)
+	player.set_physics_process(false)
+	# Physics is off, so face down the hallway directly.
+	player.rotation.y = -PI / 2
+	player.head.rotation.x = -0.06
+	var vm := player.viewmodel
+	var dt := 1.0 / 60.0
+	var speed := 4.5
+	var pos := Vector3(1.0, 0.05, 8.5)
+	var phase := 0.0
+	# Get into the run first, then capture two strides.
+	for i in 40:
+		phase += dt * speed * 2.1
+		pos.x += dt * speed * 0.6
+		player.global_position = pos
+		vm.update_motion(dt, speed, true, false, true, phase)
+		await get_tree().physics_frame
+	var frame := 0
+	var stride_frames := int(round(TAU / (dt * speed * 2.1)))
+	for i in stride_frames * 2:
+		phase += dt * speed * 2.1
+		pos.x += dt * speed * 0.6
+		player.global_position = pos
+		# The head bobs with the same phase as the arms.
+		player.head.position.y = 1.6 + absf(cos(phase)) * 0.045
+		vm.update_motion(dt, speed, true, false, true, phase)
+		await get_tree().physics_frame
+		if i % 2 == 0:
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png(_out.path_join("run_%02d.png" % frame))
+			frame += 1
+	print("shot: run x%d" % frame)

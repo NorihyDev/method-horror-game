@@ -324,8 +324,14 @@ func server_interact(pid: int, entity_id: String, sub: int, action: String, args
 
 
 ## Player motion report (local player each tick; remote players via net).
+## Authority: a client's motion packet (flags from NetProtocol.motion_flags).
+func report_motion_flags(pid: int, pos: Vector3, yaw: float, speed: float, flags: int) -> void:
+	var pitch := NetProtocol.pitch_from_bits(flags)
+	report_motion(pid, pos, yaw, speed, flags & 1 != 0, flags & 2 != 0, flags & 4 != 0, pitch)
+
+
 func report_motion(
-	pid: int, pos: Vector3, yaw: float, speed: float, crouch: bool, sprint: bool, flashlight: bool
+	pid: int, pos: Vector3, yaw: float, speed: float, crouch: bool, sprint: bool, flashlight: bool, pitch: float = 0.0
 ) -> void:
 	var p := state.player(pid)
 	if p.is_empty() or not running:
@@ -337,6 +343,7 @@ func report_motion(
 	p["yaw"] = wrapf(yaw, -PI, PI)
 	p["crouch"] = crouch
 	p["flashlight"] = flashlight
+	p["pitch"] = clampf(pitch, -1.6, 1.6) if is_finite(pitch) else 0.0
 	if not is_authority or p["status"] != MatchState.STATUS_ALIVE or not str(p["hiding"]).is_empty():
 		return
 	# Footstep noise is computed by the authority from movement, not trusted from clients.

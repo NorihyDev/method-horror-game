@@ -20,6 +20,11 @@ var ready_ok := false
 ## 0..1 how far the left hand is brought into play, and what it is doing.
 var left_mix := 0.0
 var left_action := ""
+## Roll of each hand about its fingers, in radians. The characters' knuckle
+## line sits a quarter turn from the side the viewmodel names: at PI / 2 the
+## player sees the backs of the hands (a fist round the flashlight, a reach
+## back-of-hand up); at 0 the palms faced the camera.
+var hand_roll := {"l": PI / 2, "r": PI / 2}
 
 var _model: Node3D
 var _skel_xf := Transform3D.IDENTITY
@@ -179,7 +184,7 @@ func pose_arm(side: String, wrist: Vector3, fingers: Vector3, thumb_up: Vector3,
 	var inv := _skel_xf.affine_inverse()
 	var target := inv * wrist
 	var f_des := (inv.basis * fingers).normalized()
-	var t_des := (inv.basis * thumb_up).normalized()
+	var t_des := (inv.basis * thumb_up).normalized().rotated(f_des, float(hand_roll[side]))
 	var pole_s := (inv.basis * pole).normalized()
 	var ua: int = _bone["upperarm_" + side]
 	var la: int = _bone["lowerarm_" + side]

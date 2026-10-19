@@ -203,7 +203,7 @@ func _left_target() -> Array:
 		"pickup":
 			return [Vector3(-0.1, -0.33, -0.42), Vector3(0.1, -0.7, -1.0), Vector3(0.4, 0.3, 0.0), 0.55]
 		"use":
-			return [Vector3(-0.04, -0.27, -0.3), Vector3(0.8, 0.0, -0.6), Vector3(0.0, 1.0, 0.0), 0.6]
+			return [Vector3(-0.06, -0.27, -0.3), Vector3(1.0, -0.1, -0.3), Vector3(0.0, 1.0, 0.0), 0.6]
 		"inspect":
 			return [Vector3(-0.16, -0.24, -0.36), Vector3(0.4, 0.3, -1.0), Vector3(0.0, 0.4, 0.3), 0.4]
 	return [Vector3(-0.1, -0.15, -0.47), Vector3(0.05, 0.0, -1.0), Vector3(0.0, 1.0, 0.0), 0.2]

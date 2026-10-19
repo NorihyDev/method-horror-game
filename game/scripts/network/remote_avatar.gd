@@ -26,6 +26,8 @@ var _bob := 0.0
 ## Ground speed smoothed over ~0.15 s: network updates arrive in steps, and the
 ## raw per-frame speed would make the clip flicker between gaits.
 var _speed := 0.0
+var _pitch := 0.0
+var _look: LookModifier
 
 
 func get_player_id() -> int:
@@ -47,6 +49,10 @@ func _ready() -> void:
 	_model = TeammateModel.create(character)
 	if _model:
 		_body.add_child(_model)
+		var skel := _model.find_child("Skeleton3D", true, false) as Skeleton3D
+		if skel:
+			_look = LookModifier.new()
+			skel.add_child(_look)
 	else:
 		_build_figure()
 	_light = SpotLight3D.new()
@@ -112,6 +118,7 @@ func target(pos: Vector3, yaw: float, snap: bool = false, flags: int = 0) -> voi
 	_target_pos = pos
 	_target_yaw = yaw
 	_crouch = flags & 1 != 0
+	_pitch = NetProtocol.pitch_from_bits(flags)
 	if _light:
 		_light.visible = flags & 4 != 0 and status == MatchState.STATUS_ALIVE and not _hidden
 	if snap:
@@ -126,6 +133,12 @@ func _process(delta: float) -> void:
 	var raw := Vector2(global_position.x - before.x, global_position.z - before.z).length() / maxf(delta, 0.001)
 	_speed = lerpf(_speed, raw, clampf(delta * 7.0, 0.0, 1.0))
 	var speed := _speed
+	# Head, chest and flashlight beam follow where they look.
+	var look := _pitch if status == MatchState.STATUS_ALIVE else 0.0
+	if _look:
+		_look.pitch = lerpf(_look.pitch, look, clampf(delta * 10.0, 0.0, 1.0))
+	if _light:
+		_light.rotation.x = lerpf(_light.rotation.x, look, clampf(delta * 10.0, 0.0, 1.0))
 	_bob += delta * speed * 2.0
 	if _model:
 		_model.update_motion(speed, _crouch, status == MatchState.STATUS_DOWNED)

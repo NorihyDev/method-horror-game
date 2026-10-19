@@ -12,8 +12,19 @@ dates are ISO 8601.
   sprinting, and the left hand reaches out to use things, picks items up,
   swaps the battery and holds what is being inspected. The old box hand
   remains as the fallback.
+- **Teammates look where they look.** In co-op a teammate's head and chest
+  tilt up and down with their view, on top of whatever they are doing
+  (walking, crouching), and their flashlight beam follows. The pitch rides in
+  spare bits of the existing motion packet, so older builds still connect.
 
 ### Fixed
+- The first-person hands were turned the wrong way: the palms faced the
+  player (the flashlight lay in an open palm). They now show the backs of the
+  hands: a fist round the flashlight, a reach back-of-hand up.
+- On the host, teammates never animated: their position was snapped on every
+  packet, so they slid around in the idle pose, and crouching and their
+  flashlight state were ignored. The host now moves them smoothly like
+  clients do, so they walk, jog, run and crouch.
 - The miner (Last Train) stood with his arms stuck out in a T-pose: his arms
   were fitted at the wrong height. The plague doctor's raised arm tore his
   coat; he now attacks by rearing back and lunging. Walks swing the arms more.

@@ -601,11 +601,11 @@ func _c_motion(pos: Variant, yaw: Variant, speed: Variant, flags: Variant) -> vo
 	if Vector2(new_pos.x - old.x, new_pos.z - old.z).length() > allowed or absf(new_pos.y - old.y) > 4.0:
 		_rpc_to(_peer_of(pid), "_s_correct", [old])
 		return
-	var f := int(flags)
-	mc.report_motion(pid, new_pos, float(yaw), clampf(float(speed), 0.0, 10.0), f & 1 != 0, f & 2 != 0, f & 4 != 0)
+	mc.report_motion_flags(pid, new_pos, float(yaw), clampf(float(speed), 0.0, 10.0), int(flags))
 	var avatar: RemoteAvatar = _avatars.get(pid)
 	if avatar:
-		avatar.server_place(new_pos, float(yaw))
+		# Glide there like clients do (teleporting each packet froze the walk).
+		avatar.target(new_pos, float(yaw), false, int(flags))
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -912,9 +912,9 @@ func send_interact(entity_id: String, sub: int, action: String, args: Dictionary
 		rpc_id(1, "_c_interact", entity_id, sub, action, args)
 
 
-func send_motion(pos: Vector3, yaw: float, speed: float, crouch: bool, sprint: bool, flashlight: bool) -> void:
+func send_motion(pos: Vector3, yaw: float, speed: float, crouch: bool, sprint: bool, light: bool, pitch := 0.0) -> void:
 	if mode == Mode.CLIENT:
-		var flags := (1 if crouch else 0) | (2 if sprint else 0) | (4 if flashlight else 0)
+		var flags := NetProtocol.motion_flags(crouch, sprint, light, pitch)
 		rpc_id(1, "_c_motion", pos, yaw, speed, flags)
 
 

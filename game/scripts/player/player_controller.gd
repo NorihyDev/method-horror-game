@@ -472,7 +472,8 @@ func _report(delta: float) -> void:
 			Vector2(velocity.x, velocity.z).length(),
 			crouching,
 			sprinting,
-			flashlight_on and battery > 0.0
+			flashlight_on and battery > 0.0,
+			_pitch
 		)
 	elif _report_timer <= 0.0 and match_ctrl.net:
 		_report_timer = float(match_ctrl.net.get("motion_interval"))
@@ -483,7 +484,8 @@ func _report(delta: float) -> void:
 			Vector2(velocity.x, velocity.z).length(),
 			crouching,
 			sprinting,
-			flashlight_on and battery > 0.0
+			flashlight_on and battery > 0.0,
+			_pitch
 		)
 
 
