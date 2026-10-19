@@ -1,0 +1,60 @@
+# Publishes the self-hosted server image (lobby + dedicated server) to the
+# GitHub Container Registry for every release tag, or on demand for a tag.
+# Uses only the workflow's own GITHUB_TOKEN; no other secrets.
+name: Package
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version label for the image (e.g. v0.4.0)"
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  server-image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      # On demand it builds the branch it runs on and labels the image with the
+      # given version (for a release tagged before this workflow existed).
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install pinned Godot + export templates (SHA-512 verified)
+        run: ./tools/ci/install_godot.sh --templates
+      - name: Export the dedicated server
+        run: |
+          mkdir -p builds/server
+          timeout 600 godot --headless --path game --import
+          timeout 600 godot --headless --path game --export-release "Linux Dedicated Server" ../builds/server/method_horror_server.x86_64
+          test -s builds/server/method_horror_server.x86_64
+      - name: Build and push ghcr.io image
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          image="ghcr.io/$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')/method-horror-server"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          docker build -f deploy/server/Dockerfile -t "$image:$version" -t "$image:latest" .
+          # The game server binary runs in the image (no missing libraries).
+          docker run --rm "$image:$version" /opt/method/server/method_horror_server.x86_64 --headless --version
+          # Without its secrets the lobby refuses to start...
+          timeout 30 docker run --rm "$image:$version" > nosecret.log 2>&1 || true
+          grep -q "must be set" nosecret.log || { cat nosecret.log; echo "lobby did not refuse to start without secrets"; exit 1; }
+          # ...and with throwaway ones it starts and answers its health check.
+          cid=$(docker run -d -e METHOD_TICKET_SECRET="$(openssl rand -hex 24)" -e METHOD_SERVER_SECRET="$(openssl rand -hex 24)" "$image:$version")
+          ok=0
+          for i in $(seq 1 30); do
+            if docker exec "$cid" node -e "fetch('http://127.0.0.1:8787/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then ok=1; break; fi
+            sleep 1
+          done
+          docker logs "$cid" | tail -20
+          docker rm -f "$cid" > /dev/null
+          [ "$ok" = 1 ] || { echo "lobby did not become healthy"; exit 1; }
+          docker push "$image:$version"
+          docker push "$image:latest"
+          echo "Pushed $image:$version" >> "$GITHUB_STEP_SUMMARY"

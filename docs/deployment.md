@@ -67,6 +67,20 @@ quota. It resets at 00:00 UTC.
 
 ## Self-hosted alternative: lobby service + dedicated server (not used by the shipped client)
 
+### Docker image
+
+Every release publishes the lobby and the dedicated server together as
+`ghcr.io/norihydev/method-horror-server:<version>` (and `:latest`), built by
+`.github/workflows/package.yml` from `deploy/server/Dockerfile`. The image
+holds no secrets; pass them at run time:
+
+```bash
+docker run -d --name method-horror   -e METHOD_TICKET_SECRET=<32+ random characters>   -e METHOD_SERVER_SECRET=<32+ random characters>   -e PUBLIC_GAME_HOST=<public IP or DNS name>   -p 8787:8787 -p 24600-24699:24600-24699/udp   -v method-horror-data:/data   ghcr.io/norihydev/method-horror-server:latest
+```
+
+The lobby answers on port 8787 (`/healthz`); put an HTTPS proxy in front of
+it for real players, as below. Without the two secrets it refuses to start.
+
 The repository still contains a lobby service (`services/lobby`) and a
 headless dedicated server (`--server`). They run the match on a server you
 control, with verified wallet rewards, but need a paid host with UDP. The
