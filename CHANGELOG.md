@@ -5,6 +5,8 @@ dates are ISO 8601.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-19
+
 ### Added
 - **Real first-person arms.** The player's own character (the one chosen in
   Profile) is cut down to its arms and hands and posed live by IK: the right
@@ -233,6 +235,7 @@ dates are ISO 8601.
   payload types/sizes), puzzle answers withheld from client snapshots, and
   lag-bounded crank timing.
 
-[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.3.1...main
+[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.4.0...main
+[0.4.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.4.0
 [0.3.1]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.3.1
 [0.3.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.3.0
