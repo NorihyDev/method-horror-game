@@ -11,14 +11,10 @@ func build() -> void:
 	add_child(bg)
 	var box := UI.vbox(14)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	var word := UI.title("METHOD", 92)
-	word.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	word.add_theme_constant_override("outline_size", 0)
+	var word := HorrorTitle.new("METHOD", 104, false)
+	word.set_alignment(HORIZONTAL_ALIGNMENT_CENTER)
 	box.add_child(word)
-	var bar := ColorRect.new()
-	bar.color = ThemeFactory.CRIMSON
-	bar.custom_minimum_size = Vector2(220, 4)
+	var bar := UI.accent_bar(240)
 	bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(bar)
 	var sub := UI.caption("SPLASH_PRESENTS")

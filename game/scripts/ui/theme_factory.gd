@@ -1,20 +1,26 @@
 class_name ThemeFactory
 extends RefCounted
-## Builds the METHOD visual language as a Godot Theme: charcoal surfaces,
-## aged off-white type, restrained crimson accents.
+## Builds the METHOD visual language as a Godot Theme: near-black surfaces,
+## bone-white type in worn print and typewriter faces, dried-blood accents.
+##
+## Fonts (bundled, see docs/asset-manifest.md): IM Fell English SC for titles,
+## Special Elite for buttons, labels and captions, Crimson Pro for reading.
+## System fonts stay as fallbacks for any missing glyph.
 
-const BG := Color("0b0b0d")
-const SURFACE := Color("141416")
-const SURFACE_2 := Color("1c1c1f")
-const LINE := Color("2c2b2e")
-const TEXT := Color("e8e2d4")
+const BG := Color("070607")
+const SURFACE := Color("0f0d0e")
+const SURFACE_2 := Color("1a1416")
+const LINE := Color("2e2426")
+## Dark red edge of buttons and panels.
+const EDGE := Color("4a1518")
+const TEXT := Color("e6dccb")
 const TEXT_DIM := Color("9d978b")
 ## Quietest readable text: still 4.5:1 on every surface (WCAG AA).
 const TEXT_FAINT := Color("8d877d")
 ## Disabled controls only (exempt from contrast rules); never for information.
 const DISABLED := Color("625e57")
-const CRIMSON := Color("8e1b1b")
-const CRIMSON_HI := Color("b42727")
+const CRIMSON := Color("7d0c0c")
+const CRIMSON_HI := Color("b01e1e")
 ## Crimson for text (status, warnings): readable on dark surfaces.
 const DANGER := Color("e35d5d")
 const WARN := Color("c9a227")
@@ -28,6 +34,8 @@ const MIN_TOUCH := 56
 
 static var _theme: Theme
 static var _title_font: Font
+static var _body_font: Font
+static var _type_font: Font
 static var _mono_font: Font
 
 
@@ -37,26 +45,41 @@ static func theme() -> Theme:
 	return _theme
 
 
-## Serif display face for titles (system font, engine default fallback).
+## Worn old-print serif for titles and headings.
 static func title_font() -> Font:
 	if _title_font == null:
-		var sys := SystemFont.new()
-		sys.font_names = PackedStringArray(
-			[
-				"Georgia",
-				"Times New Roman",
-				"Noto Serif",
-				"DejaVu Serif",
-				"Liberation Serif",
-				"serif",
-			]
-		)
-		sys.font_weight = 400
-		var variation := FontVariation.new()
-		variation.base_font = sys
-		variation.spacing_glyph = 3
-		_title_font = variation
+		_title_font = _bundled("IMFellEnglishSC-Regular.ttf", ["Georgia", "Times New Roman", "Noto Serif", "serif"], 2)
 	return _title_font
+
+
+## Book serif for reading (the theme default).
+static func body_font() -> Font:
+	if _body_font == null:
+		_body_font = _bundled("CrimsonPro-Variable.ttf", ["Georgia", "Noto Serif", "serif"], 0, 500)
+	return _body_font
+
+
+## Typewriter face for buttons, tabs, captions and fields: case-file notes.
+static func type_font() -> Font:
+	if _type_font == null:
+		_type_font = _bundled("SpecialElite-Regular.ttf", ["Courier New", "Noto Sans Mono", "monospace"], 1)
+	return _type_font
+
+
+static func _bundled(file: String, fallbacks: Array, spacing: int = 0, weight: int = 0) -> Font:
+	var v := FontVariation.new()
+	var path := "res://assets/fonts/" + file
+	var sys := SystemFont.new()
+	sys.font_names = PackedStringArray(fallbacks)
+	if ResourceLoader.exists(path):
+		v.base_font = load(path)
+		v.fallbacks = [sys]
+	else:
+		v.base_font = sys
+	v.spacing_glyph = spacing
+	if weight > 0:
+		v.variation_opentype = {"wght": weight}
+	return v
 
 
 static func mono_font() -> Font:
@@ -90,9 +113,30 @@ static func flat(
 	return sb
 
 
+## Button slab: hairline frame with a thick edge on the left.
+static func edged(bg: Color, edge: Color, left: int, pad_h: int = 22, pad_v: int = 12) -> StyleBoxFlat:
+	var sb := flat(bg, edge, 1, 0, pad_h, pad_v)
+	sb.border_width_left = left
+	sb.content_margin_left = pad_h + left
+	sb.shadow_color = Color(0, 0, 0, 0.55)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 2)
+	return sb
+
+
+## Panels: almost black, a rust line along the top, and a deep shadow.
+static func panel_box(pad_h: int, pad_v: int, alpha: float = 0.94) -> StyleBoxFlat:
+	var sb := flat(Color(SURFACE, alpha), EDGE, 1, 0, pad_h, pad_v)
+	sb.border_width_top = 2
+	sb.shadow_color = Color(0, 0, 0, 0.6)
+	sb.shadow_size = 22
+	return sb
+
+
 static func _build() -> Theme:
 	var t := Theme.new()
 	t.default_font_size = FONT_BODY
+	t.default_font = body_font()
 
 	# Labels
 	t.set_color("font_color", "Label", TEXT)
@@ -101,11 +145,12 @@ static func _build() -> Theme:
 	t.set_constant("shadow_offset_y", "Label", 1)
 	t.set_constant("line_spacing", "Label", 4)
 
-	# Buttons: dark slab with a crimson edge on focus/hover.
-	var normal := flat(Color(SURFACE, 0.88), LINE, 1, 2, 22, 12)
-	var hover := flat(Color(SURFACE_2, 0.95), Color(CRIMSON_HI, 0.8), 1, 2, 22, 12)
-	var pressed := flat(Color(CRIMSON, 0.55), CRIMSON_HI, 1, 2, 22, 12)
-	var disabled := flat(Color(SURFACE, 0.5), Color(LINE, 0.5), 1, 2, 22, 12)
+	# Buttons: black slabs with a dried-blood edge on the left that wells up
+	# red on hover and press.
+	var normal := edged(Color(BG, 0.82), EDGE, 3)
+	var hover := edged(Color(CRIMSON, 0.3), CRIMSON_HI, 5)
+	var pressed := edged(Color(CRIMSON, 0.62), CRIMSON_HI, 5)
+	var disabled := edged(Color(BG, 0.45), Color(LINE, 0.5), 2)
 	var focus := StyleBoxFlat.new()
 	focus.draw_center = false
 	focus.border_color = TEXT
@@ -127,7 +172,21 @@ static func _build() -> Theme:
 		t.set_color("font_pressed_color", type, Color.WHITE)
 		t.set_color("font_focus_color", type, Color.WHITE)
 		t.set_color("font_disabled_color", type, DISABLED)
+		t.set_font("font", type, type_font())
 	t.set_constant("h_separation", "Button", 10)
+	# Toggles: a plain row with a blood-red switch, not a button slab.
+	var row := flat(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0, 12, 10)
+	var row_hover := flat(Color(CRIMSON, 0.14), Color.TRANSPARENT, 0, 0, 12, 10)
+	for state in ["normal", "pressed", "disabled"]:
+		t.set_stylebox(state, "CheckButton", row)
+	for state in ["hover", "hover_pressed"]:
+		t.set_stylebox(state, "CheckButton", row_hover)
+	t.set_icon("checked", "CheckButton", _switch_icon(true, false))
+	t.set_icon("unchecked", "CheckButton", _switch_icon(false, false))
+	t.set_icon("checked_disabled", "CheckButton", _switch_icon(true, true))
+	t.set_icon("unchecked_disabled", "CheckButton", _switch_icon(false, true))
+	for type in ["LineEdit", "TabBar", "PopupMenu", "TooltipLabel"]:
+		t.set_font("font", type, type_font())
 
 	# Inputs
 	var field := flat(Color(0.03, 0.03, 0.035, 0.95), LINE, 1, 2, 14, 10)
@@ -141,8 +200,8 @@ static func _build() -> Theme:
 	t.set_color("font_placeholder_color", "LineEdit", TEXT_FAINT)
 
 	# Panels
-	t.set_stylebox("panel", "PanelContainer", flat(Color(SURFACE, 0.92), LINE, 1, 3, 24, 20))
-	t.set_stylebox("panel", "Panel", flat(Color(SURFACE, 0.92), LINE, 1, 3, 0, 0))
+	t.set_stylebox("panel", "PanelContainer", panel_box(24, 20))
+	t.set_stylebox("panel", "Panel", panel_box(0, 0))
 
 	# Sliders
 	var track := flat(Color(LINE, 1.0), Color.TRANSPARENT, 0, 2, 0, 3)
@@ -189,6 +248,31 @@ static func _build() -> Theme:
 	t.set_stylebox("separator", "HSeparator", flat(LINE, Color.TRANSPARENT, 0, 0, 0, 0))
 	t.set_constant("separation", "HSeparator", 12)
 	return t
+
+
+## Pill switch, 56x30: red with the knob right when on, dark when off.
+static func _switch_icon(on: bool, off_limits: bool) -> Texture2D:
+	var w := 56
+	var h := 30
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var track := CRIMSON if on else LINE
+	var knob := TEXT if on else TEXT_DIM
+	if off_limits:
+		track = Color(track, 0.45)
+		knob = DISABLED
+	var r := h / 2.0
+	var kx := w - r if on else r
+	for y in h:
+		for x in w:
+			var p := Vector2(x + 0.5, y + 0.5)
+			var cx := clampf(p.x, r, w - r)
+			var d_track := p.distance_to(Vector2(cx, r)) - (r - 1.0)
+			var d_knob := p.distance_to(Vector2(kx, r)) - (r - 5.0)
+			var c := Color(track, clampf(0.5 - d_track, 0.0, 1.0))
+			var ka := clampf(0.5 - d_knob, 0.0, 1.0)
+			c = Color(c.lerp(knob, ka), maxf(c.a, ka))
+			img.set_pixel(x, y, c)
+	return ImageTexture.create_from_image(img)
 
 
 static func _circle_icon(size: int, color: Color) -> Texture2D:

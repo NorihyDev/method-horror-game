@@ -11,6 +11,7 @@ var _built := false
 
 func _init() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	theme = ThemeFactory.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
 

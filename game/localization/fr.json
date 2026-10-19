@@ -1,5 +1,6 @@
 {
 	"GAME_TITLE": "METHOD HORROR",
+	"MENU_TAGLINE": "Il vous entend.",
 	"SPLASH_PRESENTS": "présente",
 	"OK": "OK",
 	"CANCEL": "Annuler",
@@ -530,7 +531,7 @@
 
 	"CREDITS_TITLE": "Crédits",
 	"CREDITS_STUDIO": "Une production METHOD.",
-	"CREDITS_ASSETS": "Toutes les textures, modèles, animations et sons de cette version sont des éléments provisoires procéduraux originaux générés par les outils de METHOD. Aucun visuel, musique ou police externe n'est inclus ; le texte utilise la police par défaut du moteur et la police serif de votre système.",
+	"CREDITS_ASSETS": "Polices : IM Fell English SC d'Igino Marini et Crimson Pro de Jacques Le Bailly (SIL Open Font License 1.1), Special Elite d'Astigmatic (licence Apache 2.0) ; les textes des licences sont fournis dans assets/fonts. Textures photo des surfaces d'ambientCG et modèles de mobilier de Poly Haven, tous deux CC0. Tout le reste (niveaux, sons, musique, animation) est créé par les outils de METHOD.",
 	"CREDITS_ENGINE": "Moteur",
 	"CREDITS_THIRD_PARTY": "Composants tiers inclus dans le moteur",
 	"CREDITS_LICENSE": "METHOD HORROR © METHOD. Tous droits réservés.",

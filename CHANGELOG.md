@@ -5,7 +5,26 @@ dates are ISO 8601.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-19
+
 ### Added
+- **A horror interface.** Every menu now sits under a heavy vignette, film
+  grain, faint scanlines and a slow red glow, and the light fails for a
+  moment now and then. The title is printed in worn ink with a blood-red
+  echo that glitches, and titles have a dripping blood rule. New bundled
+  fonts: IM Fell English SC for titles, Special Elite (typewriter) for
+  buttons, tabs and captions, Crimson Pro for reading. Buttons are black
+  slabs with a blood-red edge, toggles are red switches. Reduced motion and
+  reduced flashing keep it still.
+- **Real furniture.** Cars, beds, sofas, chairs, tables, desks, cabinets,
+  shelves, crates, the stove, a grandfather clock, a wall clock and picture
+  frames are photo-scanned CC0 models from Poly Haven, fitted to the space
+  the old box furniture took, with the same collisions. Floors, walls,
+  wood, metal, fabric and concrete use CC0 photo textures from ambientCG,
+  with dust, streaks and wear in the surface shader.
+- **Imported monster models** for each map's enemy when the monster packs
+  are installed locally (they are not in the repository; the procedural
+  rigs remain the fallback).
 - **Choose your character.** Profile → Character picks who teammates see
   you as in co-op. Tsila joins Punky: short curly hair and a black METHOD
   jersey with neon-green trim, with the same six animations. The choice
@@ -128,6 +147,18 @@ dates are ISO 8601.
   names and focus on every menu screen, and caption coverage of every cue.
 
 ### Fixed
+- The enemy got stuck at doors on four of the five maps. Door panels no
+  longer trap it, it opens any shut door it is about to pass, navigation now
+  avoids hiding cabinets and locked doors, quick successive door unlocks no
+  longer leave its paths out of date, its clearance matches its body, and
+  furniture that sealed a doorway (Black Ward reception) and half of the
+  study (House) was moved. A new test walks it to every patrol point on
+  every map with the doors shut.
+- The interface theme never reached any screen (a window theme does not pass
+  into canvas layers): its colours, styles and fonts now apply everywhere.
+- A dropped item could fall inside a counter, out of sight and reach.
+- The school office clock went through the ceiling, and a hall picture in
+  the house hung in the middle of a doorway.
 - A crate stood in the house's garage doorway, so a player could not enter the
   garage, and through it the utility room, the stairwell and the basement.
   The waiting chairs in The Black Ward's observation corridor blocked
@@ -164,4 +195,5 @@ dates are ISO 8601.
   payload types/sizes), puzzle answers withheld from client snapshots, and
   lag-bounded crank timing.
 
-[Unreleased]: https://github.com/NorihyDev/method-horror-game/commits/main
+[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.3.0...main
+[0.3.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.3.0

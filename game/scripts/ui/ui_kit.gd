@@ -3,6 +3,24 @@ extends RefCounted
 ## Small widget factory so every screen shares spacing, typography and sound.
 
 const T = preload("res://scripts/ui/theme_factory.gd")
+const WORN_PRINT := """
+shader_type canvas_item;
+float h(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+float vn(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y);
+}
+void fragment() {
+	vec2 p = FRAGCOORD.xy;
+	float n = vn(p / 2.2) * 0.55 + vn(p / 7.0) * 0.45;
+	COLOR.a *= smoothstep(0.2, 0.34, n);
+	COLOR.rgb *= mix(0.78, 1.04, vn(p / 14.0));
+}
+"""
+
+static var _worn: ShaderMaterial
 
 
 static func label(text: String, size: int = T.FONT_BODY, color: Color = T.TEXT) -> Label:
@@ -30,7 +48,18 @@ static func para(text: String, size: int = T.FONT_BODY, color: Color = T.TEXT_DI
 static func title(text: String, size: int = T.FONT_H1) -> Label:
 	var l := label(text, size, T.TEXT)
 	l.add_theme_font_override("font", T.title_font())
+	l.material = _worn_print()
 	return l
+
+
+## Ink that did not take: speckled, slightly uneven letters (static).
+static func _worn_print() -> ShaderMaterial:
+	if _worn == null:
+		var sh := Shader.new()
+		sh.code = WORN_PRINT
+		_worn = ShaderMaterial.new()
+		_worn.shader = sh
+	return _worn
 
 
 static func heading(text: String) -> Label:
@@ -42,6 +71,7 @@ static func heading(text: String) -> Label:
 static func caption(text: String) -> Label:
 	var l := label(text, T.FONT_SMALL, T.TEXT_DIM)
 	l.uppercase = true
+	l.add_theme_font_override("font", T.type_font())
 	l.add_theme_constant_override("outline_size", 0)
 	return l
 
@@ -52,9 +82,9 @@ static func button(text: String, on_pressed: Callable, primary: bool = false, mi
 	b.custom_minimum_size = Vector2(min_width, T.MIN_TOUCH)
 	b.focus_mode = Control.FOCUS_ALL
 	if primary:
-		b.add_theme_stylebox_override("normal", T.flat(Color(T.CRIMSON, 0.85), T.CRIMSON_HI, 1, 2, 26, 12))
-		b.add_theme_stylebox_override("hover", T.flat(T.CRIMSON_HI, T.TEXT, 1, 2, 26, 12))
-		b.add_theme_stylebox_override("pressed", T.flat(Color(T.CRIMSON, 1.0).darkened(0.25), T.TEXT, 1, 2, 26, 12))
+		b.add_theme_stylebox_override("normal", T.edged(Color(T.CRIMSON, 0.88), T.CRIMSON_HI, 5, 26))
+		b.add_theme_stylebox_override("hover", T.edged(T.CRIMSON_HI, T.TEXT, 5, 26))
+		b.add_theme_stylebox_override("pressed", T.edged(T.CRIMSON.darkened(0.3), T.TEXT, 5, 26))
 	if on_pressed.is_valid():
 		b.pressed.connect(
 			func() -> void:
@@ -99,7 +129,7 @@ static func hbox(separation: int = 12) -> HBoxContainer:
 
 static func panel(padding: int = 24) -> PanelContainer:
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", T.flat(Color(T.SURFACE, 0.93), T.LINE, 1, 3, padding, padding))
+	p.add_theme_stylebox_override("panel", T.panel_box(padding, padding, 0.93))
 	return p
 
 
@@ -126,12 +156,9 @@ static func rule() -> ColorRect:
 	return r
 
 
-static func accent_bar(width: float = 64.0) -> ColorRect:
-	var r := ColorRect.new()
-	r.color = T.CRIMSON
-	r.custom_minimum_size = Vector2(width, 3)
-	r.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	return r
+## Dripping blood-red rule under titles.
+static func accent_bar(width: float = 64.0) -> Control:
+	return BloodRule.new(width)
 
 
 static func full_rect(c: Control) -> Control:

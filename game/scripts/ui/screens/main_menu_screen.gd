@@ -21,15 +21,12 @@ func build() -> void:
 	left.custom_minimum_size.x = 440
 	cols.add_child(left)
 	left.add_child(UI.spacer(10, true))
-	var studio := UI.caption("METHOD")
-	studio.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	studio.add_theme_color_override("font_color", ThemeFactory.DANGER)
-	left.add_child(studio)
-	var title := UI.title("GAME_TITLE", 64)
-	title.add_theme_constant_override("outline_size", 0)
-	left.add_child(title)
-	left.add_child(UI.accent_bar(140))
-	left.add_child(UI.spacer(14))
+	var tagline := UI.caption("MENU_TAGLINE")
+	tagline.add_theme_color_override("font_color", ThemeFactory.DANGER)
+	left.add_child(tagline)
+	left.add_child(HorrorTitle.new("GAME_TITLE", 66))
+	left.add_child(UI.accent_bar(260))
+	left.add_child(UI.spacer(4))
 	var snap := Saves.load_checkpoint()
 	if not snap.is_empty():
 		var map := Session.map_def(str(snap.get("map_id", "")))

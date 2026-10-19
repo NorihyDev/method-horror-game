@@ -38,6 +38,8 @@ var _dynres: DynamicResolution
 
 
 func _ready() -> void:
+	# Also set on each layer's top controls: a Window theme does not reach
+	# controls inside a CanvasLayer.
 	get_tree().root.theme = ThemeFactory.theme()
 	get_tree().quit_on_go_back = false
 	# UI keeps running while a solo match is paused; the world does not.
@@ -47,6 +49,9 @@ func _ready() -> void:
 	world_root.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(world_root)
 	screen_layer = _layer("Screens", 10)
+	var atmosphere := MenuAtmosphere.new()
+	atmosphere.app = self
+	_layer("Atmosphere", 15).add_child(atmosphere)
 	modal_layer = _layer("Modals", 20)
 	overlay_layer = _layer("Overlay", 30)
 	post_fx = PostFX.new()
@@ -54,6 +59,7 @@ func _ready() -> void:
 	var fx_layer := _layer("PostFX", 5)
 	fx_layer.add_child(post_fx)
 	captions = CaptionsOverlay.new()
+	captions.theme = ThemeFactory.theme()
 	overlay_layer.add_child(captions)
 	_toast_box = VBoxContainer.new()
 	_toast_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
@@ -61,6 +67,7 @@ func _ready() -> void:
 	_toast_box.alignment = BoxContainer.ALIGNMENT_BEGIN
 	_toast_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast_box.add_theme_constant_override("separation", 8)
+	_toast_box.theme = ThemeFactory.theme()
 	overlay_layer.add_child(_toast_box)
 	_fade = ColorRect.new()
 	_fade.color = Color(0, 0, 0, 1)
@@ -229,6 +236,8 @@ func show_modal(control: Control) -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	control.set_meta("dim", dim)
 	modal_layer.add_child(dim)
+	if control.theme == null:
+		control.theme = ThemeFactory.theme()
 	modal_layer.add_child(control)
 	_modal_stack.append(control)
 	if control is Container or control.get_child_count() > 0:
