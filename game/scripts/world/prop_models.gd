@@ -15,6 +15,7 @@ const MAX_STRETCH := 1.25
 static var _info: Dictionary = {}
 static var _scenes: Dictionary = {}
 static var _loaded := false
+static var _glass: StandardMaterial3D
 
 
 static func available(id: String) -> bool:
@@ -57,6 +58,36 @@ static func place(
 		mi.visibility_range_end_margin = 4.0
 		mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
 	return true
+
+
+## Places a flat model (a framed picture) centred on `center`, stretched to
+## `w` x `h` in the plane of `basis` (its +Z faces out of the wall).
+static func place_flat(b: GeoBuilder, id: String, center: Vector3, basis: Basis, w: float, h: float) -> bool:
+	if not available(id):
+		return false
+	var size: Array = _info[id]["size"]
+	var sx := w / maxf(float(size[0]), 0.01)
+	var sy := h / maxf(float(size[1]), 0.01)
+	var node := _scene(id).instantiate() as Node3D
+	node.transform = Transform3D(basis.scaled_local(Vector3(sx, sy, (sx + sy) * 0.5)), center - basis.y * h * 0.5)
+	b.root.add_child(node)
+	# Its tinted glass reads as a black pane in torchlight: clear, faint glass.
+	for mi: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false):
+		for i in mi.mesh.get_surface_count():
+			var mat := mi.mesh.surface_get_material(i)
+			if mat and mat.resource_name.contains("glass"):
+				mi.set_surface_override_material(i, _clear_glass())
+	return true
+
+
+static func _clear_glass() -> StandardMaterial3D:
+	if _glass == null:
+		_glass = StandardMaterial3D.new()
+		_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_glass.albedo_color = Color(0.9, 0.95, 1.0, 0.06)
+		_glass.roughness = 0.05
+		_glass.metallic_specular = 0.8
+	return _glass
 
 
 static func _scene(id: String) -> PackedScene:

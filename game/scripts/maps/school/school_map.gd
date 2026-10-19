@@ -279,7 +279,7 @@ func _props() -> void:
 	PropFactory.cabinet(b, Vector3(51.6, 0, 6.0), -90, 0.9, 1.1, 0.45, "metal_green")
 	PropFactory.shelf(b, Vector3(44.3, 0, 10.0), 90, 1.8, 2.0, 0.4, "dark_wood")
 	PropFactory.rug(b, Vector3(48.0, 0, 9.0), Vector2(3.0, 2.2))
-	PropFactory.clock(b, Vector3(48.0, 2.4, 4.1), 0)
+	PropFactory.wall_clock(b, Vector3(48.0, 2.45, 4.13), 0)
 	# Classroom D and the art store (east wing).
 	b.room = "class_d"
 	FinaleProps.chalkboard(b, Vector3(41.0, 0, 27.92), 180)

@@ -300,7 +300,8 @@ func _props() -> void:
 	b.room = "hallway"
 	PropFactory.cabinet(b, Vector3(5.0, 0, 7.3), 0, 1.2, 0.8, 0.35)
 	PropFactory.clock(b, Vector3(13.6, 0, 8.0), -90)
-	PropFactory.picture(b, Vector3(8.5, 1.6, 9.9), 180, 0.6, 0.8, -6.0)
+	# On the wall beside the dining doorway (it used to hang in the opening).
+	PropFactory.picture(b, Vector3(9.4, 1.6, 9.9), 180, 0.6, 0.8, -6.0)
 	PropFactory.picture(b, Vector3(1.0, 1.7, 7.1), 0, 0.5, 0.6, 3.0)
 	PropFactory.radiator(b, Vector3(5.2, 0, 9.8), 180, 1.0)
 	# Living
@@ -323,7 +324,8 @@ func _props() -> void:
 	PropFactory.table(b, Vector3(12.3, 0, 12.0), 0, 1.6, 0.8, "dark_wood")
 	PropFactory.chair(b, Vector3(12.3, 0, 12.8), 180)
 	PropFactory.shelf(b, Vector3(13.75, 0, 15.0), -90, 1.8, 2.2)
-	PropFactory.shelf(b, Vector3(10.3, 0, 13.0), 90, 1.4, 2.2)
+	# Further along the wall: beside the desk it closed the way to the back.
+	PropFactory.shelf(b, Vector3(10.3, 0, 15.4), 90, 1.4, 2.2)
 	PropFactory.debris(b, Vector3(12, 0, 15), 1.4, 9)
 	# Garage
 	b.room = "garage"

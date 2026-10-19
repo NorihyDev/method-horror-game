@@ -56,7 +56,25 @@ func approach(entity_id: String) -> void:
 		return
 	var origin := ent.interact_origin()
 	var spot := map.closest_nav_point(Vector3(origin.x, origin.y - 1.0, origin.z))
+	# Next to a wall the closest point can be on its far side: stand where
+	# the item can actually be seen, like a player would.
+	if not _sees(spot, origin):
+		var best := INF
+		for r: float in [0.6, 0.9, 1.2, 1.5]:
+			for i in 16:
+				var a := TAU * i / 16.0
+				var p := map.closest_nav_point(origin + Vector3(cos(a) * r, -1.0, sin(a) * r))
+				var d := p.distance_to(origin)
+				if d < best and d < 2.0 and _sees(p, origin):
+					best = d
+					spot = p
 	put(spot)
+
+
+func _sees(stand: Vector3, target: Vector3) -> bool:
+	var mask := GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP | DoorEntity.LAYER_DOOR
+	var q := PhysicsRayQueryParameters3D.create(stand + Vector3(0, 1.55, 0), target, mask)
+	return map.get_world_3d().direct_space_state.intersect_ray(q).is_empty()
 
 
 func put(pos: Vector3) -> void:

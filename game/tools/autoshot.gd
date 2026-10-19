@@ -22,6 +22,8 @@ const SHOTS := {
 		["10_cage_keypad", Vector3(16.0, -3.15, 21.5), 0.25, -0.05, true],
 		["11_dining_lit", Vector3(12.8, 0.05, 6.0), 0.9, -0.1, true],
 		["12_study", Vector3(11.0, 0.05, 11.0), -2.6, -0.1, true],
+		["13_dining_clock", Vector3(11.6, 0.05, 8.3), -PI / 2, -0.05, true],
+		["14_hall_picture", Vector3(9.2, 0.05, 8.4), PI, 0.08, true],
 	],
 	"black_ward":
 	[

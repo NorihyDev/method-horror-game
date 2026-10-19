@@ -86,7 +86,10 @@ func _ready() -> void:
 	_rng.randomize()
 	add_to_group("enemies")
 	collision_layer = LAYER_ENEMY
-	collision_mask = GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP | DoorEntity.LAYER_DOOR
+	# Unlocked door panels never block it (it shoves them open as it comes;
+	# a half-swung panel used to pin it in the frame). Locked panels are on
+	# LAYER_WORLD as well, so they still stop it.
+	collision_mask = GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP
 	floor_max_angle = deg_to_rad(46)
 	floor_snap_length = 0.5
 	var cs := CollisionShape3D.new()
@@ -617,25 +620,27 @@ func _open_doors_ahead(dir: Vector3) -> void:
 	_door_timer -= get_physics_process_delta_time()
 	if _door_timer > 0.0:
 		return
-	_door_timer = 0.2
-	var from := global_position + Vector3(0, 1.1, 0)
-	var q := PhysicsRayQueryParameters3D.create(
-		from, from + dir * 1.4, DoorEntity.LAYER_DOOR | Interactable.LAYER_INTERACT
-	)
-	q.exclude = [get_rid()]
-	var hit := get_world_3d().direct_space_state.intersect_ray(q)
-	if hit.is_empty():
+	_door_timer = 0.15
+	# Any shut, unlocked door it is about to pass: near, and ahead of it or
+	# right beside it (doors met at an angle or while turning a corner).
+	for e in match_ctrl.entities.values():
+		if not e is DoorEntity:
+			continue
+		var door: DoorEntity = e
+		if door.is_locked() or door.is_open():
+			continue
+		var to := door.interact_origin() - global_position
+		to.y = 0.0
+		var dist := to.length()
+		if absf(door.interact_origin().y - global_position.y - 1.1) > 1.5 or dist > 1.9:
+			continue
+		if dist > 1.0 and to.normalized().dot(dir) < 0.2:
+			continue
+		door.enemy_open()
+		match_ctrl.emit_noise(door.interact_origin(), 6.0, "door")
+		rig.play("open_door", 0.1)
+		_pause = 0.45
 		return
-	var n: Node = hit["collider"]
-	while n and not n is DoorEntity:
-		n = n.get_parent()
-	if n is DoorEntity:
-		var door: DoorEntity = n
-		if not door.is_locked() and not door.is_open():
-			door.enemy_open()
-			match_ctrl.emit_noise(door.interact_origin(), 6.0, "door")
-			rig.play("open_door", 0.1)
-			_pause = 0.45
 
 
 func _check_stuck(delta: float) -> void:

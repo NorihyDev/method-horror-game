@@ -222,7 +222,8 @@ func _props() -> void:
 	b.room = "reception"
 	FacilityProps.reception_desk(b, Vector3(12.0, 0, 6.2), 0, 4.0)
 	FacilityProps.waiting_chairs(b, Vector3(12.0, 0, 0.75), 0, 5)
-	FacilityProps.waiting_chairs(b, Vector3(8.75, 0, 3.0), -90, 3)
+	# Clear of the bay door (3.2-4.8), which they used to block.
+	FacilityProps.waiting_chairs(b, Vector3(8.75, 0, 6.1), -90, 3)
 	PropFactory.picture(b, Vector3(15.9, 1.7, 3.5), -90, 1.2, 0.8, 0.0)
 	PropFactory.debris(b, Vector3(12, 0, 3.5), 2.5, 10)
 	b.room = "triage"

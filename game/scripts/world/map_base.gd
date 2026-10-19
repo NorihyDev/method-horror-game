@@ -6,6 +6,7 @@ extends Node3D
 const WATCHER_SCRIPT := "res://scripts/ai/watcher.gd"
 const PLAYER_SCRIPT := "res://scripts/player/player_controller.gd"
 const MIN_ENEMY_SPAWN_DISTANCE := 12.0
+const NAV_SOURCE_GROUP := &"nav_source"
 
 var definition: MapDefinition
 var match_ctrl: MatchController
@@ -28,6 +29,7 @@ var rooms: Dictionary = {}
 var lamps: Array[FlickerLight] = []
 var power_on := false
 var _particles: Array[GPUParticles3D] = []
+var _rebake_queued := false
 
 
 func _init() -> void:
@@ -41,13 +43,18 @@ func prepare() -> void:
 	var nm := NavigationMesh.new()
 	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	nm.geometry_collision_mask = GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP
-	nm.geometry_source_geometry_mode = NavigationMesh.SOURCE_GEOMETRY_ROOT_NODE_CHILDREN
+	# Level geometry and entities (hiding-spot cabinets, locked door panels)
+	# both shape the mesh; entities used to be left out, so paths ran
+	# straight through lockers and the enemy walked into them.
+	nm.geometry_source_geometry_mode = NavigationMesh.SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN
+	nm.geometry_source_group_name = NAV_SOURCE_GROUP
 	nm.cell_size = 0.1
 	nm.cell_height = 0.1
-	# Whole numbers of cells (the baker rounds anything else): 5 cells = 0.5 m
-	# radius, 3 cells = 0.3 m climb. The epsilon keeps float division from
-	# flooring 3 cells to 2.
-	nm.agent_radius = 5 * nm.cell_size
+	# Whole numbers of cells (the baker rounds anything else): 4 cells = 0.4 m
+	# radius (the enemy capsule is 0.38; 0.5 sealed 1.1 m doorways and the
+	# gaps beside furniture), 3 cells = 0.3 m climb. The epsilon keeps float
+	# division from flooring 3 cells to 2.
+	nm.agent_radius = 4 * nm.cell_size
 	nm.agent_height = 19 * nm.cell_height
 	nm.agent_max_climb = 3 * nm.cell_height + 0.000001
 	nm.agent_max_slope = 42.0
@@ -56,6 +63,8 @@ func prepare() -> void:
 	builder = GeoBuilder.new(nav_region)
 	lights_root = _child("Lights")
 	entities_root = _child("Entities")
+	nav_region.add_to_group(NAV_SOURCE_GROUP)
+	entities_root.add_to_group(NAV_SOURCE_GROUP)
 	players_root = _child("Players")
 	enemies_root = _child("Enemies")
 	world_env = WorldEnvironment.new()
@@ -252,8 +261,15 @@ func _dress() -> void:
 
 ## Re-bakes navigation (e.g. after a locked door opens). Runs on a thread.
 func rebake_navigation() -> void:
+	# Doors unlocked while a bake runs share one follow-up bake (each used to
+	# start its own the moment the first finished; all but one were dropped
+	# and the enemy's paths kept treating those doors as walls).
 	if nav_region.is_baking():
+		if _rebake_queued:
+			return
+		_rebake_queued = true
 		await nav_region.bake_finished
+		_rebake_queued = false
 	nav_region.bake_navigation_mesh(true)
 
 
@@ -421,12 +437,14 @@ func spawn_dropped_item(mc: MatchController, id: String, item: String, pos: Vect
 func safe_drop_position(player_pos: Vector3, yaw: float) -> Vector3:
 	var forward := Vector3(-sin(yaw), 0, -cos(yaw))
 	var space := get_world_3d().direct_space_state
+	# Furniture counts too: an item used to drop inside a counter, out of sight.
+	var solid := GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP
 	for dist: float in [0.8, 0.5, 0.0]:
 		var p := player_pos + forward * dist + Vector3(0, 1.0, 0)
-		var q := PhysicsRayQueryParameters3D.create(player_pos + Vector3(0, 1.0, 0), p, 1 | 16)
+		var q := PhysicsRayQueryParameters3D.create(player_pos + Vector3(0, 1.0, 0), p, solid | DoorEntity.LAYER_DOOR)
 		if dist > 0.0 and not space.intersect_ray(q).is_empty():
 			continue
-		var down := PhysicsRayQueryParameters3D.create(p, p + Vector3(0, -3.0, 0), 1)
+		var down := PhysicsRayQueryParameters3D.create(p, p + Vector3(0, -3.0, 0), solid)
 		var hit := space.intersect_ray(down)
 		if not hit.is_empty():
 			return hit["position"] + Vector3(0, 0.02, 0)

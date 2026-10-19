@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://c2uw02xwdyc4o"
-valid=false
+uid="uid://c53k74x5i60ok"
+path="res://.godot/imported/sofa_03.glb-e4cc550bf55b025d2b200c6b095a58b6.scn"
 
 [deps]
 
 source_file="res://assets/props/sofa_03.glb"
+dest_files=["res://.godot/imported/sofa_03.glb-e4cc550bf55b025d2b200c6b095a58b6.scn"]
 
 [params]
 

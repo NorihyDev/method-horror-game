@@ -254,6 +254,9 @@ static func fireplace(b: GeoBuilder, pos: Vector3, rot: float) -> void:
 
 
 static func clock(b: GeoBuilder, pos: Vector3, rot: float) -> void:
+	if PropModels.place(b, "vintage_grandfather_clock_01", pos, rot, Vector3(0.5, 1.95, 0.34)):
+		solid(b, pos, rot, Vector3(0, 0.95, 0), Vector3(0.5, 1.9, 0.32))
+		return
 	part(b, pos, rot, Vector3(0, 0.95, 0), Vector3(0.5, 1.9, 0.32), "dark_wood", true)
 	part(b, pos, rot, Vector3(0, 1.6, 0.165), Vector3(0.32, 0.32, 0.01), "painted_wood")
 	part(b, pos, rot, Vector3(0, 0.9, 0.165), Vector3(0.3, 0.7, 0.01), "metal_dark")
@@ -261,6 +264,10 @@ static func clock(b: GeoBuilder, pos: Vector3, rot: float) -> void:
 
 static func picture(b: GeoBuilder, pos: Vector3, rot: float, w: float, h: float, tilt: float = 0.0) -> void:
 	var basis := _basis(rot) * Basis(Vector3.BACK, deg_to_rad(tilt))
+	# The real frame is a portrait; landscape ones stay boxes (stretching it
+	# sideways would squash the painting).
+	if h >= w * 0.95 and PropModels.place_flat(b, "hanging_picture_frame_01", pos, basis, w, h):
+		return
 	b.box(pos, Vector3(w, h, 0.04), "dark_wood", false, GeoBuilder.FACE_ALL, basis, false)
 	b.box(
 		pos + _basis(rot) * Vector3(0, 0, 0.022),
@@ -271,6 +278,14 @@ static func picture(b: GeoBuilder, pos: Vector3, rot: float, w: float, h: float,
 		basis,
 		false
 	)
+
+
+## Round clock hung on a wall, centred on `pos`, face towards local +Z.
+static func wall_clock(b: GeoBuilder, pos: Vector3, rot: float) -> void:
+	if PropModels.place_flat(b, "wall_clock", pos, _basis(rot), 0.4, 0.4):
+		return
+	part(b, pos, rot, Vector3(0, 0, 0), Vector3(0.36, 0.36, 0.05), "painted_wood")
+	part(b, pos, rot, Vector3(0, 0, 0.03), Vector3(0.3, 0.3, 0.01), "metal_dark")
 
 
 ## Planks nailed across a window opening. `axis_x` = wall runs along X.

@@ -55,6 +55,14 @@
   ],
   "tris": 4000
  },
+ "hanging_picture_frame_01": {
+  "size": [
+   0.594,
+   0.841,
+   0.016
+  ],
+  "tris": 2586
+ },
  "metal_office_desk": {
   "size": [
    2.0,
@@ -127,6 +135,14 @@
   ],
   "tris": 4000
  },
+ "wall_clock": {
+  "size": [
+   0.32,
+   0.32,
+   0.047
+  ],
+  "tris": 3658
+ },
  "wooden_bookshelf_worn": {
   "size": [
    1.374,
@@ -156,6 +172,14 @@
    0.915,
    1.9,
    0.6
+  ],
+  "tris": 4000
+ },
+ "vintage_grandfather_clock_01": {
+  "size": [
+   0.626,
+   2.191,
+   0.427
   ],
   "tris": 4000
  }

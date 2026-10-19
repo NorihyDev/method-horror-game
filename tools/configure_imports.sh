@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Applies project import conventions to generated assets (idempotent).
 # Run after generating new textures/audio and after a first `--import`, then re-import.
-#  - Textures (generated and character): VRAM compressed (S3TC/BPTC desktop, ETC2/ASTC mobile), mipmaps, normal-map flag.
+#  - Textures (generated, character, monster and prop): VRAM compressed (S3TC/BPTC desktop, ETC2/ASTC mobile), mipmaps, normal-map flag.
 #  - Audio: *_loop.wav loop forward; everything else QOA compressed (default).
 set -euo pipefail
 cd "$(dirname "$0")/../game"
@@ -18,7 +18,7 @@ for f in assets/generated/decals/*.png.import; do
          -e 's/^mipmaps\/generate=.*/mipmaps\/generate=true/' \
          -e 's/^detect_3d\/compress_to=.*/detect_3d\/compress_to=0/' "$f"
 done
-for f in assets/characters/*/*.webp.import assets/monsters/*/*.webp.import; do
+for f in assets/characters/*/*.webp.import assets/monsters/*/*.webp.import assets/props/*.webp.import; do
   sed -i -e 's/^compress\/mode=.*/compress\/mode=2/' \
          -e 's/^detect_3d\/compress_to=.*/detect_3d\/compress_to=0/' "$f"
 done
