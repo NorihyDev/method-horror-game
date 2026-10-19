@@ -61,6 +61,12 @@ const CHARACTERS := {
 		"scene": "res://assets/characters/kanzaki/kanzaki.glb",
 		"portrait": "res://assets/characters/kanzaki/portrait.png",
 	},
+	"loss":
+	{
+		"name": "Loss",
+		"scene": "res://assets/characters/loss/loss.glb",
+		"portrait": "res://assets/characters/loss/portrait.png",
+	},
 }
 
 

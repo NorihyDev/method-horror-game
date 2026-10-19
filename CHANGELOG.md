@@ -5,6 +5,11 @@ dates are ISO 8601.
 
 ## [Unreleased]
 
+### Added
+- **Loss**, a new character (Profile → Character), built from his photo with
+  his agreement: buzz cut and a royal-blue METHOD jersey with white trim,
+  like his own shirt. `make_jersey.py` takes an optional cloth colour.
+
 ## [0.4.0] - 2026-10-19
 
 ### Added

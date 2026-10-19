@@ -2,7 +2,7 @@
 with neon-green trim and a METHOD badge, and turns the jeans into dark
 trousers. Keeps the cloth's shading so it still reads as fabric.
 
-python -I make_jersey.py <male_casualsuit04_diffuse.png> <out.png> [classic|pro]
+python -I make_jersey.py <male_casualsuit04_diffuse.png> <out.png> [classic|pro] [accent hex] [cloth hex]
 "classic" (Tsila): round green collar, badge, straight side flashes.
 "pro" (Mianja): V-neck, METHOD on both shoulders, grey slashes, sleeve "M",
 green cuffs and a larger badge, like the team's match jersey.
@@ -19,6 +19,9 @@ STYLE = sys.argv[3] if len(sys.argv) > 3 else "classic"
 # Optional 4th argument: accent colour as hex (default METHOD green), and
 # "+flag" in the style adds a Madagascar flag on the left sleeve.
 ACCENT = sys.argv[4].lstrip("#") if len(sys.argv) > 4 else "1eeb6e"
+# Optional 5th argument: the cloth colour as hex (default black; Loss wears
+# royal blue with white trim, like his own shirt).
+BASE = sys.argv[5].lstrip("#") if len(sys.argv) > 5 else "101211"
 FLAG = STYLE.endswith("+flag")
 STYLE = STYLE.replace("+flag", "")
 GREEN = np.array([int(ACCENT[i : i + 2], 16) for i in (0, 2, 4)], dtype=np.float32)
@@ -34,7 +37,8 @@ detail = (lum - lum[top].mean()) * 0.25
 orange = (r > 170) & (g > 70) & (g < 190) & (b < 110)
 shirt = top & (b - r > 45) & (b > 100)
 out = img.copy()
-black = np.stack([16 + detail, 18 + detail, 17 + detail], axis=-1)
+base = [int(BASE[i : i + 2], 16) for i in (0, 2, 4)]
+black = np.stack([base[0] + detail, base[1] + detail, base[2] + detail], axis=-1)
 out[shirt] = black[shirt]
 out[orange] = GREEN * np.clip(lum[orange] / 200.0, 0.75, 1.1)[:, None]
 # The darker blue collar ribbing turns green like the trim.
@@ -97,7 +101,7 @@ if STYLE == "baseball":
     sys.exit(0)
 sx, sy = w / 768.0, h / 768.0
 cx, cy = 428 * sx, 128 * sy
-d.ellipse([cx - 52 * sx, cy - 52 * sy, cx + 52 * sx, cy + 52 * sy], fill=(16, 18, 17))
+d.ellipse([cx - 52 * sx, cy - 52 * sy, cx + 52 * sx, cy + 52 * sy], fill=tuple(base))
 try:
     font = ImageFont.truetype("arialbd.ttf", int(30 * sx))
     small = ImageFont.truetype("arialbd.ttf", int(14 * sx))
@@ -135,7 +139,7 @@ if STYLE == "pro":
     # V-neck: a green V under the collar, black inside.
     vx, vy = 428 * sx, 30 * sy
     d.polygon([(vx - 26 * sx, vy), (vx + 26 * sx, vy), (vx, vy + 42 * sy)], fill=G)
-    d.polygon([(vx - 16 * sx, vy), (vx + 16 * sx, vy), (vx, vy + 27 * sy)], fill=(16, 18, 17))
+    d.polygon([(vx - 16 * sx, vy), (vx + 16 * sx, vy), (vx, vy + 27 * sy)], fill=tuple(base))
     # METHOD along both front shoulders, with piping under it.
     for ox in (-66, 66):
         d.text(((428 + ox) * sx, 62 * sy), "METHOD", font=small, fill=G, anchor="mm")
