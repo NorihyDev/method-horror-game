@@ -454,4 +454,26 @@ func safe_drop_position(player_pos: Vector3, yaw: float) -> Vector3:
 func player_spawn(index: int) -> Transform3D:
 	if player_spawns.is_empty():
 		return Transform3D.IDENTITY
-	return player_spawns[index % player_spawns.size()]
+	var n := player_spawns.size()
+	if index < n:
+		return player_spawns[index]
+	# More players than spawn points (up to 10): the nearest free spot around
+	# a shared spawn point, on walkable floor and apart from everyone else.
+	var taken: Array[Vector3] = []
+	for k in index:
+		taken.append(player_spawn(k).origin)
+	var t: Transform3D = player_spawns[index % n]
+	for radius: float in [0.8, 1.2, 1.6, 2.0]:
+		for step in 8:
+			var a := TAU * step / 8.0
+			var p := t.origin + (t.basis.x * cos(a) + t.basis.z * sin(a)) * radius
+			if nav_region and navigation_ready():
+				var on_floor := closest_nav_point(p)
+				if Vector2(on_floor.x - p.x, on_floor.z - p.z).length() > 0.3:
+					continue
+			var free := true
+			for q in taken:
+				free = free and p.distance_to(q) > 0.6
+			if free:
+				return Transform3D(t.basis, p)
+	return t

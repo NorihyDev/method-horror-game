@@ -132,7 +132,7 @@ static func from_snapshot(data: Dictionary) -> MatchState:
 	s.map_id = str(data.get("map_id", ""))
 	s.difficulty_id = str(data.get("difficulty_id", ""))
 	s.rng_seed = int(data.get("seed", 0))
-	s.player_count = clampi(int(data.get("player_count", 1)), 1, 6)
+	s.player_count = clampi(int(data.get("player_count", 1)), 1, NetProtocol.MAX_PLAYERS)
 	s.phase = clampi(int(data.get("phase", 0)), 0, Phase.ENDED) as Phase
 	s.elapsed = maxf(0.0, float(data.get("elapsed", 0.0)))
 	s.flags = _dict(data.get("flags"))

@@ -50,7 +50,7 @@ func test_malformed_snapshot_is_sanitized_or_rejected() -> void:
 	}
 	var s := MatchState.from_snapshot(weird)
 	assert_true(s != null)
-	assert_eq(s.player_count, 6)
+	assert_eq(s.player_count, NetProtocol.MAX_PLAYERS)
 	assert_eq(int(s.phase), int(MatchState.Phase.ENDED))
 	assert_eq(s.elapsed, 0.0)
 	assert_true(s.flags.is_empty())

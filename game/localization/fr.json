@@ -615,7 +615,7 @@
 
 	"MP_INSECURE_SERVICE": "Salons en ligne désactivés : le service de lobby configuré n’utilise pas HTTPS.",
 	"MP_MAX_PLAYERS": "Joueurs",
-	"MP_MAX_PLAYERS_TIP": "Jusqu’à 4 joueurs. L’appareil du créateur fait tourner la partie pour tout le monde : gardez-le chargé et bien connecté.",
+	"MP_MAX_PLAYERS_TIP": "Jusqu’à 10 joueurs. L’appareil du créateur fait tourner la partie pour tout le monde : gardez-le chargé et bien connecté.",
 	"MP_PASSWORD": "Mot de passe du salon",
 	"MP_PASSWORD_OPTIONAL": "Facultatif (4 à 32 caractères)",
 	"MP_PASSWORD_IF_SET": "Seulement si le salon en a un",

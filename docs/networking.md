@@ -8,7 +8,7 @@ model is in [security.md](security.md).
 
 | Piece | State |
 |---|---|
-| **Online rooms over the internet** (create with a 6-digit code, join from any network, 2–4 players) | Implemented through the **METHOD relay** (Cloudflare Worker + one Durable Object per room, `services/relay`). **Deployed** at `https://method-horror-relay.norihyapp.workers.dev`. Verified with two Godot clients through the deployed relay (see *Verification*) |
+| **Online rooms over the internet** (create with a 6-digit code, join from any network, 2–10 players) | Implemented through the **METHOD relay** (Cloudflare Worker + one Durable Object per room, `services/relay`). **Deployed** at `https://method-horror-relay.norihyapp.workers.dev`. Verified with two Godot clients through the deployed relay (see *Verification*) |
 | Phones on **different networks** | **Not yet tried**: the deployed test ran both clients on one PC (same network). Instructions: [deployment.md](deployment.md#testing-with-two-phones-on-different-networks) |
 | Authority | The **room creator's device** runs the match (rules, enemy AI, physics) and is authoritative for the room; guests send intentions only. The relay checks membership, roles, sizes and rates, never game rules |
 | Reconnect | A dropped guest rejoins its slot with a full snapshot, while the host is still there |
@@ -151,7 +151,7 @@ Unknown reasons fall back to a generic message.
 
 | Command | What it shows |
 |---|---|
-| `cd services/relay && npm test` | Relay protocol: codes, create validation (2–4 players), frame encoding, routing (guests reach only the host), control messages, rate buckets |
+| `cd services/relay && npm test` | Relay protocol: codes, create validation (2–10 players), frame encoding, routing (guests reach only the host), control messages, rate buckets |
 | `RELAY_URL=<url> node scripts/check-relay.ts` | 20 checks against a running relay, over real WebSockets: no host yet, wrong host token, second host, wrong password, protocol mismatch, a full room, sender stamping, guest→guest blocked, broadcast/exclude/direct, oversize frame closes the socket, only the host kicks, flood rate-limited, host departure closes the room and deletes it |
 | `GODOT_BIN=… RELAY_URL=<url> npm run e2e` | **Two separate Godot processes** through the relay, driving the real screens. The guest is refused for a wrong password and an unknown code, then joins by code and readies; the owner starts. Then: host interaction replicated; monster simulated by the host and moving on the guest; guest movement reaches the host; guest drops and rejoins its slot with the match state; host finishes the match and the guest gets the results; in a second room, the host leaves and the guest is told |
 | `tools/godot.sh --headless --path game -- --test --filter=multiplayer` | In-process server + clients over real localhost ENet (the same NetBridge logic): lobby, ready/start barrier, late join refused, replicated interaction, pickup race, cheating attempts ignored, reconnect with state, six-player sync, Maps 2–5 replication |

@@ -57,7 +57,9 @@ func rage(minutes: float) -> float:
 
 
 func scaled_hearing(player_count: int) -> float:
-	return enemy_hearing * (1.0 + 0.08 * maxf(0, player_count - 1))
+	# Grows with the group, but stops growing past 7 players (10 would make
+	# the enemy hear everything).
+	return enemy_hearing * (1.0 + 0.08 * clampf(player_count - 1, 0, 6))
 
 
 func scaled_cooldown(player_count: int) -> float:

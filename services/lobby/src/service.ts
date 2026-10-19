@@ -129,7 +129,7 @@ export class LobbyService {
     if (!DIFFICULTIES.has(difficultyId)) throw new ApiError(400, "DIFFICULTY_INVALID");
     const unlocked = this.unlockedMaps(user.id);
     if (!unlocked.includes(mapId)) throw new ApiError(403, "MAP_LOCKED");
-    const maxPlayers = clampInt(body.max_players, 1, 6);
+    const maxPlayers = clampInt(body.max_players, 1, 10);
     let passwordHash: string | null = null;
     if (body.password !== undefined && body.password !== null && body.password !== "") {
       if (typeof body.password !== "string" || body.password.length < 4 || body.password.length > 64) {

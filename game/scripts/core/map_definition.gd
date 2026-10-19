@@ -16,7 +16,7 @@ enum Status { PLAYABLE, COMING_LATER }
 ## Script extending MapRules that declares objectives/zones/items.
 @export var rules_script: Script
 @export var supported_difficulties: Array[StringName] = [&"story", &"normal", &"hard", &"nightmare"]
-@export_range(1, 6) var max_players: int = 6
+@export_range(1, 10) var max_players: int = 10
 @export var is_tutorial: bool = false
 @export var estimated_minutes: int = 20
 ## Map that must be escaped first (offline: on this device; online: verified

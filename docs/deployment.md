@@ -49,7 +49,7 @@ one PC.
 2. Install it on both phones: `adb install -r builds/android/method_horror_debug.apk`, or copy the APK over and open it with *Install unknown apps* allowed.
 3. Put the phones on **different networks**: phone A on home Wi‑Fi, phone B with Wi‑Fi **off** on mobile data.
 4. Unlock the map on phone A if needed (online rooms offer the creator's unlocked maps; *The Abandoned House* is always available).
-5. **Phone A:** *Multiplayer → Online → Create room*. Choose the map, difficulty and 2–4 players, and optionally a password. The lobby shows a 6-digit code.
+5. **Phone A:** *Multiplayer → Online → Create room*. Choose the map, difficulty and 2–10 players, and optionally a password. The lobby shows a 6-digit code.
 6. **Phone B:** *Multiplayer → Online → Join room*. Enter the code (and password) and tap *Ready*. Phone A's lobby lists both players with B ready.
 7. **Phone A:** *Start*. Both phones load the same map and begin together.
 8. Check:

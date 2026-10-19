@@ -19,7 +19,7 @@ export const HEADER_BYTES = 7;
 export const HOST_ID = 1;
 export const MIN_PLAYERS = 2;
 /** The host's phone simulates the match (enemy AI, physics) for everyone. */
-export const MAX_PLAYERS = 4;
+export const MAX_PLAYERS = 10;
 export const CODE_LENGTH = 6;
 export const MAX_PASSWORD = 32;
 

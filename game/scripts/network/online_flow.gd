@@ -16,7 +16,7 @@ signal begun
 enum Kind { ONLINE, LAN_HOST, LAN_CLIENT }
 
 ## The host's device runs the match for everyone: rooms hold four players.
-const LAN_MAX_PLAYERS := 4
+const LAN_MAX_PLAYERS := 10
 ## How long the room creator waits for the relay to admit them.
 const RELAY_CONNECT_SECONDS := 15.0
 

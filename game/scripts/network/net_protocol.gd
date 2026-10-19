@@ -6,7 +6,7 @@ extends RefCounted
 
 const DEFAULT_PORT := 24600
 const LAN_PORT := 24610
-const MAX_PLAYERS := 6
+const MAX_PLAYERS := 10
 const AUTH_TIMEOUT := 5.0
 const RECONNECT_WINDOW := 60.0
 const LOAD_TIMEOUT := 60.0
@@ -16,7 +16,7 @@ const MOTION_INTERVAL := 0.05
 ## Online (relay) rooms: the room creator's device simulates for everyone, so
 ## four players at most; lower rates keep a match inside the relay's free
 ## daily quota (incoming WebSocket messages are billed 20 to 1 request).
-const RELAY_MAX_PLAYERS := 4
+const RELAY_MAX_PLAYERS := 10
 const RELAY_BROADCAST_HZ := 10.0
 const RELAY_MOTION_INTERVAL := 0.08
 const TIME_SYNC_SECONDS := 2.0

@@ -786,17 +786,15 @@ func _server_tick(delta: float) -> void:
 	_broadcast_timer -= delta
 	if _broadcast_timer <= 0.0:
 		_broadcast_timer = 1.0 / broadcast_hz
-		_rpc_all_unreliable("_s_players", [NetProtocol.players_packet(mc.state.players)])
+		_rpc_all("_s_players", [NetProtocol.players_packet(mc.state.players)])
 		for e in mc.enemies:
 			if is_instance_valid(e) and e is Watcher:
 				var w: Watcher = e
-				_rpc_all_unreliable(
-					"_s_enemy", [str(w.name), w.global_position, w.rotation.y, w.net_anim(), w.net_lens()]
-				)
+				_rpc_all("_s_enemy", [str(w.name), w.global_position, w.rotation.y, w.net_anim(), w.net_lens()])
 	_time_timer -= delta
 	if _time_timer <= 0.0:
 		_time_timer = NetProtocol.TIME_SYNC_SECONDS
-		_rpc_all_unreliable("_s_time", [mc.state.elapsed])
+		_rpc_all("_s_time", [mc.state.elapsed])
 
 
 func _on_enemy_spawned(enemy: Node) -> void:
@@ -1182,13 +1180,14 @@ func uid_of(pid: int) -> String:
 func _rpc_all(method: String, args: Array) -> void:
 	if _mp == null or _mp.multiplayer_peer == null or _peers.is_empty():
 		return
+	# Over the relay one frame reaches every guest (a frame per guest each tick
+	# would hit the relay's rate limit with up to 9 guests).
+	if trust == Trust.RELAY_HOST and _peers.values().all(func(p: Dictionary) -> bool: return bool(p["connected"])):
+		callv("rpc", [method] + args)
+		return
 	for peer in _peers:
 		if bool(_peers[peer]["connected"]):
 			_rpc_to(int(peer), method, args)
-
-
-func _rpc_all_unreliable(method: String, args: Array) -> void:
-	_rpc_all(method, args)
 
 
 func _rpc_to(peer: int, method: String, args: Array) -> void:

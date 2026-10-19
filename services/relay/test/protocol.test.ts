@@ -39,7 +39,8 @@ test("create requests are validated", () => {
   });
   assert.equal((parseCreate({ proto: PROTOCOL }) as { max_players: number }).max_players, MAX_PLAYERS);
   assert.deepEqual(parseCreate({ proto: 99, max_players: 2 }), { error: "VERSION" });
-  assert.deepEqual(parseCreate({ proto: PROTOCOL, max_players: 5 }), { error: "BAD_REQUEST" }, "four players max");
+  assert.deepEqual(parseCreate({ proto: PROTOCOL, max_players: 10 }).max_players, 10, "ten players allowed");
+  assert.deepEqual(parseCreate({ proto: PROTOCOL, max_players: 11 }), { error: "BAD_REQUEST" }, "ten players max");
   assert.deepEqual(parseCreate({ proto: PROTOCOL, max_players: 1 }), { error: "BAD_REQUEST" });
   assert.deepEqual(parseCreate({ proto: PROTOCOL, max_players: 2.5 }), { error: "BAD_REQUEST" });
   assert.deepEqual(parseCreate({ proto: PROTOCOL, password: "a".repeat(33) }), { error: "BAD_REQUEST" });

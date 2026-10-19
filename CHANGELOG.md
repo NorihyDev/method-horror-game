@@ -6,9 +6,19 @@ dates are ISO 8601.
 ## [Unreleased]
 
 ### Added
+- **Up to 10 players** in an online room (was 4), through the redeployed
+  relay. Players beyond a map's six spawn points start beside them on free
+  floor; over the relay the host sends one update for everyone instead of
+  one per guest, and the enemy's hearing stops growing past seven players.
 - **Loss**, a new character (Profile → Character), built from his photo with
   his agreement: buzz cut and a royal-blue METHOD jersey with white trim,
   like his own shirt. `make_jersey.py` takes an optional cloth colour.
+
+### Fixed
+- Every character's hair now follows a natural hairline all round (temples,
+  sideburns, over the ears, down to the nape) and thins out at its edge, instead
+  of ending in a straight helmet edge at the back; the body's neck now meets
+  the head under the jaw, so no gap shows the inside of the collar.
 
 ## [0.4.0] - 2026-10-19
 

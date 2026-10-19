@@ -615,7 +615,7 @@
 
 	"MP_INSECURE_SERVICE": "Online rooms are disabled: the configured lobby service does not use HTTPS.",
 	"MP_MAX_PLAYERS": "Players",
-	"MP_MAX_PLAYERS_TIP": "Up to 4 players. The room creator's device runs the match for everyone, so keep it charged and on a steady connection.",
+	"MP_MAX_PLAYERS_TIP": "Up to 10 players. The room creator's device runs the match for everyone, so keep it charged and on a steady connection.",
 	"MP_PASSWORD": "Room password",
 	"MP_PASSWORD_OPTIONAL": "Optional (4–32 characters)",
 	"MP_PASSWORD_IF_SET": "Only if the room has one",
