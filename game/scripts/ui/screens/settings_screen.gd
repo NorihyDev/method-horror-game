@@ -76,6 +76,14 @@ func _on_external_change(key: String, _v: Variant) -> void:
 func _render() -> void:
 	for i in _tab_buttons.size():
 		_tab_buttons[i].button_pressed = i == _tab
+	# Rebuilding frees the focused control: remember its row to focus it again
+	# (a controller had nothing focused after a preset change or a rebind).
+	var row := -1
+	var f := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	while f and f.get_parent() != _content:
+		f = f.get_parent() as Control
+	if f:
+		row = f.get_index()
 	for c in _content.get_children():
 		c.queue_free()
 	var cat: String = TABS[_tab][1]
@@ -86,6 +94,8 @@ func _render() -> void:
 		_content.add_child(_row(key, spec))
 	if cat == Settings.CAT_CONTROLS:
 		_controls_extras()
+	if row >= 0:
+		_refocus.call_deferred(row)
 	if cat == Settings.CAT_GAMEPLAY:
 		_content.add_child(UI.spacer(8))
 		_content.add_child(UI.para("SET_MP_NOTE", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_FAINT))
@@ -250,3 +260,10 @@ func handle_back() -> bool:
 	if not _rebinding.is_empty():
 		return true
 	return false
+
+
+func _refocus(row: int) -> void:
+	var rows := _content.get_children().filter(func(c: Node) -> bool: return not c.is_queued_for_deletion())
+	if rows.is_empty():
+		return
+	focus_first(rows[mini(row, rows.size() - 1)])

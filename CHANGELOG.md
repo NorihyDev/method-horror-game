@@ -5,6 +5,8 @@ dates are ISO 8601.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-20
+
 ### Added
 - **Pick your character on first launch**, with your name and colour; all
   three can be changed later in Profile.
@@ -17,6 +19,22 @@ dates are ISO 8601.
   like his own shirt. `make_jersey.py` takes an optional cloth colour.
 
 ### Fixed
+- A full review before release (gameplay, online play, interface):
+  - Co-op: a player who bleeds out or leaves drops everything they carried,
+    so keys and parts are never lost to the team; the host keeps their
+    chosen character; a guest dropping while the level loads, or joining as
+    Start is pressed, no longer breaks the match; dead connections are
+    detected and reconnecting retries; movement is checked against speed
+    and walls.
+  - The enemy starts searching as soon as it loses you, and only remembers
+    the hiding spot it saw you enter for 20 s.
+  - A checkpoint saved while hiding no longer resumes stuck in the spot; the
+    tutorial no longer erases another map's checkpoint.
+  - Esc/Back no longer resumes the game under a dialog or Settings; the main
+    menu scrolls at large interface sizes; touch buttons and the team list
+    keep clear of each other; controller focus survives in Settings; key
+    names follow the keyboard layout; texts no longer mention the house on
+    every map; French wording fixes.
 - The flashlight sat on top of the hand instead of in it, in first person and
   on teammates. It now passes through the closed fist, found from each
   character's own finger bones, with the fingers and thumb wrapped round it
@@ -256,7 +274,8 @@ dates are ISO 8601.
   payload types/sizes), puzzle answers withheld from client snapshots, and
   lag-bounded crank timing.
 
-[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.4.0...main
+[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.5.0...main
+[0.5.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.5.0
 [0.4.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.4.0
 [0.3.1]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.3.1
 [0.3.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.3.0

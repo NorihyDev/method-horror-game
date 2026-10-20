@@ -13,7 +13,7 @@
 ## Versioning
 
 Semantic versions without Conventional-Commit coupling. The single source is
-`application/config/version` in `game/project.godot` (currently `0.4.0`);
+`application/config/version` in `game/project.godot` (currently `0.5.0`);
 Android `version/code` in `export_presets.cfg` must be incremented for every
 store upload. Tag `vX.Y.Z` → `release.yml` checks the tag equals the project
 version and that `CHANGELOG.md` has a `## [X.Y.Z]` section.
@@ -49,7 +49,7 @@ cleanly headless.
 ```
 
 Verified locally (2026-10-17, five playable maps): 42.5 MB APK, signed with the debug certificate,
-`com.method.horror`, versionCode 5 / versionName 0.4.0, minSdk 24, targetSdk 36,
+`com.method.horror`, versionCode 6 / versionName 0.5.0, minSdk 24, targetSdk 36,
 landscape (`userLandscape`), permissions INTERNET, ACCESS_NETWORK_STATE, VIBRATE,
 arm64-v8a.
 
