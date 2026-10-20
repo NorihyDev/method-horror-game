@@ -139,7 +139,17 @@ func button_center(button: String) -> Vector2:
 	if Settings.b("left_handed"):
 		x = area.position.x + off.x
 	var y := area.position.y + off.y if button in TOP_ANCHORED else area.end.y - off.y
-	return Vector2(x, y)
+	var c := Vector2(x, y)
+	if button not in TOP_ANCHORED:
+		# On short screens (or big buttons) the upper ones reach the pause
+		# button: slide them inward until they clear it.
+		var p := button_center("pause")
+		var gap := button_radius("pause") + button_radius(button) + 10.0
+		if c.distance_to(p) < gap:
+			var dy := absf(c.y - p.y)
+			var dx := sqrt(maxf(gap * gap - dy * dy, 0.0))
+			c.x = p.x + dx if Settings.b("left_handed") else p.x - dx
+	return c
 
 
 func button_radius(button: String) -> float:

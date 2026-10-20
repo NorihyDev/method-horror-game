@@ -3,6 +3,7 @@ extends Screen
 
 var _coins: HBoxContainer
 var _name: Label
+var _swatch: ColorRect
 
 
 func build() -> void:
@@ -18,8 +19,14 @@ func build() -> void:
 	root.add_child(cols)
 	var left := UI.vbox(10)
 	left.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	left.custom_minimum_size.x = 440
-	cols.add_child(left)
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Scrolls when the buttons do not fit (short phones, large interface).
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size.x = 440
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(left)
+	cols.add_child(scroll)
 	left.add_child(UI.spacer(10, true))
 	var tagline := UI.caption("MENU_TAGLINE")
 	tagline.add_theme_color_override("font_color", ThemeFactory.DANGER)
@@ -75,7 +82,8 @@ func build() -> void:
 	cols.add_child(right)
 	var who := UI.hbox(10)
 	who.alignment = BoxContainer.ALIGNMENT_END
-	var swatch := ColorRect.new()
+	_swatch = ColorRect.new()
+	var swatch := _swatch
 	swatch.custom_minimum_size = Vector2(18, 18)
 	swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	swatch.color = Saves.avatar_color()
@@ -103,6 +111,7 @@ func on_enter(_p: Dictionary) -> void:
 	AudioService.play_music("mus_menu_loop", 2.5, -4.0)
 	AudioService.play_ambience("amb_house_loop", 2.0, -14.0)
 	_name.text = Saves.display_name()
+	_swatch.color = Saves.avatar_color()
 	(_coins.get_child(1) as Label).text = str(Saves.wallet.balance)
 	focus_first()
 	if Saves.load_recovered or Settings.load_recovered:

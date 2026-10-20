@@ -9,6 +9,7 @@ var _colors: HBoxContainer
 var _color_index := 0
 var _character := ""
 var _first_run := false
+var _cancel: Button
 
 
 func build() -> void:
@@ -69,6 +70,9 @@ func build() -> void:
 	box.add_child(privacy)
 	var row := UI.hbox(12)
 	row.add_child(UI.button("NAME_CONFIRM", _submit, true, 240))
+	# From Profile there is a way out without changing anything.
+	_cancel = UI.button("CANCEL", func() -> void: app.back(), false, 160)
+	row.add_child(_cancel)
 	box.add_child(row)
 	# Scrolls on short screens (phones in landscape, large interface scale).
 	var scroll := ScrollContainer.new()
@@ -82,6 +86,7 @@ func build() -> void:
 
 func on_enter(p: Dictionary) -> void:
 	_first_run = bool(p.get("first_run", false))
+	_cancel.visible = not _first_run
 	_edit.grab_focus.call_deferred()
 
 
@@ -93,7 +98,8 @@ func _paint_colors() -> void:
 		var sb := ThemeFactory.flat(
 			c, ThemeFactory.TEXT if selected else ThemeFactory.LINE, 3 if selected else 1, 2, 0, 0
 		)
-		for state in ["normal", "hover", "pressed", "focus"]:
+		# "focus" keeps the theme's outline so the controller can see where it is.
+		for state in ["normal", "hover", "pressed"]:
 			b.add_theme_stylebox_override(state, sb)
 		b.text = "•" if selected else ""
 

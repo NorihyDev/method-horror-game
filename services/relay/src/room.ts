@@ -46,7 +46,7 @@ export interface Env {
  */
 export class RoomDO extends DurableObject<Env> {
   private buckets = new Map<number, TokenBucket>();
-  private drops = new Map<number, number>();
+  private drops = new Map<number, { count: number; since: number }>();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -143,9 +143,13 @@ export class RoomDO extends DurableObject<Env> {
     const me = ws.deserializeAttachment() as Member | null;
     if (!me) return;
     if (!this.allow(me)) {
-      const drops = (this.drops.get(me.id) ?? 0) + 1;
-      this.drops.set(me.id, drops);
-      if (drops > LIMITS.maxDrops) await this.evict(ws, me, "RATE_LIMITED");
+      // Drops are counted per minute: a long room never adds up old bursts.
+      const now = Date.now();
+      const prev = this.drops.get(me.id);
+      const window = prev && now - prev.since < LIMITS.dropWindowMs ? prev : { count: 0, since: now };
+      window.count += 1;
+      this.drops.set(me.id, window);
+      if (window.count > LIMITS.maxDrops) await this.evict(ws, me, "RATE_LIMITED");
       return;
     }
     if (typeof message === "string") {

@@ -69,7 +69,7 @@ var _ready: Dictionary = {}
 var _loaded: Dictionary = {}
 var _away_since: Dictionary = {}
 var _banned: Dictionary = {}
-var _last_motion: Dictionary = {}
+var _motion_guard := MotionGuard.new()
 var _avatars: Dictionary = {}
 var _puppets: Dictionary = {}
 var _owner_pid := 0
@@ -247,9 +247,15 @@ func _server_auth(peer: int, data: PackedByteArray) -> void:
 		_reject(peer, NetProtocol.REJECT_KICKED)
 		return
 	var reconnect := _pid_by_uid.has(uid)
-	if reconnect and _any_peer_for(int(_pid_by_uid[uid])):
-		_reject(peer, "NET_REJECT_DUPLICATE")
+	if _phase == PHASE_ENDED:
+		_reject(peer, NetProtocol.REJECT_ENDED)
 		return
+	if reconnect:
+		# Their old connection is still open (it died silently): the new one wins.
+		for stale in _peers.keys():
+			if int(_peers[stale]["pid"]) == int(_pid_by_uid[uid]) and int(stale) != peer:
+				_drop_peer(int(stale))
+		reconnect = _pid_by_uid.has(uid)
 	if not reconnect:
 		if _phase != PHASE_LOBBY:
 			_reject(peer, NetProtocol.REJECT_STARTED)
@@ -324,7 +330,8 @@ func _on_peer_connected(peer: int) -> void:
 	var info: Dictionary = _peers[peer]
 	info["connected"] = true
 	var pid := int(info["pid"])
-	if bool(info["reconnect"]) and _phase == PHASE_PLAYING:
+	# Reconnecting, or admitted just as the owner pressed Start: send the level.
+	if _phase == PHASE_PLAYING or (_phase == PHASE_LOADING and mc != null):
 		_rpc_to(peer, "_s_load", [_client_config(pid)])
 	_publish_room()
 
@@ -336,12 +343,17 @@ func _on_peer_disconnected(peer: int) -> void:
 	var uid := str(_peers[peer]["uid"])
 	_peers.erase(peer)
 	limiter.forget(peer)
-	if _phase == PHASE_PLAYING and mc:
+	_motion_guard.forget(pid)
+	if (_phase == PHASE_PLAYING or _phase == PHASE_LOADING) and mc:
+		# Their slot stays (they can rejoin); the match treats them as away.
 		_away_since[pid] = mc.state.elapsed
 		mc.set_player_away(pid, true)
+		_loaded.erase(pid)
 		var avatar: RemoteAvatar = _avatars.get(pid)
 		if avatar:
 			avatar.set_away(true)
+		if _phase == PHASE_LOADING:
+			_check_all_loaded()
 	elif _phase != PHASE_ENDED:
 		_names.erase(pid)
 		_ready.erase(pid)
@@ -373,19 +385,10 @@ func _publish_room() -> void:
 	pids.sort()
 	for pid in pids:
 		var connected := _peer_of(int(pid)) != 0 or (host_plays() and int(pid) == 1)
-		(
-			members
-			. append(
-				{
-					"pid": int(pid),
-					"name": _names[pid],
-					"color": int(_colors.get(pid, 0)),
-					"ready": bool(_ready.get(pid, false)) or int(pid) == _owner_pid,
-					"owner": int(pid) == _owner_pid,
-					"away": not connected,
-				}
-			)
-		)
+		var m := {"pid": int(pid), "name": _names[pid], "color": int(_colors.get(pid, 0)), "away": not connected}
+		m["ready"] = bool(_ready.get(pid, false)) or int(pid) == _owner_pid
+		m["owner"] = int(pid) == _owner_pid
+		members.append(m)
 	room["members"] = members
 	room["owner_pid"] = _owner_pid
 	room["allowed_maps"] = allowed_maps
@@ -592,13 +595,9 @@ func _c_motion(pos: Variant, yaw: Variant, speed: Variant, flags: Variant) -> vo
 	var p := mc.state.player(pid)
 	if p.is_empty() or p["status"] != MatchState.STATUS_ALIVE or not str(p["hiding"]).is_empty():
 		return
-	var now := Time.get_ticks_msec() / 1000.0
-	var last := float(_last_motion.get(pid, now - 0.1))
-	_last_motion[pid] = now
 	var old := MatchState.array_to_vec(p["pos"])
 	var new_pos: Vector3 = pos
-	var allowed := NetProtocol.MAX_PLAYER_SPEED * clampf(now - last, 0.05, 1.0) * 1.5 + 0.6
-	if Vector2(new_pos.x - old.x, new_pos.z - old.z).length() > allowed or absf(new_pos.y - old.y) > 4.0:
+	if not _motion_guard.allow(pid, old, new_pos, mc.map.get_world_3d() if mc.map else null):
 		_rpc_to(_peer_of(pid), "_s_correct", [old])
 		return
 	mc.report_motion_flags(pid, new_pos, float(yaw), clampf(float(speed), 0.0, 10.0), int(flags))

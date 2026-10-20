@@ -88,5 +88,5 @@ func _character_picker(body: VBoxContainer) -> void:
 
 
 func _choose(id: String) -> void:
+	# The picker repaints itself; rebuilding the screen lost the scroll position.
 	Saves.set_character(id)
-	on_enter({})

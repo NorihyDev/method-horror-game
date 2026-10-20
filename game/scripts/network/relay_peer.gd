@@ -20,6 +20,9 @@ const HEADER := 7
 const PING_SECONDS := 20.0
 ## A welcome must arrive this soon after the socket opens.
 const WELCOME_TIMEOUT := 10.0
+## The relay answers every ping (each PING_SECONDS): this long without any
+## message means the link died silently (Wi-Fi to mobile data, NAT timeout).
+const SILENCE_TIMEOUT := 50.0
 
 var is_host := false
 ## Last refusal or close reason from the relay ("ROOM_FULL", "HOST_LEFT", ...).
@@ -41,6 +44,7 @@ var _queue: Array = []
 var _peers: Dictionary = {}
 var _opened_at := 0.0
 var _ping_timer := 0.0
+var _last_rx := 0.0
 var _was_open := false
 
 
@@ -64,7 +68,11 @@ func _poll() -> void:
 	var state := _ws.get_ready_state()
 	if state == WebSocketPeer.STATE_OPEN:
 		_was_open = true
+		var now := Time.get_ticks_msec() / 1000.0
+		if _last_rx <= 0.0:
+			_last_rx = now
 		while _ws.get_available_packet_count() > 0:
+			_last_rx = now
 			var data := _ws.get_packet()
 			if _ws.was_string_packet():
 				_on_control(data.get_string_from_utf8())
@@ -75,8 +83,12 @@ func _poll() -> void:
 			_ping_timer = PING_SECONDS
 			_ws.send_text("ping")
 		if _status == MultiplayerPeer.CONNECTION_CONNECTING:
-			if Time.get_ticks_msec() / 1000.0 - _opened_at > WELCOME_TIMEOUT:
+			if now - _opened_at > WELCOME_TIMEOUT:
 				_lost("TIMEOUT")
+		elif now - _last_rx > SILENCE_TIMEOUT:
+			last_error = "LOST"
+			_ws.close(1000, "LOST")
+			_lost("LOST")
 	elif state == WebSocketPeer.STATE_CLOSED and _status != MultiplayerPeer.CONNECTION_DISCONNECTED:
 		if last_error.is_empty():
 			var reason := _ws.get_close_reason()

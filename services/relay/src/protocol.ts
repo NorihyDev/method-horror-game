@@ -31,9 +31,11 @@ export const LIMITS = {
   controlBytes: 512,
   createBodyBytes: 1024,
   guest: { capacity: 120, refillPerSecond: 60 },
-  host: { capacity: 600, refillPerSecond: 300 },
-  /** Dropped frames tolerated before a socket is closed for abuse. */
+  /** The host sends to up to 9 guests (one frame each while a guest joins). */
+  host: { capacity: 1200, refillPerSecond: 600 },
+  /** Dropped frames tolerated per dropWindowMs before a socket is closed. */
   maxDrops: 300,
+  dropWindowMs: 60_000,
   /** Wrong passwords before the room refuses joins for lockoutMs. */
   passwordFailures: 8,
   lockoutMs: 60_000,

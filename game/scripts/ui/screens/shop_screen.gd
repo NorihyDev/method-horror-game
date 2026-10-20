@@ -50,6 +50,10 @@ func build() -> void:
 	_tab_online.toggle_mode = true
 	_tab_online.disabled = not online_reason.is_empty()
 	_tab_online.tooltip_text = online_reason
+	# Without a lobby service (the shipped game uses the relay, which has no
+	# wallet) the tab would only ever be greyed out: hide both tabs.
+	_tab_online.visible = online_reason.is_empty()
+	_tab_local.visible = online_reason.is_empty()
 	tabs.add_child(_tab_online)
 	_status = UI.label("", ThemeFactory.FONT_SMALL, ThemeFactory.TEXT_DIM)
 	_status.size_flags_vertical = Control.SIZE_SHRINK_CENTER

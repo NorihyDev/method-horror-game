@@ -98,9 +98,9 @@ func _layout() -> void:
 	var m := Session.app.safe_margins() if Session.app else Vector4.ZERO
 	var team := get_node("Team") as Control
 	if touch_mode:
-		# Opposite the button cluster, under the notification feed.
-		var left := not Settings.b("left_handed")
-		team.position = Vector2(m.x + 24 if left else vp.x - m.z - 270, m.y + 290)
+		# Top centre: clear of the joystick and the buttons whatever the team
+		# size (up to nine teammates), and touches pass through it.
+		team.position = Vector2((vp.x - team.size.x) * 0.5, m.y + 10)
 	else:
 		team.position = Vector2(vp.x - m.z - 270, m.y + 24)
 	_bar_box.position = Vector2((vp.x - 360) * 0.5, vp.y * 0.62)

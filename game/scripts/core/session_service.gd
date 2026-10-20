@@ -221,7 +221,10 @@ func _apply_solo_progress(result: Dictionary) -> void:
 		)
 	if escaped:
 		Saves.record_completion(map_id, str(result.get("difficulty_id", "")), float(result.get("time", 0.0)))
-		Saves.clear_checkpoint()
+		# Only this map's checkpoint is done with (finishing the tutorial must
+		# not erase a run saved in another map).
+		if str(Saves.load_checkpoint().get("map_id", "")) == str(map_id):
+			Saves.clear_checkpoint()
 	if bool(result.get("tutorial", false)) and escaped:
 		Saves.set_tutorial_done()
 	result["rewards"] = rewards

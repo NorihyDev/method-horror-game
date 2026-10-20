@@ -111,6 +111,12 @@ static func key_for(action: String, custom_keys: Dictionary) -> int:
 static func key_label(keycode: int) -> String:
 	if keycode == KEY_NONE:
 		return "—"
+	# Keys are bound by position: show what that key prints on this keyboard
+	# (Z/Q on AZERTY, not W/A).
+	if DisplayServer.get_name() != "headless":
+		var shown := DisplayServer.keyboard_get_label_from_physical(keycode as Key)
+		if shown != KEY_NONE:
+			return OS.get_keycode_string(shown)
 	return OS.get_keycode_string(keycode)
 
 

@@ -52,6 +52,10 @@ func handle_back() -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Only the overlay the player sees: not while a dialog or another screen
+	# (Settings opened from pause) is on top of it.
+	if not is_visible_in_tree() or (Session.app and Session.app.has_modal()):
+		return
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause"):
 		get_viewport().set_input_as_handled()
 		handle_back()

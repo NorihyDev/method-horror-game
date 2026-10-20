@@ -19,6 +19,10 @@ enum Kind { ONLINE, LAN_HOST, LAN_CLIENT }
 const LAN_MAX_PLAYERS := 10
 ## How long the room creator waits for the relay to admit them.
 const RELAY_CONNECT_SECONDS := 15.0
+## Rejoin attempts after a drop (2, 4, 6, 8 s apart) before giving up.
+const RECONNECT_TRIES := 4
+## Reasons worth retrying: the old link may still be closing on the relay.
+const TRANSIENT := ["NET_LOST", "NET_REJECT_TIMEOUT", "NET_REJECT_FULL"]
 
 ## Reason key of the last session that ended in an error (tests, diagnostics).
 static var last_abort := ""
@@ -37,6 +41,7 @@ var _port := 0
 var _joined := false
 var _leaving := false
 var _reconnecting := false
+var _reconnect_tries := 0
 
 
 static func create(p_app: App) -> OnlineFlow:
@@ -196,7 +201,11 @@ func _on_joined(_pid: int) -> void:
 
 
 func _on_join_failed(reason: String) -> void:
-	_abort(_relay_reason(reason))
+	var why := _relay_reason(reason)
+	if _reconnecting and _reconnect_tries < RECONNECT_TRIES and why in TRANSIENT:
+		_reconnect()
+		return
+	_abort(why)
 
 
 ## The relay's own refusal (room full, wrong password, host left...) explains
@@ -224,6 +233,10 @@ func _on_disconnected(reason: String) -> void:
 	var why := _relay_reason(reason)
 	# A dropped guest can rejoin its slot while the host is still there.
 	if in_match and kind == Kind.ONLINE and Settings.b("auto_reconnect") and why == "NET_LOST":
+		_reconnect_tries = 0
+		_reconnect()
+		return
+	if _reconnecting and _reconnect_tries < RECONNECT_TRIES and why in TRANSIENT:
 		_reconnect()
 		return
 	_abort(why)
@@ -250,7 +263,8 @@ func _reconnect() -> void:
 		)
 	)
 	app.set_world(null)
-	await get_tree().create_timer(2.0).timeout
+	_reconnect_tries += 1
+	await get_tree().create_timer(2.0 * _reconnect_tries).timeout
 	if _leaving:
 		return
 	# Same code and identity: the host puts us back into our slot with a
@@ -263,10 +277,17 @@ func _reconnect() -> void:
 	var err := _connect_guest()
 	if not err.is_empty():
 		_abort(err)
+		return
+	# Never wait on the reconnect screen for ever.
+	var attempt := _reconnect_tries
+	await get_tree().create_timer(45.0).timeout
+	if _reconnecting and not _leaving and attempt == _reconnect_tries:
+		_abort("NET_LOST")
 
 
 func _on_load_requested(config: Dictionary) -> void:
 	_reconnecting = false
+	_reconnect_tries = 0
 	var params := config.duplicate()
 	params.merge({"online": true, "flow": self, "config": config}, true)
 	app.reset_to("loading", params)
