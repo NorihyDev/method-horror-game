@@ -24,6 +24,7 @@ hello:
 | `dekai` | Dekai | `game/assets/characters/dekai/dekai.glb` | about 24k | Box braids (modelled strands), black-and-orange pro METHOD jersey |
 | `kanzaki` | Kanzaki | `game/assets/characters/kanzaki/kanzaki.glb` | about 31k | Short hair, black-and-white pro METHOD jersey with a Madagascar flag |
 | `loss` | Loss | `game/assets/characters/loss/loss.glb` | about 27k | Buzz cut, royal-blue classic METHOD jersey with white trim (like his own blue shirt) |
+| `miky` | Miky | `game/assets/characters/miky/miky.glb` | about 25k | The first female character: long dark-brown hair (MPFB long-hair cards kept and fitted to her head), a plain white T-shirt like her photos and dark jeans |
 | `mianja` | Mianja | `game/assets/characters/mianja/mianja.glb` | about 17k | Black snapback cap over a fade, "pro" METHOD jersey (V-neck, METHOD on both shoulders, grey slashes, sleeve M), dark trousers |
 
 Both use the same skeleton, clips and code:

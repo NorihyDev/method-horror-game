@@ -1,0 +1,117 @@
+{
+  "name": "Miky",
+  "phenotype": {
+    "gender": 0.0,
+    "age": 0.32,
+    "muscle": 0.4,
+    "weight": 0.4,
+    "proportions": 0.6,
+    "height": 0.75,
+    "cupsize": 0.5,
+    "firmness": 0.55,
+    "race": {
+      "asian": 0.3,
+      "caucasian": 0.15,
+      "african": 0.55
+    }
+  },
+  "skin": "young_african_female/young_african_female.mhmat",
+  "hair": "culturalibre_hair_01/culturalibre_hair_01.mhclo",
+  "eyebrows": "eyebrow009/eyebrow009.mhclo",
+  "clothes": [
+    "female_casualsuit01/female_casualsuit01.mhclo",
+    "shoes03/shoes03.mhclo"
+  ],
+  "textures": {
+    "high-poly": "eye.png",
+    "female_casualsuit01": "tee.png",
+    "eyebrow009": "brows.png",
+    "culturalibre_hair_01": "hair.png"
+  },
+  "targets": [
+    {
+      "target": "head-oval",
+      "value": 0.4
+    },
+    {
+      "target": "chin-height-incr",
+      "value": 0.15
+    }
+  ],
+  "decimate": {
+    "shoes03": 0.5,
+    "fbhead": 0.22,
+    "hairshell": 0.5
+  },
+  "hair_decimate": 0.5,
+  "photo": {
+    "eye_r": [
+      468.0,
+      524.0
+    ],
+    "eye_l": [
+      564.0,
+      524.0
+    ],
+    "mouth": [
+      507.7,
+      627.7
+    ],
+    "chin_y": 675.9,
+    "tone_scale": 0.95,
+    "strength": 0,
+    "exclude": [
+      [
+        462,
+        426,
+        18,
+        16
+      ],
+      [
+        510,
+        450,
+        18,
+        16
+      ],
+      [
+        602,
+        545,
+        26,
+        75
+      ],
+      [
+        418,
+        575,
+        22,
+        70
+      ]
+    ]
+  },
+  "facebuilder": {
+    "paint_lips": true,
+    "cut": 1.2
+  },
+  "hair_shell": {
+    "thickness": 0.003,
+    "min_thickness": 0.002,
+    "max_thickness": 0.006,
+    "tufts": 0,
+    "rgb": [
+      0.13,
+      0.09,
+      0.07
+    ],
+    "keep_cards": true,
+    "hairline": {
+      "62": -0.02,
+      "75": -0.065,
+      "90": -0.055,
+      "110": -0.06
+    },
+    "card_inflate": [
+      1.11,
+      1.04,
+      1.01
+    ]
+  }
+}

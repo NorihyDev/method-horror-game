@@ -954,9 +954,12 @@ for o in bpy.data.objects:
     if key not in (CFG["hair"].split("/")[0], "cap", "glasses"):
         continue
     inv = o.matrix_world.inverted()
+    # Long hair kept as cards can sit a little further out, so the ears do
+    # not poke through the gaps between the cards ("card_inflate").
+    k = ratio * np.asarray(spec.get("card_inflate", 1.0), dtype=float) if key == CFG["hair"].split("/")[0] else ratio
     for v in o.data.vertices:
         p = np.array(tuple(o.matrix_world @ v.co))
-        v.co = inv @ Vector(tuple(f_c + (p - m_c) * ratio))
+        v.co = inv @ Vector(tuple(f_c + (p - m_c) * k))
     print("refit", o.name)
 
 # --- 4. Skin to the neck and head bones -------------------------------------------------

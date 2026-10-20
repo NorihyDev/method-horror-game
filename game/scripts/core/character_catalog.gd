@@ -67,6 +67,12 @@ const CHARACTERS := {
 		"scene": "res://assets/characters/loss/loss.glb",
 		"portrait": "res://assets/characters/loss/portrait.png",
 	},
+	"miky":
+	{
+		"name": "Miky",
+		"scene": "res://assets/characters/miky/miky.glb",
+		"portrait": "res://assets/characters/miky/portrait.png",
+	},
 }
 
 

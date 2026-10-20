@@ -5,6 +5,16 @@ dates are ISO 8601.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-20
+
+### Added
+- **Miky**, the first female character (Profile → Character, and on first
+  launch), built from her photos with her agreement: long dark-brown hair,
+  a white T-shirt like hers and dark jeans, with the same animations and
+  first-person arms as everyone. New tools: `make_tee.py` repaints the
+  T-shirt outfit; long hair can keep its own strands (`keep_cards`), set a
+  little out from the head (`card_inflate`).
+
 ## [0.5.0] - 2026-10-20
 
 ### Added
@@ -274,7 +284,8 @@ dates are ISO 8601.
   payload types/sizes), puzzle answers withheld from client snapshots, and
   lag-bounded crank timing.
 
-[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.5.0...main
+[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.6.0...main
+[0.6.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.6.0
 [0.5.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.5.0
 [0.4.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.4.0
 [0.3.1]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.3.1
