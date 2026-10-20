@@ -57,4 +57,7 @@ tools/characters/**/face_mask.png
 
 # Third-party source packs (licences vary; converted models live elsewhere)
 game/assets/monster-pack/
-game/assets/monsters/
+# Converted monsters are committed (credited in THIRD_PARTY_NOTICES.md),
+# except Gravvok, whose itch.io page states no licence: it is built into the
+# release downloads from the maintainer's machine but not published here.
+game/assets/monsters/gravvok/

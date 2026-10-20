@@ -16,13 +16,22 @@ so the game always works.
 The other models in the packs were left out: the Straw Reaper, the spider,
 the Masked man, the Scarecrow and the Sea explorer.
 
-## The models are not in the repository
+## Licences and what is in the repository
 
-The packs come from itch.io, and their pages set the terms. This repository
-is public, so the source packs (`game/assets/monster-pack/`) and the
-converted models (`game/assets/monsters/`) are both gitignored. A checkout
-without them plays the procedural monsters. `test_monster_models.gd` skips
-any monster whose model is missing.
+| Model | Author | Terms on its itch.io page |
+|---|---|---|
+| Big Frankie (House) | imaginais, from *The Roach Hotel* | No licence stated; the author's reply to a licence question: "you can use it but needs to be credited on the roach hotel" |
+| Gravvok (Facility) | imaginais | No licence stated (name your own price) |
+| Doctor, Miner, Clown | TheDime (Killer Pack) | "cc0 Models Credit is Optional" |
+
+All five are credited in the game's Credits screen and in
+`THIRD_PARTY_NOTICES.md`, and all five are built into the release downloads
+(APK, Windows, Linux). The converted models of the Killer Pack and Big
+Frankie are committed under `game/assets/monsters/`. Gravvok's converted model
+and the raw source packs (`game/assets/monster-pack/`) are not published in
+this repository; the release builds are made on the maintainer's machine,
+where they are installed. A checkout without a model plays that map's
+procedural monster, and `test_monster_models.gd` skips any missing model.
 
 ## Building them
 

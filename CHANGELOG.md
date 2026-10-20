@@ -5,6 +5,16 @@ dates are ISO 8601.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-20
+
+### Added
+- **Real monster models in the downloads.** Every map's enemy is now a real
+  animated model in the APK and the Windows/Linux builds, instead of the
+  procedural body: Big Frankie in the House and Gravvok in the Facility (by
+  imaginais; Big Frankie is from *The Roach Hotel*), and the plague doctor,
+  miner and clown from TheDime's Killer Pack (CC0). All authors are credited
+  in the game's Credits screen, `THIRD_PARTY_NOTICES.md` and the README.
+
 ## [0.6.0] - 2026-10-20
 
 ### Added
@@ -284,7 +294,8 @@ dates are ISO 8601.
   payload types/sizes), puzzle answers withheld from client snapshots, and
   lag-bounded crank timing.
 
-[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.6.0...main
+[Unreleased]: https://github.com/NorihyDev/method-horror-game/compare/v0.7.0...main
+[0.7.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.7.0
 [0.6.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.6.0
 [0.5.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.5.0
 [0.4.0]: https://github.com/NorihyDev/method-horror-game/releases/tag/v0.4.0

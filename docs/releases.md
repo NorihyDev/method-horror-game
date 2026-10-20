@@ -13,7 +13,7 @@
 ## Versioning
 
 Semantic versions without Conventional-Commit coupling. The single source is
-`application/config/version` in `game/project.godot` (currently `0.6.0`);
+`application/config/version` in `game/project.godot` (currently `0.7.0`);
 Android `version/code` in `export_presets.cfg` must be incremented for every
 store upload. Tag `vX.Y.Z` → `release.yml` checks the tag equals the project
 version and that `CHANGELOG.md` has a `## [X.Y.Z]` section.
@@ -49,7 +49,7 @@ cleanly headless.
 ```
 
 Verified locally (2026-10-17, five playable maps): 42.5 MB APK, signed with the debug certificate,
-`com.method.horror`, versionCode 7 / versionName 0.6.0, minSdk 24, targetSdk 36,
+`com.method.horror`, versionCode 8 / versionName 0.7.0, minSdk 24, targetSdk 36,
 landscape (`userLandscape`), permissions INTERNET, ACCESS_NETWORK_STATE, VIBRATE,
 arm64-v8a.
 
@@ -103,9 +103,11 @@ commands above and attached to the GitHub release as `METHOD_HORROR.apk`
 (a fixed name, so `releases/latest/download/METHOD_HORROR.apk` always serves
 the newest one), with its `.sha256`.
 
-Every export preset excludes `assets/monsters/*` and `assets/monster-pack/*`:
-the imported monster packs are local only (see docs/monsters.md), so a build
-made on a machine that has them still ships the procedural enemies.
+Export presets exclude only the raw packs (`assets/monster-pack/*`): the
+converted monsters in `assets/monsters/` are built in. Gravvok's converted
+model is not in the repository, so release downloads are built on the
+maintainer's machine (see docs/monsters.md); a CI build plays the Facility's
+procedural enemy.
 
 Google Play requires an AAB built with Gradle (`gradle_build/use_gradle_build=true`
 and the Android build template). That path is documented here but **not yet

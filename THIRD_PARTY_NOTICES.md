@@ -61,6 +61,25 @@ from `IMFeENsc28P.ttf`.
 No attribution is required for CC0 assets; they are listed in
 `docs/asset-manifest.md` for provenance.
 
+## Monster models
+
+Each map's enemy uses a model from an itch.io creator, converted (reduced,
+re-rigged or re-animated, retextured) by `tools/monsters/`:
+
+- **Big Frankie — Subject 2112** (The House) by **imaginais**,
+  https://imaginais.itch.io/big-frankie, from the game *The Roach Hotel*
+  (https://hawtcombo.itch.io/the-roach-hotel). Free download; the page
+  states no licence, and the author answered a licence question with "you
+  can use it but needs to be credited on the roach hotel". Credited here and
+  in the game's Credits screen.
+- **GRAVVOK — Retro PSX Monster** (METHOD Facility) by **imaginais**,
+  https://imaginais.itch.io/gravvok-retro-psx-monster (name your own price).
+  The page states no licence terms. Its converted model is included in the
+  release downloads but not published in this repository.
+- **Plague doctor** (The Black Ward), **Miner** (Last Train) and **Clown**
+  (The Silent School) from the **Killer Pack** by **TheDime**,
+  https://thedime.itch.io/killer-pack — "cc0 Models Credit is Optional".
+
 ## Audio and textures
 
 All audio and textures in `game/assets/` are original procedural output from

@@ -37,11 +37,11 @@ is built and signed but **has not been run on a phone yet**.
 | ![The Headmistress in the school corridor](docs/screenshots/school_headmistress.jpg) | ![Music-room chimes](docs/screenshots/school_chimes.jpg) |
 | ![Subject Zero in the facility](docs/screenshots/facility_subject.jpg) | ![The freight lift arrives](docs/screenshots/facility_lift.jpg) |
 
-*Screenshots are real renders of version 0.3.1 (desktop, Mobile renderer).
-The enemies are shown with the optional imported monster models, which are
-installed locally and not part of this repository or its release builds;
-without them each enemy uses its procedural body (see
-[docs/monsters.md](docs/monsters.md)).*
+*Screenshots are real renders of the game (desktop, Mobile renderer).
+Monster models by [imaginais](https://imaginais.itch.io/) (Big Frankie, from
+[The Roach Hotel](https://hawtcombo.itch.io/the-roach-hotel), and Gravvok) and
+[TheDime](https://thedime.itch.io/killer-pack) (plague doctor, miner, clown,
+CC0); see [docs/monsters.md](docs/monsters.md).*
 
 ## Contents
 
