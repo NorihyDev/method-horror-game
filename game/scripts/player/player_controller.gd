@@ -83,6 +83,8 @@ var _pad_look_ramp := 0.0
 var _flicker_timer := 0.0
 var _rng := RandomNumberGenerator.new()
 var _report_timer := 0.0
+var _shown_stamina := 1.0
+var _shown_battery := 1.0
 var _assist_timer := 0.0
 var _assist: Interactable
 ## Scare: seconds the flashlight stays dead regardless of battery.
@@ -303,7 +305,10 @@ func _physics_process(delta: float) -> void:
 		_stamina_delay -= delta
 		if _stamina_delay <= 0.0:
 			stamina = minf(1.0, stamina + STAMINA_REGEN * delta)
-	stamina_changed.emit(stamina)
+	# The HUD only needs visible steps, not an update every physics tick.
+	if absf(stamina - _shown_stamina) > 0.004 or (stamina != _shown_stamina and stamina in [0.0, 1.0]):
+		_shown_stamina = stamina
+		stamina_changed.emit(stamina)
 
 	var speed := CROUCH_SPEED if crouching else (SPRINT_SPEED if sprinting else WALK_SPEED)
 	if _stumble > 0.0:
@@ -336,6 +341,9 @@ func _physics_process(delta: float) -> void:
 
 func _update_capsule(delta: float) -> void:
 	var target_h := CROUCH_HEIGHT if crouching else STAND_HEIGHT
+	# Only touch the shape while it changes (a write re-sends it to physics).
+	if is_equal_approx(_capsule.height, target_h):
+		return
 	_capsule.height = move_toward(_capsule.height, target_h, delta * 3.0)
 	_shape.position.y = _capsule.height * 0.5
 
@@ -399,7 +407,9 @@ func _tick_battery(delta: float) -> void:
 	var drain := match_ctrl.difficulty.battery_drain if match_ctrl else 1.0
 	if flashlight_on and battery > 0.0:
 		battery = maxf(0.0, battery - delta / BATTERY_SECONDS * drain)
-		battery_changed.emit(battery)
+		if absf(battery - _shown_battery) > 0.002 or battery == 0.0:
+			_shown_battery = battery
+			battery_changed.emit(battery)
 	var energy := 0.0
 	if flashlight_on:
 		energy = 3.0

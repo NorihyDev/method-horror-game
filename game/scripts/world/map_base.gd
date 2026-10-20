@@ -451,6 +451,27 @@ func safe_drop_position(player_pos: Vector3, yaw: float) -> Vector3:
 	return player_pos + Vector3(0, 0.02, 0)
 
 
+## A player fits here: floor just below, no wall or furniture in the way.
+## Physics only, so it works right after the level is built (before the
+## navigation mesh is ready).
+func _standable(p: Vector3) -> bool:
+	if not is_inside_tree():
+		return true
+	var space := get_world_3d().direct_space_state
+	var solid := GeoBuilder.LAYER_WORLD | GeoBuilder.LAYER_PROP
+	var down := PhysicsRayQueryParameters3D.create(p + Vector3(0, 0.5, 0), p + Vector3(0, -0.4, 0), solid)
+	if space.intersect_ray(down).is_empty():
+		return false
+	var q := PhysicsShapeQueryParameters3D.new()
+	var cap := CapsuleShape3D.new()
+	cap.radius = 0.35
+	cap.height = 1.6
+	q.shape = cap
+	q.transform = Transform3D(Basis(), p + Vector3(0, 0.95, 0))
+	q.collision_mask = solid
+	return space.intersect_shape(q, 1).is_empty()
+
+
 func player_spawn(index: int) -> Transform3D:
 	if player_spawns.is_empty():
 		return Transform3D.IDENTITY
@@ -467,10 +488,8 @@ func player_spawn(index: int) -> Transform3D:
 		for step in 8:
 			var a := TAU * step / 8.0
 			var p := t.origin + (t.basis.x * cos(a) + t.basis.z * sin(a)) * radius
-			if nav_region and navigation_ready():
-				var on_floor := closest_nav_point(p)
-				if Vector2(on_floor.x - p.x, on_floor.z - p.z).length() > 0.3:
-					continue
+			if not _standable(p):
+				continue
 			var free := true
 			for q in taken:
 				free = free and p.distance_to(q) > 0.6

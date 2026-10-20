@@ -300,7 +300,8 @@ func _props() -> void:
 	# Hallway
 	b.room = "hallway"
 	PropFactory.cabinet(b, Vector3(5.0, 0, 7.3), 0, 1.2, 0.8, 0.35)
-	PropFactory.clock(b, Vector3(13.6, 0, 8.0), -90)
+	# Beside the garage door, not in front of its frame (doorway z 8.2-9.4).
+	PropFactory.clock(b, Vector3(13.6, 0, 7.5), -90)
 	# On the wall beside the dining doorway (it used to hang in the opening).
 	PropFactory.picture(b, Vector3(9.4, 1.6, 9.9), 180, 0.6, 0.8, -6.0)
 	PropFactory.picture(b, Vector3(1.0, 1.7, 7.1), 0, 0.5, 0.6, 3.0)

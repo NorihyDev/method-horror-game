@@ -34,6 +34,7 @@ var _len := {}
 var _curl_axis := {}
 var _palm_sign := {}
 var _curl_axes := {}
+var _grip_cache := {}
 
 
 func setup(character_id: String) -> bool:
@@ -239,8 +240,12 @@ func pose_grip(side: String, grip: Vector3, along: Vector3, fingers: Vector3, po
 	var f_s := (inv.basis * fingers).normalized()
 	var a_s := (inv.basis * along).normalized()
 	var mid_loc := (_rest[_bone["middle_01_" + side]] as Transform3D).origin
-	var bh := _frame(f_s, a_s) * _frame(mid_loc, HandGrip.across_local(skeleton, side)).inverse()
-	var wrist_s := inv * grip - bh * HandGrip.grip_local(skeleton, side)
+	# Rest-pose hand geometry never changes: work it out once per hand.
+	if not _grip_cache.has(side):
+		_grip_cache[side] = [HandGrip.across_local(skeleton, side), HandGrip.grip_local(skeleton, side)]
+	var cached: Array = _grip_cache[side]
+	var bh := _frame(f_s, a_s) * _frame(mid_loc, cached[0]).inverse()
+	var wrist_s := inv * grip - bh * (cached[1] as Vector3)
 	# pose_arm rolls its index-side vector by hand_roll: pre-roll it back.
 	var f_c := fingers.normalized()
 	var t_c := along.normalized().rotated(f_c, -float(hand_roll[side]))

@@ -17,6 +17,8 @@ enum S { PATROL, INVESTIGATE, SEARCH, CHASE, ATTACK, RECOVER, LOST, CHECK_HIDING
 
 const LAYER_ENEMY := 1 << 2
 const ATTACK_RANGE := 1.75
+## Seconds it remembers seeing a player get into a hiding spot.
+const SEEN_HIDING_MEMORY := 20.0
 const STRIKE_RANGE := 2.2
 const SEARCH_TIME := 11.0
 const GRAVITY := 18.0
@@ -443,7 +445,16 @@ func _tick_chase(delta: float) -> void:
 	var hidden_spot := str(p["hiding"])
 	if not hidden_spot.is_empty():
 		var seen: Dictionary = _seen_hiding.get(_chase_pid, {})
-		if not seen.is_empty():
+		# It only remembers seeing you hide for a short while.
+		if not seen.is_empty() and match_ctrl.state.elapsed - float(seen["time"]) > SEEN_HIDING_MEMORY:
+			_seen_hiding.erase(_chase_pid)
+			seen = {}
+		# Straight to the spot only if it is the one it saw them get into.
+		if (
+			not seen.is_empty()
+			and is_instance_valid(seen["spot"])
+			and (seen["spot"] as HidingSpot).entity_id == hidden_spot
+		):
 			_check_spot = seen["spot"]
 			_enter(S.CHECK_HIDING)
 		else:
@@ -469,7 +480,10 @@ func _tick_chase(delta: float) -> void:
 func _tick_lost(delta: float) -> void:
 	agent.target_position = _last_seen_pos
 	_follow(profile.investigate * 1.2, delta)
-	if _arrived() or _state_time > 12.0:
+	# _enter() clears _has_target, so check the spot itself (it used to stand
+	# there for the full 12 s).
+	var flat := Vector2(global_position.x - _last_seen_pos.x, global_position.z - _last_seen_pos.z)
+	if (_state_time > 0.5 and agent.is_navigation_finished()) or flat.length() < 1.0 or _state_time > 12.0:
 		_enter(S.SEARCH)
 
 
@@ -534,6 +548,10 @@ func _tick_check_hiding(delta: float) -> void:
 		_check_spot = null
 		_enter(S.ATTACK)
 	else:
+		# Empty: forget that spot, or it would come back to it forever.
+		for pid in _seen_hiding.keys():
+			if (_seen_hiding[pid] as Dictionary)["spot"] == _check_spot:
+				_seen_hiding.erase(pid)
 		_check_spot = null
 		_enter(S.SEARCH)
 

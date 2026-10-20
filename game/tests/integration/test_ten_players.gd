@@ -11,10 +11,14 @@ func test_ten_players_get_their_own_spawn_on_every_map() -> void:
 			continue
 		if not await build(String(m.id), "normal", 3):
 			continue
-		await map.wait_for_navigation()
+		# Spawns are chosen before navigation is ready (as the server does).
 		var spots: Array[Vector3] = []
+		var picked: Array[Vector3] = []
 		for i in NetProtocol.MAX_PLAYERS:
-			var p := map.player_spawn(i).origin
+			picked.append(map.player_spawn(i).origin)
+		await map.wait_for_navigation()
+		for i in NetProtocol.MAX_PLAYERS:
+			var p := picked[i]
 			var on_floor := map.closest_nav_point(p)
 			assert_true(
 				Vector2(on_floor.x - p.x, on_floor.z - p.z).length() < 0.6, "%s: player %d on the floor" % [m.id, i + 1]

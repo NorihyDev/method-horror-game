@@ -68,7 +68,7 @@ func setup(p_map: MapBase, p_config: Dictionary) -> void:
 	map_def = Session.map_def(str(config.get("map_id", "")))
 	difficulty = Session.difficulty(str(config.get("difficulty_id", "normal")))
 	is_solo = str(config.get("mode", "solo")) == "solo"
-	var player_count := clampi(int(config.get("player_count", 1)), 1, 6)
+	var player_count := clampi(int(config.get("player_count", 1)), 1, NetProtocol.MAX_PLAYERS)
 	rules = map_def.rules_script.new() as MapRules
 	rules.setup(player_count, difficulty)
 	_rng.seed = int(config.get("seed", 1)) ^ 0x5eed
@@ -92,7 +92,7 @@ func initialize_state(resume: Dictionary = {}) -> bool:
 		state.map_id = String(map_def.id)
 		state.difficulty_id = String(difficulty.id)
 		state.rng_seed = int(config.get("seed", 0))
-		state.player_count = clampi(int(config.get("player_count", 1)), 1, 6)
+		state.player_count = clampi(int(config.get("player_count", 1)), 1, NetProtocol.MAX_PLAYERS)
 		var variant := rules.generate_variant(state.rng_seed)
 		if variant.is_empty():
 			Log.error("match", "No solvable variant could be generated", {"seed": state.rng_seed})
@@ -142,6 +142,29 @@ func drop_item(pid: int, item: String) -> bool:
 	return true
 
 
+## Authority: a player who bled out or left drops everything they carried,
+## spread round where they were, so keys and parts are never lost to the team.
+func _drop_all(pid: int) -> void:
+	var inv := inventory(pid)
+	var p := state.player(pid)
+	if inv == null or p.is_empty() or not is_authority:
+		return
+	var at := MatchState.array_to_vec(p["pos"])
+	var k := 0
+	for entry: Dictionary in inv.to_array():
+		for n in int(entry["count"]):
+			var pos := map.safe_drop_position(at, float(p["yaw"]) + k * 1.3)
+			k += 1
+			var id := state.allocate_dynamic_id("drop")
+			map.spawn_dropped_item(self, id, str(entry["id"]), pos)
+			set_entity_state(
+				id, {"kind": "dropped", "item": entry["id"], "pos": MatchState.vec_to_array(pos), "taken": false}
+			)
+			if net:
+				net.call("broadcast_spawn_drop", id, str(entry["id"]), pos)
+		take_item(pid, str(entry["id"]), int(entry["count"]))
+
+
 func request_drop(item: String) -> void:
 	if is_authority:
 		drop_item(local_player_id, item)
@@ -174,7 +197,10 @@ func request_use_item(item: String) -> void:
 func add_player_record(pid: int, display_name: String, character: String = "") -> void:
 	if not state.players.has(pid):
 		state.add_player(pid, display_name)
-	state.players[pid]["char"] = CharacterCatalog.sanitize(character)
+	# An empty character keeps the one already recorded (the host's own record
+	# is made by the server first, then again when its player node spawns).
+	if not character.is_empty() or not state.players[pid].has("char"):
+		state.players[pid]["char"] = CharacterCatalog.sanitize(character)
 	_inventories[pid] = _make_inventory(state.players[pid]["inventory"])
 
 
@@ -588,6 +614,7 @@ func _tick_downed() -> void:
 	for pid in state.players:
 		var p: Dictionary = state.players[pid]
 		if p["status"] == MatchState.STATUS_DOWNED and state.elapsed - float(p["downed_at"]) > difficulty.bleedout_time:
+			_drop_all(int(pid))
 			_set_status(int(pid), MatchState.STATUS_DEAD)
 			_check_end()
 
@@ -649,7 +676,20 @@ func _save_checkpoint(objective_id: String) -> void:
 	if not is_solo or not difficulty.checkpoints_enabled or map_def.is_tutorial:
 		return
 	state.checkpoint_id = objective_id
-	Saves.save_checkpoint(state.to_snapshot())
+	var snap := state.to_snapshot()
+	# Never resume inside a hiding spot: save the player standing in front of it.
+	for key in snap.get("players", {}):
+		var rec: Dictionary = snap["players"][key]
+		var spot_id := str(rec.get("hiding", ""))
+		if spot_id.is_empty():
+			continue
+		var spot := entities.get(spot_id) as HidingSpot
+		if spot:
+			rec["pos"] = MatchState.vec_to_array(spot.exit_position())
+		rec["hiding"] = ""
+		if snap.get("entities", {}).has(spot_id):
+			(snap["entities"][spot_id] as Dictionary)["occupant"] = 0
+	Saves.save_checkpoint(snap)
 	notify_player(local_player_id, "CHECKPOINT_SAVED")
 
 
@@ -884,6 +924,7 @@ func player_left(pid: int) -> void:
 	var p := state.player(pid)
 	if p.is_empty() or p["status"] in [MatchState.STATUS_ESCAPED, MatchState.STATUS_LEFT]:
 		return
+	_drop_all(pid)
 	_set_status(pid, MatchState.STATUS_LEFT)
 	_check_end()
 
