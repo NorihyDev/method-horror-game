@@ -274,5 +274,5 @@ Exact current state and next steps: [docs/continuation.md](docs/continuation.md)
 
 ## License
 
-Proprietary — © METHOD, all rights reserved. See [LICENSE.md](LICENSE.md) and
+Proprietary — © METHOD & Norihy, all rights reserved. See [LICENSE.md](LICENSE.md) and
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
